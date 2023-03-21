@@ -5,6 +5,7 @@ This is a side project where I explore the inner workings of Object Oriented lan
 ```core.c``` and ```core.h``` contain partial implementations of Object, Integer, and String classes in C.
 ## Current Objective(s)
 - Implement a set of basic classes in C using structs
+- Work out a system for multiple inheritance
 ## Future Goals
 - Establish CanyonLang syntax
 - Write a program to transpile CanyonLang to C
