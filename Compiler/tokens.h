@@ -42,4 +42,62 @@ public:
     operator std::string();
 };
 
+struct Token {
+    static Token *createToken(Slice s);
+
+    virtual void justBecause() {
+    }
+
+    virtual void show() {
+        printf("Class: %s\n", typeid(*this).name());
+    }
+};
+
+struct Keyword : public Token {
+    enum class Type {
+        VOID,
+        RETURN
+    };
+    Type type;
+    Keyword(Slice s);
+    static bool isKeyword(Slice s);
+};
+
+struct Primitive : public Token {
+    Primitive(Slice s) {
+        // TODO
+    }
+
+    static bool isPrimitive(Slice s);
+};
+
+struct Operator : public Token {
+    Operator(Slice s) {
+        // TODO
+    }
+
+    static bool isOperator(Slice s);
+};
+
+struct Punctuation : public Token {
+    enum class Type {
+        OpenParen,
+        CloseParen,
+        Semicolon,
+        OpenBrace,
+        CloseBrace
+    };
+    Type type;
+    Punctuation(Slice s);
+
+    static bool isPunctuation(Slice s);
+};
+
+struct Identifier : public Token {
+    Slice s;
+
+    Identifier(Slice s) : s(s) {
+    }
+};
+
 #endif

@@ -27,3 +27,63 @@ bool Slice::operator==(const std::string &rhs) {
 Slice::operator std::string() {
     return std::string(start, len);
 }
+
+Token *Token::createToken(Slice s) {
+    if (Keyword::isKeyword(s)) {
+        return new Keyword(s);
+    }
+    if (Primitive::isPrimitive(s)) {
+        return new Primitive(s);
+    }
+    if (Operator::isOperator(s)) {
+        return new Operator(s);
+    }
+    if (Punctuation::isPunctuation(s)) {
+        return new Punctuation(s);
+    }
+    return new Identifier(s);
+}
+
+Keyword::Keyword(Slice s) {
+    if (s == "void") {
+        type = Type::VOID;
+    } else if (s == "return") {
+        type = Type::RETURN;
+    } else {
+        throw std::invalid_argument(
+              "Unknown slice argument: " + static_cast<std::string>(s));
+    }
+}
+
+bool Keyword::isKeyword(Slice s) {
+    return s == "void" || s == "return";
+}
+
+bool Primitive::isPrimitive(Slice s) {
+    return s == "int";
+}
+
+bool Operator::isOperator(Slice s) {
+    return s == "+";
+}
+
+Punctuation::Punctuation(Slice s) {
+    if (s == "(") {
+        type = Type::OpenParen;
+    } else if (s == ")") {
+        type == Type::CloseParen;
+    } else if (s == ";") {
+        type = Type::Semicolon;
+    } else if (s == "{") {
+        type = Type::OpenBrace;
+    } else if (s == "}") {
+        type = Type::CloseBrace;
+    } else {
+        throw std::invalid_argument(
+              "Unknown slice argument: " + static_cast<std::string>(s));
+    }
+}
+
+bool Punctuation::isPunctuation(Slice s) {
+    return s == "(" || s == ")" || s == ";" || s == "{" || s == "}";
+}

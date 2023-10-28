@@ -23,6 +23,14 @@ static char *current;
  */
 static inline bool isSep(char c);
 
+/**
+ * @brief Converts tokenized Slices into an abstract syntax tree representing the current
+ * module
+ *
+ * @param slices the tokens to parse
+ */
+static void parse(std::vector<Slice> slices);
+
 void tokenize(char *program, off_t size) {
     std::vector<Slice> slices;
     start = current = program;
@@ -45,6 +53,20 @@ void tokenize(char *program, off_t size) {
     if (slices.size() == 0) {
         puts("File does not contain any source code");
         exit(1);
+    }
+
+    parse(slices);
+}
+
+static void parse(std::vector<Slice> slices) {
+    std::vector<Token *> tokens;
+    for (Slice s : slices) {
+        s.show();
+        tokens.push_back(Token::createToken(s));
+    }
+
+    for (Token *t : tokens) {
+        t->show();
     }
 }
 
