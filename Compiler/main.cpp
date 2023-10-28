@@ -1,3 +1,4 @@
+#include "parse.h"
 #include <sys/mman.h>
 #include <sys/stat.h>
 
@@ -38,7 +39,8 @@ int main(int argc, char **argv) {
     }
     close(infile);
 
-    printf("File contents: %s\n", fileData);
+    // printf("File contents: %s\n", fileData);
+    tokenize(fileData, fileInfo.st_size);
 
     // Unmap and close the file
     if (munmap(fileData, fileInfo.st_size) == -1) {
