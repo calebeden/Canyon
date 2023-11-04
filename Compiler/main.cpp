@@ -1,3 +1,4 @@
+#include "ast.h"
 #include "parse.h"
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -10,9 +11,18 @@
 #include <unistd.h>
 
 int main(int argc, char **argv) {
-    int infile = open("sample.canyon", O_RDONLY);
+    if (argc != 3) {
+        fprintf(stderr, "Unexpected argument count. Usage: ./build/main infile outfile\n");
+        return 1;
+    }
+    int infile = open(argv[1], O_RDONLY);
     if (infile == -1) {
-        perror("Failed to open the file");
+        perror("Failed to open infile");
+        return 1;
+    }
+    FILE *outfile = fopen(argv[2], "w");
+    if (outfile == nullptr) {
+        perror("Failed to open outfile");
         return 1;
     }
 
@@ -24,7 +34,7 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (fileInfo.st_size == 0) {
-        puts("Empty file");
+        fprintf(stderr, "Empty file");
         close(infile);
         return 1;
     }
@@ -40,7 +50,17 @@ int main(int argc, char **argv) {
     close(infile);
 
     // printf("File contents: %s\n", fileData);
-    tokenize(fileData, fileInfo.st_size);
+    CodeBlock *ast = tokenize(fileData, fileInfo.st_size);
+    fprintf(outfile, "#include <stdio.h>\n"
+                     "void canyonMain();\n"
+                     "int main(int argc, char **argv) {\n"
+                     "    canyonMain();\n"
+                     "    return 0;\n"
+                     "}\n");
+
+    fprintf(outfile, "void canyonMain() {\n");
+    ast->compile(outfile);
+    fprintf(outfile, "}\n");
 
     // Unmap and close the file
     if (munmap(fileData, fileInfo.st_size) == -1) {

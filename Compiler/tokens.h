@@ -11,10 +11,9 @@
 #include <typeinfo>
 #include <vector>
 
-class Slice {
+struct Slice {
     char *start;
     size_t len;
-public:
     /**
      * @brief Construct a new Slice object based on a pointer to its start and its length
      *
@@ -45,11 +44,8 @@ public:
 struct Token {
     static Token *createToken(Slice s);
 
-    virtual void justBecause() {
-    }
-
     virtual void show() {
-        printf("Class: %s\n", typeid(*this).name());
+        fprintf(stderr, "Class: %s\n", typeid(*this).name());
     }
 };
 
@@ -64,17 +60,29 @@ struct Keyword : public Token {
 };
 
 struct Primitive : public Token {
-    Primitive(Slice s) {
-        // TODO
-    }
+    enum class Type {
+        INT,
+        BYTE,
+        SHORT,
+        LONG,
+        FLOAT,
+        DOUBLE,
+        BOOL,
+        CHAR,
+    };
+    Type type;
+    Primitive(Slice s);
+    virtual void show();
+    void compile(FILE *outfile);
 
     static bool isPrimitive(Slice s);
 };
 
 struct Operator : public Token {
-    Operator(Slice s) {
-        // TODO
-    }
+    enum class Type {
+    };
+    Type type;
+    Operator(Slice s);
 
     static bool isOperator(Slice s);
 };
@@ -85,7 +93,8 @@ struct Punctuation : public Token {
         CloseParen,
         Semicolon,
         OpenBrace,
-        CloseBrace
+        CloseBrace,
+        Equals
     };
     Type type;
     Punctuation(Slice s);
@@ -98,6 +107,8 @@ struct Identifier : public Token {
 
     Identifier(Slice s) : s(s) {
     }
+
+    virtual void show();
 };
 
 #endif
