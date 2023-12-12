@@ -37,6 +37,19 @@ void Assignment::compile(FILE *outfile) {
     fprintf(outfile, ";\n");
 }
 
+Expression::Expression(rvalue *rval) : rval(rval) {
+}
+
+void Expression::show() {
+    fprintf(stderr, "Expression Statement: ");
+    rval->show();
+    fprintf(stderr, "\n");
+}
+
+void Expression::compile(FILE *outfile) {
+    rval->compile(outfile);
+}
+
 Print::Print(rvalue *expression) : expression(expression) {
 }
 

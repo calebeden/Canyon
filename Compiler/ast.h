@@ -24,7 +24,7 @@ struct Statement {
     virtual void compile(FILE *outfile) = 0;
 };
 
-struct Assignment : public Statement {
+struct Assignment : public rvalue {
     Identifier *variable;
     rvalue *expression;
     Assignment(Identifier *variable, rvalue *expression);
@@ -32,21 +32,28 @@ struct Assignment : public Statement {
     virtual void compile(FILE *outfile);
 };
 
-struct Print : public Statement {
+struct Expression : public Statement {
+    rvalue *rval;
+    Expression(rvalue *rval);
+    virtual void show();
+    virtual void compile(FILE *outfile);
+};
+
+struct Print : public rvalue {
     rvalue *expression;
     Print(rvalue *expression);
     virtual void show();
     virtual void compile(FILE *outfile);
 };
 
-struct PrintVar : public Statement {
+struct PrintVar : public rvalue {
     Identifier *variable;
     PrintVar(Identifier *variable);
     virtual void show();
     virtual void compile(FILE *outfile);
 };
 
-struct Return : public Statement {
+struct Return : public rvalue {
     virtual void show();
     virtual void compile(FILE *outfile);
 };

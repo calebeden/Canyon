@@ -10,5 +10,7 @@ void main() {
     print y;
     int z = 6;
     print z;
+    int a = 1;
+    print a;
     return;
 }
