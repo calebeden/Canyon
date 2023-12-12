@@ -20,5 +20,12 @@ void canyonMain() {
     printf("%d\n",z);
     a = 1;
     printf("%d\n",a);
+    printf("%d\n",x);
+    printf("%d\n",y);
+    printf("%d\n",z);
+    x = y = z = 10;
+    printf("%d\n",x);
+    printf("%d\n",y);
+    printf("%d\n",z);
     return;
 }

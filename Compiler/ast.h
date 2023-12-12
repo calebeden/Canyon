@@ -14,7 +14,7 @@ struct rvalue {
 
 struct Literal : public rvalue {
     uint64_t value;
-    Literal(Identifier &value);
+    Literal(Identifier *value);
     virtual void show();
     virtual void compile(FILE *outfile);
 };
@@ -22,6 +22,13 @@ struct Literal : public rvalue {
 struct Statement {
     virtual void show() = 0;
     virtual void compile(FILE *outfile) = 0;
+};
+
+struct Variable : public rvalue {
+    Identifier *variable;
+    Variable(Identifier *variable);
+    virtual void show();
+    virtual void compile(FILE *outfile);
 };
 
 struct Assignment : public rvalue {
@@ -46,14 +53,9 @@ struct Print : public rvalue {
     virtual void compile(FILE *outfile);
 };
 
-struct PrintVar : public rvalue {
-    Identifier *variable;
-    PrintVar(Identifier *variable);
-    virtual void show();
-    virtual void compile(FILE *outfile);
-};
-
-struct Return : public rvalue {
+struct Return : public Statement {
+    rvalue *rval;
+    Return(rvalue *rval);
     virtual void show();
     virtual void compile(FILE *outfile);
 };

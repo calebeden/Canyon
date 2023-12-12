@@ -4,9 +4,9 @@
 
 #include <cstring>
 
-Literal::Literal(Identifier &value) {
-    char *buf = new char[value.s.len];
-    strncpy(buf, value.s.start, value.s.len);
+Literal::Literal(Identifier *value) {
+    char *buf = new char[value->s.len];
+    strncpy(buf, value->s.start, value->s.len);
     this->value = atol(buf);
     delete buf;
 }
@@ -17,6 +17,19 @@ void Literal::show() {
 
 void Literal::compile(FILE *outfile) {
     fprintf(outfile, "%d", (int) value);
+}
+
+Variable::Variable(Identifier *variable) : variable(variable) {
+}
+
+void Variable::show() {
+    fprintf(stderr, "Variable: ");
+    variable->show();
+    fprintf(stderr, "\n");
+}
+
+void Variable::compile(FILE *outfile) {
+    variable->compile(outfile);
 }
 
 Assignment::Assignment(Identifier *variable, rvalue *expression)
@@ -34,7 +47,6 @@ void Assignment::show() {
 void Assignment::compile(FILE *outfile) {
     fprintf(outfile, "%.*s = ", (int) variable->s.len, variable->s.start);
     expression->compile(outfile);
-    fprintf(outfile, ";\n");
 }
 
 Expression::Expression(rvalue *rval) : rval(rval) {
@@ -48,6 +60,7 @@ void Expression::show() {
 
 void Expression::compile(FILE *outfile) {
     rval->compile(outfile);
+    fprintf(outfile, ";\n");
 }
 
 Print::Print(rvalue *expression) : expression(expression) {
@@ -62,30 +75,30 @@ void Print::show() {
 void Print::compile(FILE *outfile) {
     fprintf(outfile, "printf(\"%%d\\n\",");
     expression->compile(outfile);
-    fprintf(outfile, ");\n");
+    fprintf(outfile, ")");
 }
 
-PrintVar::PrintVar(Identifier *variable) : variable(variable) {
-}
-
-void PrintVar::show() {
-    fprintf(stderr, "Print: ");
-    variable->show();
-    fprintf(stderr, "\n");
-}
-
-void PrintVar::compile(FILE *outfile) {
-    fprintf(outfile, "printf(\"%%d\\n\",");
-    variable->compile(outfile);
-    fprintf(outfile, ");\n");
+Return::Return(rvalue *rval) : rval(rval) {
 }
 
 void Return::show() {
-    fprintf(stderr, "Return (void)\n");
+    if (rval == nullptr) {
+        fprintf(stderr, "Return (void)\n");
+    } else {
+        fprintf(stderr, "Return: ");
+        rval->show();
+        fprintf(stderr, "\n");
+    }
 }
 
 void Return::compile(FILE *outfile) {
-    fprintf(outfile, "return;\n");
+    if (rval == nullptr) {
+        fprintf(outfile, "return;\n");
+    } else {
+        fprintf(outfile, "return ");
+        rval->compile(outfile);
+        fprintf(outfile, ";\n");
+    }
 }
 
 CodeBlock::CodeBlock() : locals(new std::unordered_map<Identifier *, Primitive *>) {

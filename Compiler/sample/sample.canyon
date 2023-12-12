@@ -12,5 +12,14 @@ void main() {
     print z;
     int a = 1;
     print a;
+
+    print x;
+    print y;
+    print z;
+    x = y = z = 10;
+    print x;
+    print y;
+    print z;
+
     return;
 }

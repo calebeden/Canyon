@@ -1,3 +1,6 @@
+#ifndef PARSE_H
+#define PARSE_H
+
 #include "ast.h"
 
 #include <fcntl.h>
@@ -7,3 +10,5 @@
  * @param program the source code to parse
  */
 AST *tokenize(char *program, off_t size);
+
+#endif

@@ -1,6 +1,7 @@
 #include "parse.h"
 
 #include "ast.h"
+#include "parseRvalue.h"
 #include "tokens.h"
 #include <unordered_map>
 
@@ -57,17 +58,6 @@ static CodeBlock *parseBlock(std::vector<Token *> tokens, size_t &i);
  */
 static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
       std::unordered_map<Identifier *, Primitive *> *locals);
-
-/**
- * @brief Parses tokens into an rvalue
- *
- * @param tokens the vector of tokens to parse from
- * @param i a reference to the index in the vector corresponding to the first token of the
- * expression. By the end of the function it will contain the index corresponding to the
- * token IMMEDIATELY AFTER the rvalue
- * @return the parsed rvalue
- */
-static rvalue *parseExpression(std::vector<Token *> tokens, size_t &i);
 
 AST *tokenize(char *program, off_t size) {
     std::vector<Slice> slices;
@@ -155,65 +145,23 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
                 throw std::invalid_argument("Re-declaration of variable");
             }
             locals->insert({id, type});
+            size_t i2 = i;
+            rvalue *rval = parseRvalue(tokens, i);
+            if (typeid(*rval) != typeid(Assignment)) {
+                i = i2;
+                return nullptr;
+            }
+            return new Expression(rval);
         }
+    } else if (typeid(*tokens[i]) == typeid(Keyword) && static_cast<Keyword *>(tokens[i])->type == Keyword::Type::RETURN) {
+        i++;
+        return new Return(parseRvalue(tokens, i));
     }
-    rvalue *rval = parseExpression(tokens, i);
+    rvalue *rval = parseRvalue(tokens, i);
     if (rval != nullptr) {
         return new Expression(rval);
     }
     return nullptr;
-}
-
-static rvalue *parseExpression(std::vector<Token *> tokens, size_t &i) {
-    if (typeid(*tokens[i]) == typeid(Identifier)) {
-        Identifier *id = static_cast<Identifier *>(tokens[i]);
-        i++;
-        if (id->s == "print") {
-            if (typeid(*tokens[i]) == typeid(Identifier)) {
-                Identifier *toPrint = static_cast<Identifier *>(tokens[i]);
-                i++;
-                bool isInt = true;
-                for (size_t i = 0; i < toPrint->s.len; i++) {
-                    if (!isdigit(toPrint->s.start[i])) {
-                        isInt = false;
-                        break;
-                    }
-                }
-                if (isInt) {
-                    return new Print(new Literal(*toPrint));
-                } else {
-                    return new PrintVar(new Identifier(*toPrint));
-                }
-            }
-        } else {
-            if (typeid(*tokens[i]) == typeid(Punctuation)) {
-                if (static_cast<Punctuation *>(tokens[i])->type == Punctuation::Type::Equals) {
-                    i++;
-                    if (typeid(*tokens[i]) == typeid(Identifier)) {
-                        // Not really identifier but just trying to get something working
-                        // for now
-                        Literal *l = new Literal(*static_cast<Identifier *>(tokens[i]));
-                        i++;
-                        return new Assignment(id, l);
-                    }
-                } else if (static_cast<Punctuation *>(tokens[i])->type == Punctuation::Type::Semicolon) {
-                    return nullptr;
-                } else {
-                    throw std::invalid_argument("Unexpected punctuation");
-                }
-            } else {
-                throw std::invalid_argument("Expecting an assignment statement");
-            }
-        }
-    } else if (typeid(*tokens[i]) == typeid(Keyword)
-               && static_cast<Keyword *>(tokens[i])->type == Keyword::Type::RETURN) {
-        i++;
-        return new Return();
-    } else {
-        throw std::invalid_argument("Found primitive without full variable declaration");
-    }
-
-    throw std::invalid_argument("Cannot handle whatever this case is");
 }
 
 static inline bool isSep(char c) {
