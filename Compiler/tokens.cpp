@@ -35,9 +35,6 @@ Token *Token::createToken(Slice s) {
     if (Primitive::isPrimitive(s)) {
         return new Primitive(s);
     }
-    if (Operator::isOperator(s)) {
-        return new Operator(s);
-    }
     if (Punctuation::isPunctuation(s)) {
         return new Punctuation(s);
     }
@@ -162,14 +159,6 @@ bool Primitive::isPrimitive(Slice s) {
            || s == "double" || s == "bool" || s == "char";
 }
 
-bool Operator::isOperator(Slice s) {
-    return s == "+";
-}
-
-Operator::Operator(Slice s) {
-    throw std::invalid_argument("Unknown slice argument: " + static_cast<std::string>(s));
-}
-
 Punctuation::Punctuation(Slice s) {
     if (s == "(") {
         type = Type::OpenParen;
@@ -183,6 +172,16 @@ Punctuation::Punctuation(Slice s) {
         type = Type::CloseBrace;
     } else if (s == "=") {
         type = Type::Equals;
+    } else if (s == "+") {
+        type = Type::Plus;
+    } else if (s == "-") {
+        type = Type::Minus;
+    } else if (s == "*") {
+        type = Type::Times;
+    } else if (s == "/") {
+        type = Type::Divide;
+    } else if (s == "%") {
+        type = Type::Mod;
     } else {
         throw std::invalid_argument(
               "Unknown slice argument: " + static_cast<std::string>(s));
@@ -190,7 +189,8 @@ Punctuation::Punctuation(Slice s) {
 }
 
 bool Punctuation::isPunctuation(Slice s) {
-    return s == "(" || s == ")" || s == ";" || s == "{" || s == "}" || s == "=";
+    return s == "(" || s == ")" || s == ";" || s == "{" || s == "}" || s == "="
+           || s == "+" || s == "-" || s == "*" || s == "/" || s == "%";
 }
 
 void Identifier::show() {

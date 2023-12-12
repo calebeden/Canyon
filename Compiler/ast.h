@@ -2,10 +2,10 @@
 #define AST_H
 
 #include "tokens.h"
+#include <unordered_map>
 
 #include <cstdint>
 #include <vector>
-#include <unordered_map>
 
 struct rvalue {
     virtual void show() = 0;
@@ -35,6 +35,46 @@ struct Assignment : public rvalue {
     Identifier *variable;
     rvalue *expression;
     Assignment(Identifier *variable, rvalue *expression);
+    virtual void show();
+    virtual void compile(FILE *outfile);
+};
+
+struct Addition : public rvalue {
+    rvalue *operand1;
+    rvalue *operand2;
+    Addition(rvalue *operand1, rvalue *operand2);
+    virtual void show();
+    virtual void compile(FILE *outfile);
+};
+
+struct Subtraction : public rvalue {
+    rvalue *operand1;
+    rvalue *operand2;
+    Subtraction(rvalue *operand1, rvalue *operand2);
+    virtual void show();
+    virtual void compile(FILE *outfile);
+};
+
+struct Multiplication : public rvalue {
+    rvalue *operand1;
+    rvalue *operand2;
+    Multiplication(rvalue *operand1, rvalue *operand2);
+    virtual void show();
+    virtual void compile(FILE *outfile);
+};
+
+struct Division : public rvalue {
+    rvalue *operand1;
+    rvalue *operand2;
+    Division(rvalue *operand1, rvalue *operand2);
+    virtual void show();
+    virtual void compile(FILE *outfile);
+};
+
+struct Modulo : public rvalue {
+    rvalue *operand1;
+    rvalue *operand2;
+    Modulo(rvalue *operand1, rvalue *operand2);
     virtual void show();
     virtual void compile(FILE *outfile);
 };

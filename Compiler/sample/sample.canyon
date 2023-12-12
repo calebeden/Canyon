@@ -21,5 +21,25 @@ void main() {
     print y;
     print z;
 
+    print 1 + 1;
+    int add = x + y;
+    print add;
+    print 2 - 1;
+    int sub = x - 5;
+    print sub;
+    print 2 - 1 + 5;
+
+    print 2 * 2;
+    int mult = x * y;
+    print mult;
+    print 4 / 2;
+    int div = x / 2;
+    print div;
+    print 15 % 4;
+    int mod = x % y;
+    print mod;
+    print 2 * 3 / 4 % 5 * 2;
+    print 2 * 3 + 6 * 7;
+
     return;
 }

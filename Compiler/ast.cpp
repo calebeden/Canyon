@@ -49,6 +49,106 @@ void Assignment::compile(FILE *outfile) {
     expression->compile(outfile);
 }
 
+Addition::Addition(rvalue *operand1, rvalue *operand2)
+    : operand1(operand1), operand2(operand2) {
+}
+
+void Addition::show() {
+    fprintf(stderr, "(");
+    operand1->show();
+    fprintf(stderr, " + ");
+    operand2->show();
+    fprintf(stderr, ")");
+}
+
+void Addition::compile(FILE *outfile) {
+    fprintf(outfile, "(");
+    operand1->compile(outfile);
+    fprintf(outfile, "+");
+    operand2->compile(outfile);
+    fprintf(outfile, ")");
+}
+
+Subtraction::Subtraction(rvalue *operand1, rvalue *operand2)
+    : operand1(operand1), operand2(operand2) {
+}
+
+void Subtraction::show() {
+    fprintf(stderr, "(");
+    operand1->show();
+    fprintf(stderr, " - ");
+    operand2->show();
+    fprintf(stderr, ")");
+}
+
+void Subtraction::compile(FILE *outfile) {
+    fprintf(outfile, "(");
+    operand1->compile(outfile);
+    fprintf(outfile, "-");
+    operand2->compile(outfile);
+    fprintf(outfile, ")");
+}
+
+Multiplication::Multiplication(rvalue *operand1, rvalue *operand2)
+    : operand1(operand1), operand2(operand2) {
+}
+
+void Multiplication::show() {
+    fprintf(stderr, "(");
+    operand1->show();
+    fprintf(stderr, " * ");
+    operand2->show();
+    fprintf(stderr, ")");
+}
+
+void Multiplication::compile(FILE *outfile) {
+    fprintf(outfile, "(");
+    operand1->compile(outfile);
+    fprintf(outfile, "*");
+    operand2->compile(outfile);
+    fprintf(outfile, ")");
+}
+
+Division::Division(rvalue *operand1, rvalue *operand2)
+    : operand1(operand1), operand2(operand2) {
+}
+
+void Division::show() {
+    fprintf(stderr, "(");
+    operand1->show();
+    fprintf(stderr, " / ");
+    operand2->show();
+    fprintf(stderr, ")");
+}
+
+void Division::compile(FILE *outfile) {
+    fprintf(outfile, "(");
+    operand1->compile(outfile);
+    fprintf(outfile, "/");
+    operand2->compile(outfile);
+    fprintf(outfile, ")");
+}
+
+Modulo::Modulo(rvalue *operand1, rvalue *operand2)
+    : operand1(operand1), operand2(operand2) {
+}
+
+void Modulo::show() {
+    fprintf(stderr, "(");
+    operand1->show();
+    fprintf(stderr, " %% ");
+    operand2->show();
+    fprintf(stderr, ")");
+}
+
+void Modulo::compile(FILE *outfile) {
+    fprintf(outfile, "(");
+    operand1->compile(outfile);
+    fprintf(outfile, " %% ");
+    operand2->compile(outfile);
+    fprintf(outfile, ")");
+}
+
 Expression::Expression(rvalue *rval) : rval(rval) {
 }
 

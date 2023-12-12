@@ -113,11 +113,67 @@ static rvalue *e2(std::vector<Token *> tokens, size_t &i) {
     return e1(tokens, i);
 }
 
+/**
+ * @brief Multiplication, division, modulo operators * / % (LTR)
+ *
+ * @param tokens the vector of tokens to parse from
+ * @param i a reference to the index in the vector corresponding to the first token of the
+ * expression. By the end of the function it will contain the index corresponding to the
+ * token IMMEDIATELY AFTER the rvalue
+ * @return the parsed rvalue
+ */
 static rvalue *e3(std::vector<Token *> tokens, size_t &i) {
+    rvalue *operand1 = e2(tokens, i);
+    while (true) {
+        if (typeid(*tokens[i]) == typeid(Punctuation)) {
+            if (static_cast<Punctuation *>(tokens[i])->type == Punctuation::Type::Times) {
+                i++;
+                operand1 = new Multiplication(operand1, e2(tokens, i));
+            } else if (static_cast<Punctuation *>(tokens[i])->type
+                       == Punctuation::Type::Divide) {
+                i++;
+                operand1 = new Division(operand1, e2(tokens, i));
+            } else if (static_cast<Punctuation *>(tokens[i])->type
+                       == Punctuation::Type::Mod) {
+                i++;
+                operand1 = new Modulo(operand1, e2(tokens, i));
+            } else {
+                return operand1;
+            }
+        } else {
+            return operand1;
+        }
+    }
     return e2(tokens, i);
 }
 
+/**
+ * @brief Addition and subtraction operators + - (LTR)
+ *
+ * @param tokens the vector of tokens to parse from
+ * @param i a reference to the index in the vector corresponding to the first token of the
+ * expression. By the end of the function it will contain the index corresponding to the
+ * token IMMEDIATELY AFTER the rvalue
+ * @return the parsed rvalue
+ */
 static rvalue *e4(std::vector<Token *> tokens, size_t &i) {
+    rvalue *operand1 = e3(tokens, i);
+    while (true) {
+        if (typeid(*tokens[i]) == typeid(Punctuation)) {
+            if (static_cast<Punctuation *>(tokens[i])->type == Punctuation::Type::Plus) {
+                i++;
+                operand1 = new Addition(operand1, e3(tokens, i));
+            } else if (static_cast<Punctuation *>(tokens[i])->type
+                       == Punctuation::Type::Minus) {
+                i++;
+                operand1 = new Subtraction(operand1, e3(tokens, i));
+            } else {
+                return operand1;
+            }
+        } else {
+            return operand1;
+        }
+    }
     return e3(tokens, i);
 }
 
@@ -160,7 +216,7 @@ static rvalue *e13(std::vector<Token *> tokens, size_t &i) {
 /**
  * @brief Assignment operators = += -= *= /= %= <<= >>= &= ^= |= (RTL)
  *
- *  @param tokens the vector of tokens to parse from
+ * @param tokens the vector of tokens to parse from
  * @param i a reference to the index in the vector corresponding to the first token of the
  * expression. By the end of the function it will contain the index corresponding to the
  * token IMMEDIATELY AFTER the rvalue

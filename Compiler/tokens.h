@@ -78,15 +78,6 @@ struct Primitive : public Token {
     static bool isPrimitive(Slice s);
 };
 
-struct Operator : public Token {
-    enum class Type {
-    };
-    Type type;
-    Operator(Slice s);
-
-    static bool isOperator(Slice s);
-};
-
 struct Punctuation : public Token {
     enum class Type {
         OpenParen,
@@ -94,7 +85,12 @@ struct Punctuation : public Token {
         Semicolon,
         OpenBrace,
         CloseBrace,
-        Equals
+        Equals,
+        Plus,
+        Minus,
+        Times,
+        Divide,
+        Mod
     };
     Type type;
     Punctuation(Slice s);

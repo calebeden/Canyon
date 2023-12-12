@@ -5,9 +5,14 @@ int main(int argc, char **argv) {
     return 0;
 }
 void canyonMain() {
+    int div;
+    int mult;
+    int add;
     int a;
     int z;
+    int sub;
     int y;
+    int mod;
     int x;
     printf("%d\n",2);
     x = 3;
@@ -27,5 +32,23 @@ void canyonMain() {
     printf("%d\n",x);
     printf("%d\n",y);
     printf("%d\n",z);
+    printf("%d\n",(1+1));
+    add = (x+y);
+    printf("%d\n",add);
+    printf("%d\n",(2-1));
+    sub = (x-5);
+    printf("%d\n",sub);
+    printf("%d\n",((2-1)+5));
+    printf("%d\n",(2*2));
+    mult = (x*y);
+    printf("%d\n",mult);
+    printf("%d\n",(4/2));
+    div = (x/2);
+    printf("%d\n",div);
+    printf("%d\n",(15 % 4));
+    mod = (x % y);
+    printf("%d\n",mod);
+    printf("%d\n",((((2*3)/4) % 5)*2));
+    printf("%d\n",((2*3)+(6*7)));
     return;
 }
