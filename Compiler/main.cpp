@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     close(infile);
 
     // printf("File contents: %s\n", fileData);
-    CodeBlock *ast = tokenize(fileData, fileInfo.st_size);
+    AST *ast = tokenize(fileData, fileInfo.st_size);
     fprintf(outfile, "#include <stdio.h>\n"
                      "void canyonMain();\n"
                      "int main(int argc, char **argv) {\n"

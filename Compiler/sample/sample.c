@@ -5,11 +5,14 @@ int main(int argc, char **argv) {
     return 0;
 }
 void canyonMain() {
+    int y;
     int x;
     printf("%d\n",2);
     x = 3;
     printf("%d\n",x);
     x = 4;
     printf("%d\n",x);
+    y = 5;
+    printf("%d\n",y);
     return;
 }

@@ -2,25 +2,19 @@
 #define AST_H
 
 #include "tokens.h"
-#include <stdint-gcc.h>
 
+#include <cstdint>
 #include <vector>
+#include <unordered_map>
 
-struct Expression {
+struct rvalue {
     virtual void show() = 0;
     virtual void compile(FILE *outfile) = 0;
 };
 
-struct Literal : public Expression {
+struct Literal : public rvalue {
     uint64_t value;
     Literal(Identifier &value);
-    virtual void show();
-    virtual void compile(FILE *outfile);
-};
-
-struct Variable : public Expression {
-    Slice s;
-    Variable(Identifier &value);
     virtual void show();
     virtual void compile(FILE *outfile);
 };
@@ -30,25 +24,24 @@ struct Statement {
     virtual void compile(FILE *outfile) = 0;
 };
 
-struct Declaration : public Statement {
-    Primitive *type;
-    Variable *variable;
-    Declaration(Primitive *type, Variable *variable);
-    virtual void show();
-    virtual void compile(FILE *outfile);
-};
-
 struct Assignment : public Statement {
     Identifier *variable;
-    Expression *expression;
-    Assignment(Identifier *variable, Expression *expression);
+    rvalue *expression;
+    Assignment(Identifier *variable, rvalue *expression);
     virtual void show();
     virtual void compile(FILE *outfile);
 };
 
 struct Print : public Statement {
-    Expression *expression;
-    Print(Expression *expression);
+    rvalue *expression;
+    Print(rvalue *expression);
+    virtual void show();
+    virtual void compile(FILE *outfile);
+};
+
+struct PrintVar : public Statement {
+    Identifier *variable;
+    PrintVar(Identifier *variable);
     virtual void show();
     virtual void compile(FILE *outfile);
 };
@@ -62,11 +55,19 @@ struct Return : public Statement {
 // functions, loops, etc
 struct CodeBlock {
     std::vector<Statement *> statements;
+    std::unordered_map<Identifier *, Primitive *> *locals;
+    CodeBlock();
     void compile(FILE *outfile);
 };
 
 struct Function {
-    CodeBlock body;
+    CodeBlock *body;
+    void compile(FILE *outfile);
+};
+
+struct AST {
+    std::vector<Function *> functions;
+    void compile(FILE *outfile);
 };
 
 #endif

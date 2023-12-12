@@ -194,5 +194,11 @@ bool Punctuation::isPunctuation(Slice s) {
 }
 
 void Identifier::show() {
+    fprintf(stderr, "Identifier: ");
     s.show();
+    fprintf(stderr, "\n");
+}
+
+void Identifier::compile(FILE *outfile) {
+    fprintf(outfile, "%.*s", (int) s.len, s.start);
 }

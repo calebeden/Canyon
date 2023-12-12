@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "tokens.h"
+#include <unordered_map>
 
 #include <cstdio>
 #include <cstring>
@@ -31,7 +32,7 @@ static inline bool isSep(char c);
  *
  * @param slices the tokens to parse
  */
-static CodeBlock *parseMain(std::vector<Slice> slices);
+static Function *parseMain(std::vector<Slice> slices);
 
 /**
  * @brief Parses tokens into a code block
@@ -50,11 +51,14 @@ static CodeBlock *parseBlock(std::vector<Token *> tokens, size_t &i);
  * @param i a reference to the index in the vector corresponding to the first token of the
  * statement. By the end of the function it will contain the index corresponding to the
  * token IMMEDIATELY AFTER the statement
+ * @param locals the mapping of variables and types for the current code block, will
+ * insert into this map if the statement is a declaration
  * @return the parsed Statement
  */
-static Statement *parseStatement(std::vector<Token *> tokens, size_t &i);
+static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *> *locals);
 
-CodeBlock *tokenize(char *program, off_t size) {
+AST *tokenize(char *program, off_t size) {
     std::vector<Slice> slices;
     start = current = program;
 
@@ -78,10 +82,14 @@ CodeBlock *tokenize(char *program, off_t size) {
         exit(1);
     }
 
-    return parseMain(slices);
+    Function *canyonMain = parseMain(slices);
+    AST *ast = new AST;
+    ast->functions.push_back(canyonMain);
+    return ast;
 }
 
-static CodeBlock *parseMain(std::vector<Slice> slices) {
+// TODO generalize to multiple functions
+static Function *parseMain(std::vector<Slice> slices) {
     std::vector<Token *> tokens;
     for (Slice s : slices) {
         s.show();
@@ -99,7 +107,9 @@ static CodeBlock *parseMain(std::vector<Slice> slices) {
     for (Statement *s : block->statements) {
         s->show();
     }
-    return block;
+    Function *canyonMain = new Function;
+    canyonMain->body = block;
+    return canyonMain;
 }
 
 static CodeBlock *parseBlock(std::vector<Token *> tokens, size_t &i) {
@@ -107,13 +117,17 @@ static CodeBlock *parseBlock(std::vector<Token *> tokens, size_t &i) {
     while (dynamic_cast<Punctuation *>(tokens[i]) == nullptr
            || static_cast<Punctuation *>(tokens[i])->type
                     != Punctuation::Type::CloseBrace) {
-        block->statements.emplace_back(parseStatement(tokens, i));
+        Statement *s = parseStatement(tokens, i, block->locals);
+        if (s != nullptr) {
+            block->statements.emplace_back(s);
+        }
         i++;
     }
     return block;
 }
 
-static Statement *parseStatement(std::vector<Token *> tokens, size_t &i) {
+static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *> *locals) {
     // while (dynamic_cast<Punctuation *>(tokens[i]) == nullptr
     //        || static_cast<Punctuation *>(tokens[i])->type
     //                 != Punctuation::Type::Semicolon) {
@@ -139,7 +153,7 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i) {
                 if (isInt) {
                     return new Print(new Literal(*toPrint));
                 } else {
-                    return new Print(new Variable(*toPrint));
+                    return new PrintVar(new Identifier(*toPrint));
                 }
             }
         } else {
@@ -177,7 +191,13 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i) {
         if (typeid(*tokens[i]) == typeid(Identifier)) {
             Identifier *id = static_cast<Identifier *>(tokens[i]);
             i++;
-            return new Declaration(type, new Variable(*id));
+            if (locals->find(id) != locals->end()) {
+                throw std::invalid_argument("Re-declaration of variable");
+            }
+            locals->insert({id, type});
+            return nullptr;
+        } else {
+            throw std::invalid_argument("Found primitive without full variable declaration");
         }
     }
     throw std::invalid_argument("Cannot handle whatever this case is");

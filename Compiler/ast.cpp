@@ -19,37 +19,7 @@ void Literal::compile(FILE *outfile) {
     fprintf(outfile, "%d", (int) value);
 }
 
-Variable::Variable(Identifier &value) : s(value.s) {
-}
-
-void Variable::show() {
-    fprintf(stderr, "Variable: ");
-    s.show();
-    fprintf(stderr, "\n");
-}
-
-void Variable::compile(FILE *outfile) {
-    fprintf(outfile, "%.*s", (int) s.len, s.start);
-}
-
-Declaration::Declaration(Primitive *type, Variable *variable)
-    : type(type), variable(variable) {
-}
-
-void Declaration::show() {
-    fprintf(stderr, "Declaration: ");
-    variable->show();
-    fprintf(stderr, "\n");
-}
-
-void Declaration::compile(FILE *outfile) {
-    type->compile(outfile);
-    fprintf(outfile, " ");
-    variable->compile(outfile);
-    fprintf(outfile, ";\n");
-}
-
-Assignment::Assignment(Identifier *variable, Expression *expression)
+Assignment::Assignment(Identifier *variable, rvalue *expression)
     : variable(variable), expression(expression) {
 }
 
@@ -67,7 +37,7 @@ void Assignment::compile(FILE *outfile) {
     fprintf(outfile, ";\n");
 }
 
-Print::Print(Expression *expression) : expression(expression) {
+Print::Print(rvalue *expression) : expression(expression) {
 }
 
 void Print::show() {
@@ -82,6 +52,21 @@ void Print::compile(FILE *outfile) {
     fprintf(outfile, ");\n");
 }
 
+PrintVar::PrintVar(Identifier *variable) : variable(variable) {
+}
+
+void PrintVar::show() {
+    fprintf(stderr, "Print: ");
+    variable->show();
+    fprintf(stderr, "\n");
+}
+
+void PrintVar::compile(FILE *outfile) {
+    fprintf(outfile, "printf(\"%%d\\n\",");
+    variable->compile(outfile);
+    fprintf(outfile, ");\n");
+}
+
 void Return::show() {
     fprintf(stderr, "Return (void)\n");
 }
@@ -90,9 +75,31 @@ void Return::compile(FILE *outfile) {
     fprintf(outfile, "return;\n");
 }
 
+CodeBlock::CodeBlock() : locals(new std::unordered_map<Identifier *, Primitive *>) {
+}
+
 void CodeBlock::compile(FILE *outfile) {
+    for (std::pair var : *locals) {
+        Identifier *name = var.first;
+        Primitive *type = var.second;
+        fprintf(outfile, "    ");
+        type->compile(outfile);
+        fprintf(outfile, " ");
+        name->compile(outfile);
+        fprintf(outfile, ";\n");
+    }
     for (Statement *s : statements) {
         fprintf(outfile, "    ");
         s->compile(outfile);
+    }
+}
+
+void Function::compile(FILE *outfile) {
+    body->compile(outfile);
+}
+
+void AST::compile(FILE *outfile) {
+    for (Function *f : functions) {
+        f->compile(outfile);
     }
 }

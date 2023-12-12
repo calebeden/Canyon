@@ -109,6 +109,7 @@ struct Identifier : public Token {
     }
 
     virtual void show();
+    void compile(FILE *outfile);
 };
 
 #endif
