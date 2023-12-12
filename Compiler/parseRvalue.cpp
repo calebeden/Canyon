@@ -79,13 +79,11 @@ static rvalue *e0(std::vector<Token *> tokens, size_t &i) {
         Identifier *id = static_cast<Identifier *>(tokens[i]);
         i++;
         if (id->s == "print") {
-            if (typeid(*tokens[i]) == typeid(Identifier)) {
-                rvalue *toPrint = parseRvalue(tokens, i);
-                if (toPrint != nullptr) {
-                    return new Print(toPrint);
-                } else {
-                    throw std::invalid_argument("No expression to print");
-                }
+            rvalue *toPrint = parseRvalue(tokens, i);
+            if (toPrint != nullptr) {
+                return new Print(toPrint);
+            } else {
+                throw std::invalid_argument("No expression to print");
             }
         } else {
             bool isInt;
@@ -105,7 +103,29 @@ static rvalue *e0(std::vector<Token *> tokens, size_t &i) {
     return nullptr;
 }
 
+/**
+ * @brief Grouping by ()
+ *
+ * @param tokens the vector of tokens to parse from
+ * @param i a reference to the index in the vector corresponding to the first token of the
+ * expression. By the end of the function it will contain the index corresponding to the
+ * token IMMEDIATELY AFTER the rvalue
+ * @return the parsed rvalue
+ */
 static rvalue *e1(std::vector<Token *> tokens, size_t &i) {
+    if (typeid(*tokens[i]) == typeid(Punctuation)
+          && static_cast<Punctuation *>(tokens[i])->type
+                   == Punctuation::Type::OpenParen) {
+        i++;
+        rvalue *rval = parseRvalue(tokens, i);
+        if (typeid(*tokens[i]) != typeid(Punctuation)
+              || static_cast<Punctuation *>(tokens[i])->type
+                       != Punctuation::Type::CloseParen) {
+            throw std::invalid_argument("Expected closing parenthesis");
+        }
+        i++;
+        return rval;
+    }
     return e0(tokens, i);
 }
 

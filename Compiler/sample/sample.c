@@ -5,14 +5,14 @@ int main(int argc, char **argv) {
     return 0;
 }
 void canyonMain() {
+    int mod;
     int div;
     int mult;
+    int sub;
     int add;
     int a;
     int z;
-    int sub;
     int y;
-    int mod;
     int x;
     printf("%d\n",2);
     x = 3;
@@ -50,5 +50,6 @@ void canyonMain() {
     printf("%d\n",mod);
     printf("%d\n",((((2*3)/4) % 5)*2));
     printf("%d\n",((2*3)+(6*7)));
+    printf("%d\n",((1+2)*3));
     return;
 }
