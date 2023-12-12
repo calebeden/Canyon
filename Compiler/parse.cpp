@@ -129,12 +129,11 @@ static CodeBlock *parseBlock(std::vector<Token *> tokens, size_t &i) {
 
 static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
       std::unordered_map<Identifier *, Primitive *> *locals) {
-    // while (dynamic_cast<Punctuation *>(tokens[i]) == nullptr
-    //        || static_cast<Punctuation *>(tokens[i])->type
-    //                 != Punctuation::Type::Semicolon) {
-    //     // TODO
-    //     i++;
-    // }
+    while (typeid(*tokens[i]) == typeid(Punctuation)
+           && static_cast<Punctuation *>(tokens[i])->type
+                    != Punctuation::Type::Semicolon) {
+        i++;
+    }
 
     if (typeid(*tokens[i]) == typeid(Primitive)) {
         Primitive *type = static_cast<Primitive *>(tokens[i]);
@@ -151,13 +150,24 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
                 i = i2;
                 return nullptr;
             }
+            if (typeid(*tokens[i]) != typeid(Punctuation)
+                  || static_cast<Punctuation *>(tokens[i])->type
+                           != Punctuation::Type::Semicolon) {
+                throw std::invalid_argument("Expected semicolon");
+            }
             return new Expression(rval);
         }
-    } else if (typeid(*tokens[i]) == typeid(Keyword) && static_cast<Keyword *>(tokens[i])->type == Keyword::Type::RETURN) {
+    } else if (typeid(*tokens[i]) == typeid(Keyword)
+               && static_cast<Keyword *>(tokens[i])->type == Keyword::Type::RETURN) {
         i++;
         return new Return(parseRvalue(tokens, i));
     }
     rvalue *rval = parseRvalue(tokens, i);
+    if (typeid(*tokens[i]) != typeid(Punctuation)
+          || static_cast<Punctuation *>(tokens[i])->type
+                   != Punctuation::Type::Semicolon) {
+        throw std::invalid_argument("Expected semicolon");
+    }
     if (rval != nullptr) {
         return new Expression(rval);
     }
