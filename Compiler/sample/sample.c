@@ -5,6 +5,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 void canyonMain() {
+    int z;
     int y;
     int x;
     printf("%d\n",2);
@@ -14,5 +15,7 @@ void canyonMain() {
     printf("%d\n",x);
     y = 5;
     printf("%d\n",y);
+    z = 6;
+    printf("%d\n",z);
     return;
 }

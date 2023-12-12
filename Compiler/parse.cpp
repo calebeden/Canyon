@@ -195,9 +195,22 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
                 throw std::invalid_argument("Re-declaration of variable");
             }
             locals->insert({id, type});
+            if (typeid(*tokens[i]) == typeid(Punctuation)
+                  && static_cast<Punctuation *>(tokens[i])->type
+                           == Punctuation::Type::Equals) {
+                i++;
+                if (typeid(*tokens[i]) == typeid(Identifier)) {
+                    // Not really identifier but just trying to get something working for
+                    // now
+                    Literal *l = new Literal(*static_cast<Identifier *>(tokens[i]));
+                    i++;
+                    return new Assignment(id, l);
+                }
+            }
             return nullptr;
         } else {
-            throw std::invalid_argument("Found primitive without full variable declaration");
+            throw std::invalid_argument(
+                  "Found primitive without full variable declaration");
         }
     }
     throw std::invalid_argument("Cannot handle whatever this case is");

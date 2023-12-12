@@ -8,5 +8,7 @@ void main() {
     int y;
     y = 5;
     print y;
+    int z = 6;
+    print z;
     return;
 }
