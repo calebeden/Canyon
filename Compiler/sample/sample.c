@@ -5,13 +5,13 @@ int main(int argc, char **argv) {
     return 0;
 }
 void canyonMain() {
-    int mod;
     int div;
     int mult;
     int sub;
-    int add;
+    int mod;
     int a;
     int z;
+    int add;
     int y;
     int x;
     printf("%d\n",2);

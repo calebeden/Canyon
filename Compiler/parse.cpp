@@ -32,8 +32,16 @@ static inline bool isSep(char c);
  * module
  *
  * @param slices the tokens to parse
+ * @return the AST of the module
  */
-static Function *parseMain(std::vector<Slice> slices);
+static AST *parse(std::vector<Slice> slices);
+
+/**
+ * @brief Converts tokens to the AST representation of a function
+ *
+ * @param tokens the stream of tokens representing the current module
+ */
+static Function *parseMain(std::vector<Token *> tokens);
 
 /**
  * @brief Parses tokens into a code block
@@ -95,14 +103,10 @@ AST *tokenize(char *program, off_t size, char *source) {
         exit(1);
     }
 
-    Function *canyonMain = parseMain(slices);
-    AST *ast = new AST;
-    ast->functions.push_back(canyonMain);
-    return ast;
+    return parse(slices);
 }
 
-// TODO generalize to multiple functions
-static Function *parseMain(std::vector<Slice> slices) {
+static AST *parse(std::vector<Slice> slices) {
     std::vector<Token *> tokens;
     for (Slice s : slices) {
         s.show();
@@ -115,6 +119,14 @@ static Function *parseMain(std::vector<Slice> slices) {
         fprintf(stderr, "\n");
     }
 
+    Function *canyonMain = parseMain(tokens);
+    AST *ast = new AST;
+    ast->functions.push_back(canyonMain);
+    return ast;
+}
+
+// TODO generalize to multiple functions
+static Function *parseMain(std::vector<Token *> tokens) {
     size_t i = 5;
     CodeBlock *block = parseBlock(tokens, i);
     for (Statement *s : block->statements) {
@@ -127,12 +139,12 @@ static Function *parseMain(std::vector<Slice> slices) {
 
 static CodeBlock *parseBlock(std::vector<Token *> tokens, size_t &i) {
     CodeBlock *block = new CodeBlock();
-    while (dynamic_cast<Punctuation *>(tokens[i]) == nullptr
+    while (typeid(*tokens[i]) != typeid(Punctuation)
            || static_cast<Punctuation *>(tokens[i])->type
                     != Punctuation::Type::CloseBrace) {
         Statement *s = parseStatement(tokens, i, block->locals);
         if (s != nullptr) {
-            block->statements.emplace_back(s);
+            block->statements.push_back(s);
         }
     }
     return block;
@@ -142,8 +154,13 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
       std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
     while (typeid(*tokens[i]) == typeid(Punctuation)
            && static_cast<Punctuation *>(tokens[i])->type
-                    != Punctuation::Type::Semicolon) {
+                    == Punctuation::Type::Semicolon) {
         i++;
+    }
+    if (typeid(*tokens[i]) == typeid(Punctuation)
+          && static_cast<Punctuation *>(tokens[i])->type
+                   == Punctuation::Type::CloseBrace) {
+        return nullptr;
     }
 
     rvalue *rval;
@@ -160,7 +177,7 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
             size_t i2 = i;
             rval = parseRvalue(tokens, i, locals);
             if (typeid(*rval) != typeid(Assignment)) {
-                i = i2;
+                i = i2 + 1;
                 return nullptr;
             }
         }
