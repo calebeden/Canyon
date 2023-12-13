@@ -5,6 +5,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 void canyonMain() {
+    int sep;
     int div;
     int mult;
     int sub;
@@ -51,5 +52,7 @@ void canyonMain() {
     printf("%d\n",((((2*3)/4) % 5)*2));
     printf("%d\n",((2*3)+(6*7)));
     printf("%d\n",((1+2)*3));
+    sep = ((1+5)/3);
+    printf("%d\n",sep);
     return;
 }

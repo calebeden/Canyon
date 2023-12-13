@@ -18,14 +18,13 @@ static char *start;
 static char *current;
 
 /**
- * @brief Determines whether a character is a token separator.
- * A character is a token separator if it is contained within {' ', '\t', '\n', '(', ')',
- * ';', '{', '}'}
+ * @brief Determines whether the character pointed to by c represents the start of a new
+ * token
  *
- * @param c the character to test
- * @returns if `c` is a token separator
+ * @param c the character to test at
+ * @returns whether `c` is at the start of a new token
  */
-static inline bool isSep(char c);
+static inline bool isSep(char *c);
 
 /**
  * @brief Converts tokenized Slices into an abstract syntax tree representing the current
@@ -94,7 +93,7 @@ AST *tokenize(char *program, off_t size, char *source) {
         do {
             current++;
             col++;
-        } while (!isSep(*current) && current - start < size);
+        } while (!isSep(current) && current - start < size);
         slices.emplace_back(tokenStart, current - 1, source, line, startCol);
     }
 
@@ -206,7 +205,18 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
     return nullptr;
 }
 
-static inline bool isSep(char c) {
-    return c == ' ' || c == '\t' || c == '\n' || c == '(' || c == ')' || c == ';'
-           || c == '{' || c == '}' || c == '=';
+static inline bool isSep(char *c) {
+    // If c is any of these characters, it is by default a separator
+    if (c[0] == ' ' || c[0] == '\t' || c[0] == '\n' || c[0] == '(' || c[0] == ')'
+          || c[0] == ';' || c[0] == '{' || c[0] == '}' || c[0] == '+' || c[0] == '-'
+          || c[0] == '*' || c[0] == '/' || c[0] == '%' || c[0] == '=') {
+        return true;
+    }
+
+    // If c is alnum, it is sep as long as prev is not alnum
+    if (isalnum(c[0]) && !isalnum(c[-1])) {
+        return true;
+    }
+
+    return false;
 }

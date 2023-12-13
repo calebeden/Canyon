@@ -42,5 +42,8 @@ void main() {
     print 2 * 3 + 6 * 7;
     print ( 1 + 2 ) * 3;
 
+    int sep=(1+5)/3;
+    print sep;
+
     return;
 }
