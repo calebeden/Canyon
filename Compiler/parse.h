@@ -12,6 +12,6 @@
  * @param program the source code to parse
  * @param source the name of the source code file
  */
-AST *tokenize(char *program, off_t size, char *source);
+AST::AST *tokenize(char *program, off_t size, char *source);
 
 #endif

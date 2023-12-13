@@ -7,9 +7,17 @@
 #include <cstdint>
 #include <vector>
 
+namespace AST {
+
 struct rvalue {
+    char *source;
+    size_t row;
+    size_t col;
     virtual void show() = 0;
     virtual void compile(FILE *outfile) = 0;
+    void error(const char *const error, ...);
+protected:
+    rvalue(char *source, size_t row, size_t col);
 };
 
 struct Literal : public rvalue {
@@ -93,6 +101,13 @@ struct Print : public rvalue {
     virtual void compile(FILE *outfile);
 };
 
+struct FunctionCall : public rvalue {
+    Variable *name;
+    FunctionCall(Variable *name);
+    virtual void show();
+    virtual void compile(FILE *outfile);
+};
+
 struct Return : public Statement {
     rvalue *rval;
     Return(rvalue *rval);
@@ -103,10 +118,22 @@ struct Return : public Statement {
 // TODO: eventually have arbitrary code blocks for precise scoping but for now just
 // functions, loops, etc
 struct CodeBlock {
+    enum IdentifierStatus {
+        VARIABLE,
+        FUNCTION,
+        UNKNOWN,
+    };
+
     std::vector<Statement *> statements;
     std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals;
-    CodeBlock();
+    std::vector<Variable *> deferred;
+    CodeBlock *parent = nullptr;
+    struct AST *global;
+    CodeBlock(AST *global);
     void compile(FILE *outfile);
+    void defer(Variable *rval);
+    IdentifierStatus find(Variable *id);
+    void resolve();
 };
 
 struct Function {
@@ -119,6 +146,9 @@ struct Function {
 struct AST {
     std::unordered_map<std::string, Function *> functions;
     void compile(FILE *outfile);
+    void resolve();
 };
+
+} // namespace AST
 
 #endif

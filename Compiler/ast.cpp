@@ -3,8 +3,25 @@
 #include "tokens.h"
 
 #include <cstring>
+#include <stdarg.h>
 
-Literal::Literal(Identifier *value) {
+namespace AST {
+
+rvalue::rvalue(char *source, size_t row, size_t col)
+    : source(source), row(row), col(col) {
+}
+
+void rvalue::error(const char *const format, ...) {
+    fprintf(stderr, "Error at %s:%ld:%ld: ", source, row, col);
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fprintf(stderr, "\n");
+    exit(EXIT_FAILURE);
+}
+
+Literal::Literal(Identifier *value) : rvalue(value->source, value->row, value->col) {
     char *buf = new char[value->s.len];
     strncpy(buf, value->s.start, value->s.len);
     this->value = atol(buf);
@@ -19,7 +36,8 @@ void Literal::compile(FILE *outfile) {
     fprintf(outfile, "%d", (int) value);
 }
 
-Variable::Variable(Identifier *variable) : variable(variable) {
+Variable::Variable(Identifier *variable)
+    : rvalue(variable->source, variable->row, variable->col), variable(variable) {
 }
 
 void Variable::show() {
@@ -33,7 +51,8 @@ void Variable::compile(FILE *outfile) {
 }
 
 Assignment::Assignment(Identifier *variable, rvalue *expression)
-    : variable(variable), expression(expression) {
+    : rvalue(variable->source, variable->row, variable->col), variable(variable),
+      expression(expression) {
 }
 
 void Assignment::show() {
@@ -50,7 +69,8 @@ void Assignment::compile(FILE *outfile) {
 }
 
 Addition::Addition(rvalue *operand1, rvalue *operand2)
-    : operand1(operand1), operand2(operand2) {
+    : rvalue(operand1->source, operand1->row, operand1->col), operand1(operand1),
+      operand2(operand2) {
 }
 
 void Addition::show() {
@@ -70,7 +90,8 @@ void Addition::compile(FILE *outfile) {
 }
 
 Subtraction::Subtraction(rvalue *operand1, rvalue *operand2)
-    : operand1(operand1), operand2(operand2) {
+    : rvalue(operand1->source, operand1->row, operand1->col), operand1(operand1),
+      operand2(operand2) {
 }
 
 void Subtraction::show() {
@@ -90,7 +111,8 @@ void Subtraction::compile(FILE *outfile) {
 }
 
 Multiplication::Multiplication(rvalue *operand1, rvalue *operand2)
-    : operand1(operand1), operand2(operand2) {
+    : rvalue(operand1->source, operand1->row, operand1->col), operand1(operand1),
+      operand2(operand2) {
 }
 
 void Multiplication::show() {
@@ -110,7 +132,8 @@ void Multiplication::compile(FILE *outfile) {
 }
 
 Division::Division(rvalue *operand1, rvalue *operand2)
-    : operand1(operand1), operand2(operand2) {
+    : rvalue(operand1->source, operand1->row, operand1->col), operand1(operand1),
+      operand2(operand2) {
 }
 
 void Division::show() {
@@ -130,7 +153,8 @@ void Division::compile(FILE *outfile) {
 }
 
 Modulo::Modulo(rvalue *operand1, rvalue *operand2)
-    : operand1(operand1), operand2(operand2) {
+    : rvalue(operand1->source, operand1->row, operand1->col), operand1(operand1),
+      operand2(operand2) {
 }
 
 void Modulo::show() {
@@ -163,7 +187,9 @@ void Expression::compile(FILE *outfile) {
     fprintf(outfile, ";\n");
 }
 
-Print::Print(rvalue *expression) : expression(expression) {
+Print::Print(rvalue *expression)
+    : rvalue(expression->source, expression->row, expression->col),
+      expression(expression) {
 }
 
 void Print::show() {
@@ -176,6 +202,20 @@ void Print::compile(FILE *outfile) {
     fprintf(outfile, "printf(\"%%d\\n\",");
     expression->compile(outfile);
     fprintf(outfile, ")");
+}
+
+FunctionCall::FunctionCall(Variable *name)
+    : rvalue(name->source, name->row, name->col), name(name) {
+}
+
+void FunctionCall::show() {
+    fprintf(stderr, "Function Call: ");
+    name->show();
+}
+
+void FunctionCall::compile(FILE *outfile) {
+    name->compile(outfile);
+    fprintf(outfile, "()");
 }
 
 Return::Return(rvalue *rval) : rval(rval) {
@@ -201,8 +241,9 @@ void Return::compile(FILE *outfile) {
     }
 }
 
-CodeBlock::CodeBlock()
-    : locals(new std::unordered_map<Identifier *, Primitive *, Hasher, Comparator>) {
+CodeBlock::CodeBlock(AST *global)
+    : locals(new std::unordered_map<Identifier *, Primitive *, Hasher, Comparator>),
+      global(global) {
 }
 
 void CodeBlock::compile(FILE *outfile) {
@@ -218,6 +259,40 @@ void CodeBlock::compile(FILE *outfile) {
     for (Statement *s : statements) {
         fprintf(outfile, "    ");
         s->compile(outfile);
+    }
+}
+
+void CodeBlock::defer(Variable *rval) {
+    deferred.push_back(rval);
+}
+
+CodeBlock::IdentifierStatus CodeBlock::find(Variable *id) {
+    if (locals->find(id->variable) != locals->end()) {
+        return VARIABLE;
+    }
+    if (parent == nullptr) {
+        if (global->functions.find(id->variable->s) != global->functions.end()) {
+            return FUNCTION;
+        }
+        return UNKNOWN;
+    }
+    return parent->find(id);
+}
+
+void CodeBlock::resolve() {
+    for (Variable *id : deferred) {
+        IdentifierStatus status = find(id);
+        switch (status) {
+            case UNKNOWN: {
+                id->error("Undeclared identifier %.*s", id->variable->s.len,
+                      id->variable->s.start);
+            }
+            case VARIABLE:
+            case FUNCTION: {
+                // TODO check if it is appropriate given the invokation
+                break;
+            }
+        }
     }
 }
 
@@ -248,3 +323,11 @@ void AST::compile(FILE *outfile) {
         f.second->compile(outfile, f.first);
     }
 }
+
+void AST::resolve() {
+    for (std::pair<std::string, Function *> f : functions) {
+        f.second->body->resolve();
+    }
+}
+
+} // namespace AST

@@ -58,5 +58,6 @@ void canyonMain(){
     printf("%d\n",((1+2)*3));
     sep = ((1+5)/3);
     printf("%d\n",sep);
+    printf("%d\n",function2());
     return;
 }

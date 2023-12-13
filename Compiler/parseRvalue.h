@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <vector>
 
-rvalue *parseRvalue(std::vector<Token *> tokens, size_t &i,
-      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals);
+AST::rvalue *parseRvalue(std::vector<Token *> tokens, size_t &i, AST::CodeBlock *context);
 
 #endif

@@ -45,6 +45,8 @@ void main() {
     int sep=(1+5)/3;
     print sep;
 
+    print function2();
+
     return;
 }
 

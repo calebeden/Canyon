@@ -46,7 +46,7 @@ struct Token {
     static Token *createToken(Slice s);
 
     virtual void show();
-    virtual void parse_error(const char *const error, ...);
+    void error(const char *const error, ...);
 protected:
     Token(char *source, size_t row, size_t col);
 };

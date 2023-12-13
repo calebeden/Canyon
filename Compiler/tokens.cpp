@@ -57,8 +57,8 @@ void Token::show() {
 Token::Token(char *source, size_t row, size_t col) : source(source), row(row), col(col) {
 }
 
-void Token::parse_error(const char *const format, ...) {
-    fprintf(stderr, "Parse error at %s:%ld:%ld: ", source, row, col);
+void Token::error(const char *const format, ...) {
+    fprintf(stderr, "Error at %s:%ld:%ld: ", source, row, col);
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
