@@ -1,6 +1,8 @@
 #include "parseRvalue.h"
 
 #include "ast.h"
+#include "tokens.h"
+#include <unordered_map>
 
 #include <vector>
 
@@ -74,16 +76,17 @@ Precedence          Operator            Associativity
  * @param i
  * @return rvalue*
  */
-static rvalue *e0(std::vector<Token *> tokens, size_t &i) {
+static rvalue *e0(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
     if (typeid(*tokens[i]) == typeid(Identifier)) {
         Identifier *id = static_cast<Identifier *>(tokens[i]);
         i++;
         if (id->s == "print") {
-            rvalue *toPrint = parseRvalue(tokens, i);
+            rvalue *toPrint = parseRvalue(tokens, i, locals);
             if (toPrint != nullptr) {
                 return new Print(toPrint);
             } else {
-                throw std::invalid_argument("No expression to print");
+                tokens[i - 1]->parse_error("No expression to print");
             }
         } else {
             bool isInt;
@@ -96,6 +99,9 @@ static rvalue *e0(std::vector<Token *> tokens, size_t &i) {
             if (isInt) {
                 return new Literal(id);
             } else {
+                if (locals->find(id) == locals->end()) {
+                    id->parse_error("Undeclared variable %.*s", id->s.len, id->s.start);
+                }
                 return new Variable(id);
             }
         }
@@ -112,25 +118,30 @@ static rvalue *e0(std::vector<Token *> tokens, size_t &i) {
  * token IMMEDIATELY AFTER the rvalue
  * @return the parsed rvalue
  */
-static rvalue *e1(std::vector<Token *> tokens, size_t &i) {
+static rvalue *e1(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
     if (typeid(*tokens[i]) == typeid(Punctuation)
           && static_cast<Punctuation *>(tokens[i])->type
                    == Punctuation::Type::OpenParen) {
         i++;
-        rvalue *rval = parseRvalue(tokens, i);
+        rvalue *rval = parseRvalue(tokens, i, locals);
+        if (rval == nullptr) {
+            tokens[i]->parse_error("Expected expression");
+        }
         if (typeid(*tokens[i]) != typeid(Punctuation)
               || static_cast<Punctuation *>(tokens[i])->type
                        != Punctuation::Type::CloseParen) {
-            throw std::invalid_argument("Expected closing parenthesis");
+            tokens[i]->parse_error("Expected ')'");
         }
         i++;
         return rval;
     }
-    return e0(tokens, i);
+    return e0(tokens, i, locals);
 }
 
-static rvalue *e2(std::vector<Token *> tokens, size_t &i) {
-    return e1(tokens, i);
+static rvalue *e2(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    return e1(tokens, i, locals);
 }
 
 /**
@@ -142,21 +153,22 @@ static rvalue *e2(std::vector<Token *> tokens, size_t &i) {
  * token IMMEDIATELY AFTER the rvalue
  * @return the parsed rvalue
  */
-static rvalue *e3(std::vector<Token *> tokens, size_t &i) {
-    rvalue *operand1 = e2(tokens, i);
+static rvalue *e3(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    rvalue *operand1 = e2(tokens, i, locals);
     while (true) {
         if (typeid(*tokens[i]) == typeid(Punctuation)) {
             if (static_cast<Punctuation *>(tokens[i])->type == Punctuation::Type::Times) {
                 i++;
-                operand1 = new Multiplication(operand1, e2(tokens, i));
+                operand1 = new Multiplication(operand1, e2(tokens, i, locals));
             } else if (static_cast<Punctuation *>(tokens[i])->type
                        == Punctuation::Type::Divide) {
                 i++;
-                operand1 = new Division(operand1, e2(tokens, i));
+                operand1 = new Division(operand1, e2(tokens, i, locals));
             } else if (static_cast<Punctuation *>(tokens[i])->type
                        == Punctuation::Type::Mod) {
                 i++;
-                operand1 = new Modulo(operand1, e2(tokens, i));
+                operand1 = new Modulo(operand1, e2(tokens, i, locals));
             } else {
                 return operand1;
             }
@@ -164,7 +176,7 @@ static rvalue *e3(std::vector<Token *> tokens, size_t &i) {
             return operand1;
         }
     }
-    return e2(tokens, i);
+    return e2(tokens, i, locals);
 }
 
 /**
@@ -176,17 +188,18 @@ static rvalue *e3(std::vector<Token *> tokens, size_t &i) {
  * token IMMEDIATELY AFTER the rvalue
  * @return the parsed rvalue
  */
-static rvalue *e4(std::vector<Token *> tokens, size_t &i) {
-    rvalue *operand1 = e3(tokens, i);
+static rvalue *e4(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    rvalue *operand1 = e3(tokens, i, locals);
     while (true) {
         if (typeid(*tokens[i]) == typeid(Punctuation)) {
             if (static_cast<Punctuation *>(tokens[i])->type == Punctuation::Type::Plus) {
                 i++;
-                operand1 = new Addition(operand1, e3(tokens, i));
+                operand1 = new Addition(operand1, e3(tokens, i, locals));
             } else if (static_cast<Punctuation *>(tokens[i])->type
                        == Punctuation::Type::Minus) {
                 i++;
-                operand1 = new Subtraction(operand1, e3(tokens, i));
+                operand1 = new Subtraction(operand1, e3(tokens, i, locals));
             } else {
                 return operand1;
             }
@@ -194,43 +207,52 @@ static rvalue *e4(std::vector<Token *> tokens, size_t &i) {
             return operand1;
         }
     }
-    return e3(tokens, i);
+    return e3(tokens, i, locals);
 }
 
-static rvalue *e5(std::vector<Token *> tokens, size_t &i) {
-    return e4(tokens, i);
+static rvalue *e5(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    return e4(tokens, i, locals);
 }
 
-static rvalue *e6(std::vector<Token *> tokens, size_t &i) {
-    return e5(tokens, i);
+static rvalue *e6(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    return e5(tokens, i, locals);
 }
 
-static rvalue *e7(std::vector<Token *> tokens, size_t &i) {
-    return e6(tokens, i);
+static rvalue *e7(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    return e6(tokens, i, locals);
 }
 
-static rvalue *e8(std::vector<Token *> tokens, size_t &i) {
-    return e7(tokens, i);
+static rvalue *e8(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    return e7(tokens, i, locals);
 }
 
-static rvalue *e9(std::vector<Token *> tokens, size_t &i) {
-    return e8(tokens, i);
+static rvalue *e9(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    return e8(tokens, i, locals);
 }
 
-static rvalue *e10(std::vector<Token *> tokens, size_t &i) {
-    return e9(tokens, i);
+static rvalue *e10(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    return e9(tokens, i, locals);
 }
 
-static rvalue *e11(std::vector<Token *> tokens, size_t &i) {
-    return e10(tokens, i);
+static rvalue *e11(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    return e10(tokens, i, locals);
 }
 
-static rvalue *e12(std::vector<Token *> tokens, size_t &i) {
-    return e11(tokens, i);
+static rvalue *e12(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    return e11(tokens, i, locals);
 }
 
-static rvalue *e13(std::vector<Token *> tokens, size_t &i) {
-    return e12(tokens, i);
+static rvalue *e13(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    return e12(tokens, i, locals);
 }
 
 /**
@@ -242,25 +264,31 @@ static rvalue *e13(std::vector<Token *> tokens, size_t &i) {
  * token IMMEDIATELY AFTER the rvalue
  * @return the parsed rvalue
  */
-static rvalue *e14(std::vector<Token *> tokens, size_t &i) {
+static rvalue *e14(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
     if (typeid(*tokens[i]) == typeid(Identifier)) {
         Identifier *id = static_cast<Identifier *>(tokens[i]);
         if (typeid(*tokens[i + 1]) == typeid(Punctuation)
               && static_cast<Punctuation *>(tokens[i + 1])->type
                        == Punctuation::Type::Equals) {
+            if (locals->find(id) == locals->end()) {
+                id->parse_error("Undeclared variable %.*s", id->s.len, id->s.start);
+            }
             i += 2;
-            return new Assignment(id, e14(tokens, i));
+            return new Assignment(id, e14(tokens, i, locals));
         } else {
-            return e13(tokens, i);
+            return e13(tokens, i, locals);
         }
     }
-    return e13(tokens, i);
+    return e13(tokens, i, locals);
 }
 
-static rvalue *e15(std::vector<Token *> tokens, size_t &i) {
-    return e14(tokens, i);
+static rvalue *e15(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    return e14(tokens, i, locals);
 }
 
-rvalue *parseRvalue(std::vector<Token *> tokens, size_t &i) {
-    return e15(tokens, i);
+rvalue *parseRvalue(std::vector<Token *> tokens, size_t &i,
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
+    return e15(tokens, i, locals);
 }

@@ -201,7 +201,8 @@ void Return::compile(FILE *outfile) {
     }
 }
 
-CodeBlock::CodeBlock() : locals(new std::unordered_map<Identifier *, Primitive *>) {
+CodeBlock::CodeBlock()
+    : locals(new std::unordered_map<Identifier *, Primitive *, Hasher, Comparator>) {
 }
 
 void CodeBlock::compile(FILE *outfile) {

@@ -57,25 +57,37 @@ static CodeBlock *parseBlock(std::vector<Token *> tokens, size_t &i);
  * @return the parsed Statement
  */
 static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
-      std::unordered_map<Identifier *, Primitive *> *locals);
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals);
 
-AST *tokenize(char *program, off_t size) {
+AST *tokenize(char *program, off_t size, char *source) {
     std::vector<Slice> slices;
     start = current = program;
+    size_t line = 1;
+    size_t col = 1;
 
     // Tokenize the input source file into Slices, skipping over whitespace
     while (current - start < size) {
         while (*current == ' ' || *current == '\t' || *current == '\n') {
+            if (*current == '\n') {
+                line++;
+                col = 1;
+            } else if (*current == '\t') {
+                col += TAB_WIDTH;
+            } else {
+                col++;
+            }
             current++;
         }
         if (current - start >= size) {
             break;
         }
         char *tokenStart = current;
+        size_t startCol = col;
         do {
             current++;
+            col++;
         } while (!isSep(*current) && current - start < size);
-        slices.emplace_back(tokenStart, current - 1);
+        slices.emplace_back(tokenStart, current - 1, source, line, startCol);
     }
 
     if (slices.size() == 0) {
@@ -122,51 +134,54 @@ static CodeBlock *parseBlock(std::vector<Token *> tokens, size_t &i) {
         if (s != nullptr) {
             block->statements.emplace_back(s);
         }
-        i++;
     }
     return block;
 }
 
 static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
-      std::unordered_map<Identifier *, Primitive *> *locals) {
+      std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals) {
     while (typeid(*tokens[i]) == typeid(Punctuation)
            && static_cast<Punctuation *>(tokens[i])->type
                     != Punctuation::Type::Semicolon) {
         i++;
     }
 
+    rvalue *rval;
     if (typeid(*tokens[i]) == typeid(Primitive)) {
         Primitive *type = static_cast<Primitive *>(tokens[i]);
         i++;
         if (typeid(*tokens[i]) == typeid(Identifier)) {
             Identifier *id = static_cast<Identifier *>(tokens[i]);
             if (locals->find(id) != locals->end()) {
-                throw std::invalid_argument("Re-declaration of variable");
+                tokens[i]->parse_error("Re-declaration of variable %.*s", id->s.len,
+                      id->s.start);
             }
             locals->insert({id, type});
             size_t i2 = i;
-            rvalue *rval = parseRvalue(tokens, i);
+            rval = parseRvalue(tokens, i, locals);
             if (typeid(*rval) != typeid(Assignment)) {
                 i = i2;
                 return nullptr;
             }
-            if (typeid(*tokens[i]) != typeid(Punctuation)
-                  || static_cast<Punctuation *>(tokens[i])->type
-                           != Punctuation::Type::Semicolon) {
-                throw std::invalid_argument("Expected semicolon");
-            }
-            return new Expression(rval);
         }
     } else if (typeid(*tokens[i]) == typeid(Keyword)
                && static_cast<Keyword *>(tokens[i])->type == Keyword::Type::RETURN) {
         i++;
-        return new Return(parseRvalue(tokens, i));
+        rval = parseRvalue(tokens, i, locals);
+        if (typeid(*tokens[i]) != typeid(Punctuation)
+              || static_cast<Punctuation *>(tokens[i])->type
+                       != Punctuation::Type::Semicolon) {
+            tokens[i]->parse_error("Expected ';' after statement");
+        }
+        return new Return(rval);
+    } else {
+        rval = parseRvalue(tokens, i, locals);
     }
-    rvalue *rval = parseRvalue(tokens, i);
+
     if (typeid(*tokens[i]) != typeid(Punctuation)
           || static_cast<Punctuation *>(tokens[i])->type
                    != Punctuation::Type::Semicolon) {
-        throw std::invalid_argument("Expected semicolon");
+        tokens[i]->parse_error("Expected ';' after statement");
     }
     if (rval != nullptr) {
         return new Expression(rval);

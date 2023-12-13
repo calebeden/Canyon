@@ -14,20 +14,16 @@
 struct Slice {
     char *start;
     size_t len;
-    /**
-     * @brief Construct a new Slice object based on a pointer to its start and its length
-     *
-     * @param start a pointer to the first character in the Slice
-     * @param len the number of characters in the Slice
-     */
-    Slice(char *start, int len);
+    size_t row;
+    size_t col;
+    char *source;
     /**
      * @brief Construct a new Slice object based on pointers to its start and end
      *
      * @param start a pointer to the first character in the Slice
      * @param end a pointer to the final character of the Slice (inclusive)
      */
-    Slice(char *start, char *end);
+    Slice(char *start, char *end, char *source, size_t row, size_t col);
     void show();
     /**
      * @brief Compares a Slice to a string
@@ -38,15 +34,21 @@ struct Slice {
      */
     bool operator==(const std::string &rhs);
 
+    bool operator==(const Slice &other);
+
     operator std::string();
 };
 
 struct Token {
+    char *source;
+    size_t row;
+    size_t col;
     static Token *createToken(Slice s);
 
-    virtual void show() {
-        fprintf(stderr, "Class: %s\n", typeid(*this).name());
-    }
+    virtual void show();
+    virtual void parse_error(const char *const error, ...);
+protected:
+    Token(char *source, size_t row, size_t col);
 };
 
 struct Keyword : public Token {
@@ -101,11 +103,28 @@ struct Punctuation : public Token {
 struct Identifier : public Token {
     Slice s;
 
-    Identifier(Slice s) : s(s) {
-    }
+    Identifier(Slice s);
 
     virtual void show();
     void compile(FILE *outfile);
+    bool operator==(const Identifier &other);
+};
+
+struct Hasher {
+    std::size_t operator()(Identifier *const id) const {
+        // djb2
+        size_t hash = 5381;
+        for (size_t i = 0; i < id->s.len; i++) {
+            hash = hash * 33 + id->s.start[i];
+        }
+        return hash;
+    }
+};
+
+struct Comparator {
+    bool operator()(Identifier *a, Identifier *b) const {
+        return a->s == b->s;
+    }
 };
 
 #endif

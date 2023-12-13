@@ -104,7 +104,7 @@ struct Return : public Statement {
 // functions, loops, etc
 struct CodeBlock {
     std::vector<Statement *> statements;
-    std::unordered_map<Identifier *, Primitive *> *locals;
+    std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals;
     CodeBlock();
     void compile(FILE *outfile);
 };

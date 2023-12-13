@@ -1,11 +1,10 @@
 #include "tokens.h"
 
+#include <stdarg.h>
 #include <stdexcept>
 
-Slice::Slice(char *start, int len) : start(start), len(len) {
-}
-
-Slice::Slice(char *start, char *end) : start(start), len(end - start + 1) {
+Slice::Slice(char *start, char *end, char *source, size_t row, size_t col)
+    : start(start), len(end - start + 1), row(row), col(col), source(source) {
 }
 
 void Slice::show() {
@@ -22,6 +21,16 @@ bool Slice::operator==(const std::string &rhs) {
         }
     }
     return rhs[this->len] == '\0';
+}
+
+bool Slice::operator==(const Slice &other) {
+    size_t length = std::min(this->len, other.len);
+    for (size_t i = 0; i < length; i++) {
+        if (other.start[i] != this->start[i]) {
+            return false;
+        }
+    }
+    return this->len == other.len;
 }
 
 Slice::operator std::string() {
@@ -41,7 +50,24 @@ Token *Token::createToken(Slice s) {
     return new Identifier(s);
 }
 
-Keyword::Keyword(Slice s) {
+void Token::show() {
+    fprintf(stderr, "Class: %s\n", typeid(*this).name());
+}
+
+Token::Token(char *source, size_t row, size_t col) : source(source), row(row), col(col) {
+}
+
+void Token::parse_error(const char *const format, ...) {
+    fprintf(stderr, "Parse error at %s:%ld:%ld: ", source, row, col);
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fprintf(stderr, "\n");
+    exit(EXIT_FAILURE);
+}
+
+Keyword::Keyword(Slice s) : Token(s.source, s.row, s.col) {
     if (s == "void") {
         type = Type::VOID;
     } else if (s == "return") {
@@ -56,7 +82,7 @@ bool Keyword::isKeyword(Slice s) {
     return s == "void" || s == "return";
 }
 
-Primitive::Primitive(Slice s) {
+Primitive::Primitive(Slice s) : Token(s.source, s.row, s.col) {
     if (s == "int") {
         type = Type::INT;
     } else if (s == "byte") {
@@ -159,7 +185,7 @@ bool Primitive::isPrimitive(Slice s) {
            || s == "double" || s == "bool" || s == "char";
 }
 
-Punctuation::Punctuation(Slice s) {
+Punctuation::Punctuation(Slice s) : Token(s.source, s.row, s.col) {
     if (s == "(") {
         type = Type::OpenParen;
     } else if (s == ")") {
@@ -193,6 +219,9 @@ bool Punctuation::isPunctuation(Slice s) {
            || s == "+" || s == "-" || s == "*" || s == "/" || s == "%";
 }
 
+Identifier::Identifier(Slice s) : Token(s.source, s.row, s.col), s(s) {
+}
+
 void Identifier::show() {
     fprintf(stderr, "Identifier: ");
     s.show();
@@ -201,4 +230,8 @@ void Identifier::show() {
 
 void Identifier::compile(FILE *outfile) {
     fprintf(outfile, "%.*s", (int) s.len, s.start);
+}
+
+bool Identifier::operator==(const Identifier &other) {
+    return this->s == other.s;
 }
