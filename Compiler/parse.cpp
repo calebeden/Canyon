@@ -126,8 +126,47 @@ static AST *parse(std::vector<Slice> slices) {
 
 // TODO generalize to multiple functions
 static Function *parseMain(std::vector<Token *> tokens) {
-    size_t i = 5;
+    size_t i = 0;
+    if (typeid(*tokens[i]) != typeid(Primitive)
+          && !(typeid(*tokens[i]) == typeid(Keyword)
+                && static_cast<Keyword *>(tokens[i])->type == Keyword::Type::VOID)) {
+        tokens[i]->parse_error("Expected function type");
+    }
+    // Primitive *type = static_cast<Primitive *>(tokens[i]);
+    i++;
+    if (typeid(*tokens[i]) != typeid(Identifier)) {
+        tokens[i]->parse_error("Expected identifier");
+    }
+    // Identifier *name = static_cast<Identifier *>(tokens[i]);
+    i++;
+    if (typeid(*tokens[i]) != typeid(Punctuation)
+          && static_cast<Punctuation *>(tokens[i])->type
+                   != Punctuation::Type::OpenParen) {
+        tokens[i]->parse_error("Expected '('");
+    }
+    i++;
+    if (typeid(*tokens[i]) != typeid(Punctuation)
+          && static_cast<Punctuation *>(tokens[i])->type
+                   != Punctuation::Type::CloseParen) {
+        tokens[i]->parse_error("Expected ')'");
+    }
+    i++;
+    if (typeid(*tokens[i]) != typeid(Punctuation)
+          && static_cast<Punctuation *>(tokens[i])->type
+                   != Punctuation::Type::OpenBrace) {
+        tokens[i]->parse_error("Expected '{'");
+    }
+    i++;
+
     CodeBlock *block = parseBlock(tokens, i);
+
+    if (typeid(*tokens[i]) != typeid(Punctuation)
+          && static_cast<Punctuation *>(tokens[i])->type
+                   != Punctuation::Type::CloseBrace) {
+        tokens[i]->parse_error("Expected '}'");
+    }
+    i++;
+
     for (Statement *s : block->statements) {
         s->show();
     }
@@ -179,6 +218,8 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
                 i = i2 + 1;
                 return nullptr;
             }
+        } else {
+            tokens[i]->parse_error("Unexpected token following primitive");
         }
     } else if (typeid(*tokens[i]) == typeid(Keyword)
                && static_cast<Keyword *>(tokens[i])->type == Keyword::Type::RETURN) {
