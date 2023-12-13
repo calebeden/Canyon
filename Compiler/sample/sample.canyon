@@ -47,3 +47,7 @@ void main() {
 
     return;
 }
+
+int function2() {
+    return 100;
+}

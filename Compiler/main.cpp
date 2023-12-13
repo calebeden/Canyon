@@ -58,16 +58,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    fprintf(outfile, "#include <stdio.h>\n"
-                     "void canyonMain();\n"
-                     "int main(int argc, char **argv) {\n"
-                     "    canyonMain();\n"
-                     "    return 0;\n"
-                     "}\n");
-
-    fprintf(outfile, "void canyonMain() {\n");
     ast->compile(outfile);
-    fprintf(outfile, "}\n");
 
     // Unmap and close the file
     if (munmap(fileData, fileInfo.st_size) == -1) {

@@ -71,12 +71,14 @@ struct Primitive : public Token {
         DOUBLE,
         BOOL,
         CHAR,
+        VOID,
     };
     Type type;
     Primitive(Slice s);
     virtual void show();
     void compile(FILE *outfile);
 
+    static void compile(FILE *outfile, Type t);
     static bool isPrimitive(Slice s);
 };
 

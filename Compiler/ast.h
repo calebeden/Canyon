@@ -111,11 +111,13 @@ struct CodeBlock {
 
 struct Function {
     CodeBlock *body;
-    void compile(FILE *outfile);
+    Primitive::Type type;
+    void compile(FILE *outfile, std::string name);
+    void forward(FILE *outfile, std::string name);
 };
 
 struct AST {
-    std::vector<Function *> functions;
+    std::unordered_map<std::string, Function *> functions;
     void compile(FILE *outfile);
 };
 

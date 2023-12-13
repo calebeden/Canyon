@@ -1,10 +1,14 @@
 #include <stdio.h>
+int function2();
 void canyonMain();
 int main(int argc, char **argv) {
     canyonMain();
     return 0;
 }
-void canyonMain() {
+int function2(){
+    return 100;
+}
+void canyonMain(){
     int sep;
     int div;
     int mult;

@@ -221,12 +221,30 @@ void CodeBlock::compile(FILE *outfile) {
     }
 }
 
-void Function::compile(FILE *outfile) {
+void Function::compile(FILE *outfile, std::string name) {
+    Primitive::compile(outfile, type);
+    fprintf(outfile, " %s(){\n", name.c_str());
     body->compile(outfile);
+    fprintf(outfile, "}\n");
+}
+
+void Function::forward(FILE *outfile, std::string name) {
+    Primitive::compile(outfile, type);
+    fprintf(outfile, " %s();\n", name.c_str());
 }
 
 void AST::compile(FILE *outfile) {
-    for (Function *f : functions) {
-        f->compile(outfile);
+    fprintf(outfile, "#include <stdio.h>\n");
+    // Forward declarations
+    for (std::pair<std::string, Function *> f : functions) {
+        f.second->forward(outfile, f.first);
+    }
+    fprintf(outfile, "int main(int argc, char **argv) {\n"
+                     "    canyonMain();\n"
+                     "    return 0;\n"
+                     "}\n");
+    // Actual code
+    for (std::pair<std::string, Function *> f : functions) {
+        f.second->compile(outfile, f.first);
     }
 }

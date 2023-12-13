@@ -140,6 +140,10 @@ void Primitive::show() {
             fprintf(stderr, "char");
             return;
         }
+        case Type::VOID: {
+            fprintf(stderr, "void");
+            return;
+        }
     }
 }
 
@@ -175,6 +179,51 @@ void Primitive::compile(FILE *outfile) {
         }
         case Type::CHAR: {
             fprintf(outfile, "unsigned char");
+            return;
+        }
+        case Type::VOID: {
+            fprintf(outfile, "void");
+            return;
+        }
+    }
+}
+
+void Primitive::compile(FILE *outfile, Type t) {
+    switch (t) {
+        case Type::INT: {
+            fprintf(outfile, "int");
+            return;
+        }
+        case Type::BYTE: {
+            fprintf(outfile, "signed char");
+            return;
+        }
+        case Type::SHORT: {
+            fprintf(outfile, "short");
+            return;
+        }
+        case Type::LONG: {
+            fprintf(outfile, "long");
+            return;
+        }
+        case Type::FLOAT: {
+            fprintf(outfile, "float");
+            return;
+        }
+        case Type::DOUBLE: {
+            fprintf(outfile, "double");
+            return;
+        }
+        case Type::BOOL: {
+            fprintf(outfile, "bool");
+            return;
+        }
+        case Type::CHAR: {
+            fprintf(outfile, "unsigned char");
+            return;
+        }
+        case Type::VOID: {
+            fprintf(outfile, "void");
             return;
         }
     }

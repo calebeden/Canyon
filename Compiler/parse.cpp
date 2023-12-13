@@ -36,18 +36,30 @@ static inline bool isSep(char *c);
 static AST *parse(std::vector<Slice> slices);
 
 /**
- * @brief Converts tokens to the AST representation of a function
+ * @brief Converts tokens to the AST representation of all functions in the current module
  *
  * @param tokens the stream of tokens representing the current module
+ * @param ast the AST to place the parsed functions inside of
  */
-static Function *parseMain(std::vector<Token *> tokens);
+static void parseFunctions(std::vector<Token *> tokens, AST *ast);
+
+/**
+ * @brief Converts tokens to the AST representation of a function
+ *
+ * @param tokens the stream of tokens representing the current function
+ * @param i a reference to the index in the vector corresponding to the token which is
+ * expected to be the function type. By the end of the function it will contain the index
+ * corresponding to the token IMMEDIATELY AFTER the closing curly brace
+ * @param ast the AST to place the parsed function inside of
+ */
+static void parseFunction(std::vector<Token *> tokens, size_t &i, AST *ast);
 
 /**
  * @brief Parses tokens into a code block
  *
  * @param slices the vector of tokens to parse from
  * @param i a reference to the index in the vector corresponding to the token IMMEDIATELY
- * AFTER the opening curly brace. By the end of the function it will contain the index
+ * AFTER the opening curly brace. By the end of the block it will contain the index
  * corresponding to the token IMMEDIATELY AFTER the closing curly brace
  * @return the parsed CodeBlock
  */
@@ -118,26 +130,40 @@ static AST *parse(std::vector<Slice> slices) {
         fprintf(stderr, "\n");
     }
 
-    Function *canyonMain = parseMain(tokens);
     AST *ast = new AST;
-    ast->functions.push_back(canyonMain);
+    parseFunctions(tokens, ast);
+    if (ast->functions.find("canyonMain") == ast->functions.end()) {
+        fprintf(stderr, "Parse error: no main function\n");
+        exit(EXIT_FAILURE);
+    }
     return ast;
 }
 
-// TODO generalize to multiple functions
-static Function *parseMain(std::vector<Token *> tokens) {
+static void parseFunctions(std::vector<Token *> tokens, AST *ast) {
     size_t i = 0;
-    if (typeid(*tokens[i]) != typeid(Primitive)
-          && !(typeid(*tokens[i]) == typeid(Keyword)
-                && static_cast<Keyword *>(tokens[i])->type == Keyword::Type::VOID)) {
+    while (i < tokens.size()) {
+        parseFunction(tokens, i, ast);
+    }
+}
+
+static void parseFunction(std::vector<Token *> tokens, size_t &i, AST *ast) {
+    Primitive::Type type;
+    if (typeid(*tokens[i]) == typeid(Primitive)) {
+        type = static_cast<Primitive *>(tokens[i])->type;
+    } else if (typeid(*tokens[i]) == typeid(Keyword)
+               && static_cast<Keyword *>(tokens[i])->type == Keyword::Type::VOID) {
+        type = Primitive::Type::VOID;
+    } else {
         tokens[i]->parse_error("Expected function type");
     }
-    // Primitive *type = static_cast<Primitive *>(tokens[i]);
     i++;
     if (typeid(*tokens[i]) != typeid(Identifier)) {
         tokens[i]->parse_error("Expected identifier");
     }
-    // Identifier *name = static_cast<Identifier *>(tokens[i]);
+    std::string name = static_cast<Identifier *>(tokens[i])->s;
+    if (name == "main") {
+        name = "canyonMain";
+    }
     i++;
     if (typeid(*tokens[i]) != typeid(Punctuation)
           && static_cast<Punctuation *>(tokens[i])->type
@@ -172,7 +198,8 @@ static Function *parseMain(std::vector<Token *> tokens) {
     }
     Function *canyonMain = new Function;
     canyonMain->body = block;
-    return canyonMain;
+    canyonMain->type = type;
+    ast->functions[name] = canyonMain;
 }
 
 static CodeBlock *parseBlock(std::vector<Token *> tokens, size_t &i) {
