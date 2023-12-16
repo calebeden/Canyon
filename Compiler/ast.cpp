@@ -64,7 +64,7 @@ void Assignment::show() {
 }
 
 void Assignment::compile(FILE *outfile) {
-    fprintf(outfile, "%.*s = ", (int) variable->s.len, variable->s.start);
+    fprintf(outfile, "%.*s=", (int) variable->s.len, variable->s.start);
     expression->compile(outfile);
 }
 
@@ -168,7 +168,7 @@ void Modulo::show() {
 void Modulo::compile(FILE *outfile) {
     fprintf(outfile, "(");
     operand1->compile(outfile);
-    fprintf(outfile, " %% ");
+    fprintf(outfile, "%%");
     operand2->compile(outfile);
     fprintf(outfile, ")");
 }
