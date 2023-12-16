@@ -262,6 +262,10 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
         if (typeid(*tokens[i]) != typeid(Punctuation)
               || static_cast<Punctuation *>(tokens[i])->type
                        != Punctuation::Type::Semicolon) {
+            if (static_cast<Punctuation *>(tokens[i])->type
+                  == Punctuation::Type::Equals) {
+                tokens[i]->error("LHS of assignment is not a variable");
+            }
             tokens[i]->error("Expected ';' after statement");
         }
         return new Return(rval);
@@ -272,6 +276,9 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
     if (typeid(*tokens[i]) != typeid(Punctuation)
           || static_cast<Punctuation *>(tokens[i])->type
                    != Punctuation::Type::Semicolon) {
+        if (static_cast<Punctuation *>(tokens[i])->type == Punctuation::Type::Equals) {
+            tokens[i]->error("LHS of assignment is not a variable");
+        }
         tokens[i]->error("Expected ';' after statement");
     }
     if (rval != nullptr) {
