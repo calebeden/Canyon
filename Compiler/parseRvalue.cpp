@@ -82,26 +82,17 @@ static rvalue *e0(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
     if (typeid(*tokens[i]) == typeid(Identifier)) {
         Identifier *id = static_cast<Identifier *>(tokens[i]);
         i++;
-        if (id->s == "print") {
-            rvalue *toPrint = parseRvalue(tokens, i, context);
-            if (toPrint != nullptr) {
-                return new Print(toPrint);
-            } else {
-                tokens[i - 1]->error("No expression to print");
+        bool isInt = true;
+        for (size_t i = 0; i < id->s.len; i++) {
+            if (!isdigit(id->s.start[i])) {
+                isInt = false;
+                break;
             }
+        }
+        if (isInt) {
+            return new Literal(id);
         } else {
-            bool isInt = true;
-            for (size_t i = 0; i < id->s.len; i++) {
-                if (!isdigit(id->s.start[i])) {
-                    isInt = false;
-                    break;
-                }
-            }
-            if (isInt) {
-                return new Literal(id);
-            } else {
-                return new Variable(id);
-            }
+            return new Variable(id);
         }
     }
     return nullptr;
@@ -125,10 +116,6 @@ static rvalue *e1(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
         i++;
         rvalue *rval = parseRvalue(tokens, i, context);
         if (temp != nullptr && typeid(*temp) == typeid(Variable)) {
-            if (rval != nullptr) {
-                fprintf(stderr, "Can only support void arguments for now\n");
-                exit(EXIT_FAILURE);
-            }
             Variable *id = static_cast<Variable *>(temp);
             CodeBlock::IdentifierStatus status = context->find(id);
             switch (status) {
@@ -143,7 +130,22 @@ static rvalue *e1(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
                     break;
                 }
             }
-            rval = new FunctionCall(id);
+            FunctionCall *call = new FunctionCall(id);
+            while (rval) {
+                call->arguments.push_back(rval);
+                if (typeid(*tokens[i]) == typeid(Punctuation)
+                      && static_cast<Punctuation *>(tokens[i])->type
+                               == Punctuation::Type::Comma) {
+                    i++;
+                    rval = parseRvalue(tokens, i, context);
+                    if (rval == nullptr) {
+                        tokens[i]->error("Expected expression");
+                    }
+                } else {
+                    rval = nullptr;
+                }
+            }
+            rval = call;
         }
         if (rval == nullptr) {
             tokens[i]->error("Expected expression");
@@ -154,9 +156,9 @@ static rvalue *e1(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
             tokens[i]->error("Expected ')'");
         }
         i++;
-
         return rval;
     }
+
     if (temp != nullptr && typeid(*temp) == typeid(Variable)) {
         Variable *id = static_cast<Variable *>(temp);
         CodeBlock::IdentifierStatus status = context->find(id);

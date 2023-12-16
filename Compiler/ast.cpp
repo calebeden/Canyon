@@ -211,11 +211,30 @@ FunctionCall::FunctionCall(Variable *name)
 void FunctionCall::show() {
     fprintf(stderr, "Function Call: ");
     name->show();
+    fprintf(stderr, "(");
+    size_t size = arguments.size();
+    if (size > 0) {
+        for (size_t i = 0; i < arguments.size() - 1; i++) {
+            arguments[i]->show();
+            fprintf(stderr, ",");
+        }
+        arguments[size - 1]->show();
+    }
+    fprintf(stderr, ")");
 }
 
 void FunctionCall::compile(FILE *outfile) {
     name->compile(outfile);
-    fprintf(outfile, "()");
+    fprintf(outfile, "(");
+    size_t size = arguments.size();
+    if (size > 0) {
+        for (size_t i = 0; i < size - 1; i++) {
+            arguments[i]->compile(outfile);
+            fprintf(outfile, ",");
+        }
+        arguments[size - 1]->compile(outfile);
+    }
+    fprintf(outfile, ")");
 }
 
 Return::Return(rvalue *rval) : rval(rval) {
@@ -242,19 +261,23 @@ void Return::compile(FILE *outfile) {
 }
 
 CodeBlock::CodeBlock(AST *global)
-    : locals(new std::unordered_map<Identifier *, Primitive *, Hasher, Comparator>),
+    : locals(new std::unordered_map<Identifier *, std::tuple<Primitive *, bool>, Hasher,
+          Comparator>),
       global(global) {
 }
 
 void CodeBlock::compile(FILE *outfile) {
     for (std::pair var : *locals) {
         Identifier *name = var.first;
-        Primitive *type = var.second;
-        fprintf(outfile, "    ");
-        type->compile(outfile);
-        fprintf(outfile, " ");
-        name->compile(outfile);
-        fprintf(outfile, ";\n");
+        std::tuple<Primitive *, bool> info = var.second;
+        if (!std::get<1>(info)) {
+            Primitive *type = std::get<0>(var.second);
+            fprintf(outfile, "    ");
+            type->compile(outfile);
+            fprintf(outfile, " ");
+            name->compile(outfile);
+            fprintf(outfile, ";\n");
+        }
     }
     for (Statement *s : statements) {
         fprintf(outfile, "    ");
@@ -267,6 +290,10 @@ void CodeBlock::defer(Variable *rval) {
 }
 
 CodeBlock::IdentifierStatus CodeBlock::find(Variable *id) {
+    if (id->variable->s == "print") {
+        // Hardcode builtin print function
+        return FUNCTION;
+    }
     if (locals->find(id->variable) != locals->end()) {
         return VARIABLE;
     }
@@ -296,16 +323,49 @@ void CodeBlock::resolve() {
     }
 }
 
+Function::Function(AST *ast) : body(new CodeBlock(ast)) {
+}
+
 void Function::compile(FILE *outfile, std::string name) {
     Primitive::compile(outfile, type);
-    fprintf(outfile, " %s(){\n", name.c_str());
+    fprintf(outfile, " %s(", name.c_str());
+    size_t size = parameters.size();
+    if (size > 0) {
+        for (size_t i = 0; i < size - 1; i++) {
+            std::pair<Identifier *, Primitive *> param = parameters[i];
+            param.second->compile(outfile);
+            fprintf(outfile, " ");
+            param.first->compile(outfile);
+            fprintf(outfile, ",");
+        }
+        std::pair<Identifier *, Primitive *> param = parameters[size - 1];
+        param.second->compile(outfile);
+        fprintf(outfile, " ");
+        param.first->compile(outfile);
+    }
+    fprintf(outfile, "){\n");
     body->compile(outfile);
     fprintf(outfile, "}\n");
 }
 
 void Function::forward(FILE *outfile, std::string name) {
     Primitive::compile(outfile, type);
-    fprintf(outfile, " %s();\n", name.c_str());
+    fprintf(outfile, " %s(", name.c_str());
+    size_t size = parameters.size();
+    if (size > 0) {
+        for (size_t i = 0; i < size - 1; i++) {
+            std::pair<Identifier *, Primitive *> param = parameters[i];
+            param.second->compile(outfile);
+            fprintf(outfile, " ");
+            param.first->compile(outfile);
+            fprintf(outfile, ",");
+        }
+        std::pair<Identifier *, Primitive *> param = parameters[size - 1];
+        param.second->compile(outfile);
+        fprintf(outfile, " ");
+        param.first->compile(outfile);
+    }
+    fprintf(outfile, ");\n");
 }
 
 void AST::compile(FILE *outfile) {
@@ -317,6 +377,9 @@ void AST::compile(FILE *outfile) {
     fprintf(outfile, "int main(int argc, char **argv) {\n"
                      "    canyonMain();\n"
                      "    return 0;\n"
+                     "}\n"
+                     "void print(int x) {\n"
+                     "    printf(\"%%d\\n\", x);\n"
                      "}\n");
     // Actual code
     for (std::pair<std::string, Function *> f : functions) {

@@ -89,6 +89,7 @@ struct Punctuation : public Token {
         Semicolon,
         OpenBrace,
         CloseBrace,
+        Comma,
         Equals,
         Plus,
         Minus,

@@ -103,6 +103,7 @@ struct Print : public rvalue {
 
 struct FunctionCall : public rvalue {
     Variable *name;
+    std::vector<rvalue *> arguments;
     FunctionCall(Variable *name);
     virtual void show();
     virtual void compile(FILE *outfile);
@@ -125,7 +126,9 @@ struct CodeBlock {
     };
 
     std::vector<Statement *> statements;
-    std::unordered_map<Identifier *, Primitive *, Hasher, Comparator> *locals;
+    // For each local, the info tuple says the type and whether it is a parameter
+    std::unordered_map<Identifier *, std::tuple<Primitive *, bool>, Hasher, Comparator>
+          *locals;
     std::vector<Variable *> deferred;
     CodeBlock *parent = nullptr;
     struct AST *global;
@@ -139,6 +142,8 @@ struct CodeBlock {
 struct Function {
     CodeBlock *body;
     Primitive::Type type;
+    std::vector<std::pair<Identifier *, Primitive *>> parameters;
+    Function(AST *ast);
     void compile(FILE *outfile, std::string name);
     void forward(FILE *outfile, std::string name);
 };

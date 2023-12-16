@@ -57,16 +57,26 @@ static void parseFunctions(std::vector<Token *> tokens, AST::AST *ast);
 static void parseFunction(std::vector<Token *> tokens, size_t &i, AST::AST *ast);
 
 /**
+ * @brief Converts tokens to the AST representation of a function parameter list
+ *
+ * @param tokens the stream of tokens representing the current function parameter list
+ * @param i a reference to the index in the vector corresponding to the token which is
+ * expected to be the opening parenthesis. When this fucntion returns, `i` will contain
+ * the index corresponding to the token IMMEDIATELY AFTER the closing parenthesis
+ * @param function the Function to determine its parameters
+ */
+static void parseParameters(std::vector<Token *> tokens, size_t &i, Function *function);
+
+/**
  * @brief Parses tokens into a code block
  *
  * @param slices the vector of tokens to parse from
  * @param i a reference to the index in the vector corresponding to the token IMMEDIATELY
  * AFTER the opening curly brace. By the end of the block it will contain the index
  * corresponding to the token IMMEDIATELY AFTER the closing curly brace
- * @param ast the global context
- * @return the parsed CodeBlock
+ * @param context the "fresh" CodeBlock to fill its contents with
  */
-static CodeBlock *parseBlock(std::vector<Token *> tokens, size_t &i, AST::AST *ast);
+static void parseBlock(std::vector<Token *> tokens, size_t &i, CodeBlock *context);
 /**
  * @brief Parses tokens into a statement
  *
@@ -168,18 +178,8 @@ static void parseFunction(std::vector<Token *> tokens, size_t &i, AST::AST *ast)
         name = "canyonMain";
     }
     i++;
-    if (typeid(*tokens[i]) != typeid(Punctuation)
-          && static_cast<Punctuation *>(tokens[i])->type
-                   != Punctuation::Type::OpenParen) {
-        tokens[i]->error("Expected '('");
-    }
-    i++;
-    if (typeid(*tokens[i]) != typeid(Punctuation)
-          && static_cast<Punctuation *>(tokens[i])->type
-                   != Punctuation::Type::CloseParen) {
-        tokens[i]->error("Expected ')'");
-    }
-    i++;
+    Function *function = new Function(ast);
+    parseParameters(tokens, i, function);
     if (typeid(*tokens[i]) != typeid(Punctuation)
           && static_cast<Punctuation *>(tokens[i])->type
                    != Punctuation::Type::OpenBrace) {
@@ -187,7 +187,7 @@ static void parseFunction(std::vector<Token *> tokens, size_t &i, AST::AST *ast)
     }
     i++;
 
-    CodeBlock *block = parseBlock(tokens, i, ast);
+    parseBlock(tokens, i, function->body);
 
     if (typeid(*tokens[i]) != typeid(Punctuation)
           && static_cast<Punctuation *>(tokens[i])->type
@@ -196,26 +196,72 @@ static void parseFunction(std::vector<Token *> tokens, size_t &i, AST::AST *ast)
     }
     i++;
 
-    for (Statement *s : block->statements) {
+    for (Statement *s : function->body->statements) {
         s->show();
     }
-    Function *canyonMain = new Function;
-    canyonMain->body = block;
-    canyonMain->type = type;
-    ast->functions[name] = canyonMain;
+    function->type = type;
+    ast->functions[name] = function;
 }
 
-static CodeBlock *parseBlock(std::vector<Token *> tokens, size_t &i, AST::AST *ast) {
-    CodeBlock *block = new CodeBlock(ast);
+static void parseParameters(std::vector<Token *> tokens, size_t &i, Function *function) {
+    if (typeid(*tokens[i]) != typeid(Punctuation)
+          && static_cast<Punctuation *>(tokens[i])->type
+                   != Punctuation::Type::OpenParen) {
+        tokens[i]->error("Expected '('");
+    }
+    i++;
+
+    CodeBlock *context = function->body;
+    while (true) {
+        if (typeid(*tokens[i]) == typeid(Primitive)) {
+            Primitive *type = static_cast<Primitive *>(tokens[i]);
+            i++;
+            if (typeid(*tokens[i]) == typeid(Identifier)) {
+                Identifier *id = static_cast<Identifier *>(tokens[i]);
+                i++;
+                if (context->locals->find(id) != context->locals->end()) {
+                    tokens[i]->error("Re-declaration of parameter %.*s", id->s.len,
+                          id->s.start);
+                }
+                context->locals->insert({
+                      id, {type, true}
+                });
+                function->parameters.push_back({id, type});
+            } else {
+                tokens[i]->error("Unexpected token following primitive");
+            }
+        }
+        if (typeid(*tokens[i]) == typeid(Punctuation)) {
+            if (static_cast<Punctuation *>(tokens[i])->type
+                  == Punctuation::Type::CloseParen) {
+                i++;
+                return;
+            } else if (static_cast<Punctuation *>(tokens[i])->type
+                       == Punctuation::Type::Comma) {
+                i++;
+                continue;
+            }
+        }
+        tokens[i]->error("Unexpected token; expected ')' or ','");
+    }
+
+    if (typeid(*tokens[i]) != typeid(Punctuation)
+          && static_cast<Punctuation *>(tokens[i])->type
+                   != Punctuation::Type::CloseParen) {
+        tokens[i]->error("Expected ')'");
+    }
+    i++;
+}
+
+static void parseBlock(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
     while (typeid(*tokens[i]) != typeid(Punctuation)
            || static_cast<Punctuation *>(tokens[i])->type
                     != Punctuation::Type::CloseBrace) {
-        Statement *s = parseStatement(tokens, i, block);
+        Statement *s = parseStatement(tokens, i, context);
         if (s != nullptr) {
-            block->statements.push_back(s);
+            context->statements.push_back(s);
         }
     }
-    return block;
 }
 
 static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
@@ -241,7 +287,9 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
                 tokens[i]->error("Re-declaration of variable %.*s", id->s.len,
                       id->s.start);
             }
-            context->locals->insert({id, type});
+            context->locals->insert({
+                  id, {type, false}
+            });
             size_t i2 = i;
             rval = parseRvalue(tokens, i, context);
             if (rval == nullptr) {
@@ -290,8 +338,8 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
 static inline bool isSep(char *c) {
     // If c is any of these characters, it is by default a separator
     if (c[0] == ' ' || c[0] == '\t' || c[0] == '\n' || c[0] == '(' || c[0] == ')'
-          || c[0] == ';' || c[0] == '{' || c[0] == '}' || c[0] == '+' || c[0] == '-'
-          || c[0] == '*' || c[0] == '/' || c[0] == '%' || c[0] == '=') {
+          || c[0] == ';' || c[0] == '{' || c[0] == '}' || c[0] == ',' || c[0] == '+'
+          || c[0] == '-' || c[0] == '*' || c[0] == '/' || c[0] == '%' || c[0] == '=') {
         return true;
     }
 

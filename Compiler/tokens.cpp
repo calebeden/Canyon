@@ -245,6 +245,8 @@ Punctuation::Punctuation(Slice s) : Token(s.source, s.row, s.col) {
         type = Type::OpenBrace;
     } else if (s == "}") {
         type = Type::CloseBrace;
+    } else if (s == ",") {
+        type = Type::Comma;
     } else if (s == "=") {
         type = Type::Equals;
     } else if (s == "+") {
@@ -264,8 +266,8 @@ Punctuation::Punctuation(Slice s) : Token(s.source, s.row, s.col) {
 }
 
 bool Punctuation::isPunctuation(Slice s) {
-    return s == "(" || s == ")" || s == ";" || s == "{" || s == "}" || s == "="
-           || s == "+" || s == "-" || s == "*" || s == "/" || s == "%";
+    return s == "(" || s == ")" || s == ";" || s == "{" || s == "}" || s == ","
+           || s == "=" || s == "+" || s == "-" || s == "*" || s == "/" || s == "%";
 }
 
 Identifier::Identifier(Slice s) : Token(s.source, s.row, s.col), s(s) {

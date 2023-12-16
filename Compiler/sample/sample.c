@@ -1,9 +1,25 @@
 #include <stdio.h>
+void print2(int one,int two);
+int function4(int x,int y);
+int function3(int x);
 int function2();
 void canyonMain();
 int main(int argc, char **argv) {
     canyonMain();
     return 0;
+}
+void print(int x) {
+    printf("%d\n", x);
+}
+void print2(int one,int two){
+    print(one);
+    print(two);
+}
+int function4(int x,int y){
+    return (x+y);
+}
+int function3(int x){
+    return x;
 }
 int function2(){
     return 100;
@@ -19,45 +35,48 @@ void canyonMain(){
     int add;
     int y;
     int x;
-    printf("%d\n",2);
+    print(2);
     x = 3;
-    printf("%d\n",x);
+    print(x);
     x = 4;
-    printf("%d\n",x);
+    print(x);
     y = 5;
-    printf("%d\n",y);
+    print(y);
     z = 6;
-    printf("%d\n",z);
+    print(z);
     a = 1;
-    printf("%d\n",a);
-    printf("%d\n",x);
-    printf("%d\n",y);
-    printf("%d\n",z);
+    print(a);
+    print(x);
+    print(y);
+    print(z);
     x = y = z = 10;
-    printf("%d\n",x);
-    printf("%d\n",y);
-    printf("%d\n",z);
-    printf("%d\n",(1+1));
+    print(x);
+    print(y);
+    print(z);
+    print((1+1));
     add = (x+y);
-    printf("%d\n",add);
-    printf("%d\n",(2-1));
+    print(add);
+    print((2-1));
     sub = (x-5);
-    printf("%d\n",sub);
-    printf("%d\n",((2-1)+5));
-    printf("%d\n",(2*2));
+    print(sub);
+    print(((2-1)+5));
+    print((2*2));
     mult = (x*y);
-    printf("%d\n",mult);
-    printf("%d\n",(4/2));
+    print(mult);
+    print((4/2));
     div = (x/2);
-    printf("%d\n",div);
-    printf("%d\n",(15 % 4));
+    print(div);
+    print((15 % 4));
     mod = (x % y);
-    printf("%d\n",mod);
-    printf("%d\n",((((2*3)/4) % 5)*2));
-    printf("%d\n",((2*3)+(6*7)));
-    printf("%d\n",((1+2)*3));
+    print(mod);
+    print(((((2*3)/4) % 5)*2));
+    print(((2*3)+(6*7)));
+    print(((1+2)*3));
     sep = ((1+5)/3);
-    printf("%d\n",sep);
-    printf("%d\n",function2());
+    print(sep);
+    print(function2());
+    print(function3(x));
+    print(function4(1,3));
+    print2((1+1),(2+2));
     return;
 }
