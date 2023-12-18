@@ -2,6 +2,7 @@
 
 #include <stdarg.h>
 #include <stdexcept>
+#include <string>
 
 Slice::Slice(char *start, char *end, char *source, size_t row, size_t col)
     : start(start), len(end - start + 1), row(row), col(col), source(source) {
@@ -25,12 +26,19 @@ bool Slice::operator==(const std::string &rhs) {
 
 bool Slice::operator==(const Slice &other) {
     size_t length = std::min(this->len, other.len);
+    if (this->len != other.len) {
+        return false;
+    }
     for (size_t i = 0; i < length; i++) {
         if (other.start[i] != this->start[i]) {
             return false;
         }
     }
-    return this->len == other.len;
+    return true;
+}
+
+bool Slice::operator==(const char *const other) {
+    return strncmp(this->start, other, this->len) == 0 && other[this->len] == '\0';
 }
 
 Slice::operator std::string() {

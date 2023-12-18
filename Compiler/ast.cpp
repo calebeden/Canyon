@@ -308,17 +308,9 @@ CodeBlock::IdentifierStatus CodeBlock::find(Variable *id) {
 
 void CodeBlock::resolve() {
     for (Variable *id : deferred) {
-        IdentifierStatus status = find(id);
-        switch (status) {
-            case UNKNOWN: {
-                id->error("Undeclared identifier %.*s", id->variable->s.len,
-                      id->variable->s.start);
-            }
-            case VARIABLE:
-            case FUNCTION: {
-                // TODO check if it is appropriate given the invokation
-                break;
-            }
+        if (global->functions.find(id->variable->s) == global->functions.end()) {
+            id->error("Undeclared identifier %.*s", id->variable->s.len,
+                  id->variable->s.start);
         }
     }
 }
@@ -390,6 +382,30 @@ void AST::compile(FILE *outfile) {
 void AST::resolve() {
     for (std::pair<std::string, Function *> f : functions) {
         f.second->body->resolve();
+    }
+    for (FunctionCall *call : functionCalls) {
+        if (call->name->variable->s == "print") {
+            size_t arg_size = call->arguments.size();
+            if (call->arguments.size() != 1) {
+                call->error(
+                      "Function called with incorrect argument count (%ld instead of 1)",
+                      arg_size);
+            }
+        } else {
+            std::unordered_map<std::string, Function *>::iterator f
+                  = functions.find(call->name->variable->s);
+            if (f == functions.end()) {
+                call->error("Function %.*s does not exist", call->name->variable->s.len,
+                      call->name->variable->s.start);
+            }
+            size_t param_size = f->second->parameters.size();
+            size_t arg_size = call->arguments.size();
+            if (param_size != arg_size) {
+                call->error("Function called with incorrect argument count (%ld instead "
+                            "of %ld)",
+                      arg_size, param_size);
+            }
+        }
     }
 }
 

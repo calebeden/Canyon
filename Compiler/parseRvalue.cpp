@@ -145,6 +145,7 @@ static rvalue *e1(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
                     rval = nullptr;
                 }
             }
+            context->global->functionCalls.push_back(call);
             rval = call;
         }
         if (rval == nullptr) {

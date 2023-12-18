@@ -36,6 +36,8 @@ struct Slice {
 
     bool operator==(const Slice &other);
 
+    bool operator==(const char *const other);
+
     operator std::string();
 };
 

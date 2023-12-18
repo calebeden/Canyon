@@ -134,8 +134,20 @@ struct CodeBlock {
     struct AST *global;
     CodeBlock(AST *global);
     void compile(FILE *outfile);
+    /**
+     * @brief Defers an identifier to be resolved within the global scope at the end of
+     * the module
+     *
+     * @param rval the identifier to defer
+     */
     void defer(Variable *rval);
     IdentifierStatus find(Variable *id);
+    // TODO global vars
+    /**
+     * @brief Resolves deferred identifiers by looking at functions found in the module's
+     * global scope
+     *
+     */
     void resolve();
 };
 
@@ -150,7 +162,15 @@ struct Function {
 
 struct AST {
     std::unordered_map<std::string, Function *> functions;
+    std::vector<FunctionCall *> functionCalls;
     void compile(FILE *outfile);
+    // TODO global vars
+    /**
+     * @brief Resolves all deferred identifiers from all CodeBlocks in the AST by looking
+     * at functions found in the module's global scope. Also resolves functionCalls to
+     * check whether they call a function that exists with the correct arguments
+     *
+     */
     void resolve();
 };
 
