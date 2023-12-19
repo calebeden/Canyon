@@ -1,5 +1,6 @@
 #include "ast.h"
 
+#include "builtins.h"
 #include "tokens.h"
 
 #include <cstring>
@@ -24,16 +25,20 @@ void rvalue::error(const char *const format, ...) {
 Literal::Literal(Identifier *value) : rvalue(value->source, value->row, value->col) {
     char *buf = new char[value->s.len];
     strncpy(buf, value->s.start, value->s.len);
-    this->value = atol(buf);
+    this->value = atoi(buf);
     delete buf;
 }
 
 void Literal::show() {
-    fprintf(stderr, "%ld", value);
+    fprintf(stderr, "%d", value);
 }
 
 void Literal::compile(FILE *outfile) {
-    fprintf(outfile, "%d", (int) value);
+    fprintf(outfile, "%d", value);
+}
+
+Type Literal::typeCheck(CodeBlock *context) {
+    return Type::INT;
 }
 
 Variable::Variable(Identifier *variable)
@@ -48,6 +53,10 @@ void Variable::show() {
 
 void Variable::compile(FILE *outfile) {
     variable->compile(outfile);
+}
+
+Type Variable::typeCheck(CodeBlock *context) {
+    return context->getType(variable);
 }
 
 Assignment::Assignment(Identifier *variable, rvalue *expression)
@@ -66,6 +75,15 @@ void Assignment::show() {
 void Assignment::compile(FILE *outfile) {
     fprintf(outfile, "%.*s=", (int) variable->s.len, variable->s.start);
     expression->compile(outfile);
+}
+
+Type Assignment::typeCheck(CodeBlock *context) {
+    Type varType = context->getType(variable);
+    Type expType = expression->typeCheck(context);
+    if (varType != expType) {
+        error("Incompatible types");
+    }
+    return expType;
 }
 
 Addition::Addition(rvalue *operand1, rvalue *operand2)
@@ -89,6 +107,15 @@ void Addition::compile(FILE *outfile) {
     fprintf(outfile, ")");
 }
 
+Type Addition::typeCheck(CodeBlock *context) {
+    Type type1 = operand1->typeCheck(context);
+    Type type2 = operand2->typeCheck(context);
+    if (type1 != type2) {
+        error("Incompatible types");
+    }
+    return type2;
+}
+
 Subtraction::Subtraction(rvalue *operand1, rvalue *operand2)
     : rvalue(operand1->source, operand1->row, operand1->col), operand1(operand1),
       operand2(operand2) {
@@ -108,6 +135,15 @@ void Subtraction::compile(FILE *outfile) {
     fprintf(outfile, "-");
     operand2->compile(outfile);
     fprintf(outfile, ")");
+}
+
+Type Subtraction::typeCheck(CodeBlock *context) {
+    Type type1 = operand1->typeCheck(context);
+    Type type2 = operand2->typeCheck(context);
+    if (type1 != type2) {
+        error("Incompatible types");
+    }
+    return type2;
 }
 
 Multiplication::Multiplication(rvalue *operand1, rvalue *operand2)
@@ -131,6 +167,15 @@ void Multiplication::compile(FILE *outfile) {
     fprintf(outfile, ")");
 }
 
+Type Multiplication::typeCheck(CodeBlock *context) {
+    Type type1 = operand1->typeCheck(context);
+    Type type2 = operand2->typeCheck(context);
+    if (type1 != type2) {
+        error("Incompatible types");
+    }
+    return type2;
+}
+
 Division::Division(rvalue *operand1, rvalue *operand2)
     : rvalue(operand1->source, operand1->row, operand1->col), operand1(operand1),
       operand2(operand2) {
@@ -150,6 +195,15 @@ void Division::compile(FILE *outfile) {
     fprintf(outfile, "/");
     operand2->compile(outfile);
     fprintf(outfile, ")");
+}
+
+Type Division::typeCheck(CodeBlock *context) {
+    Type type1 = operand1->typeCheck(context);
+    Type type2 = operand2->typeCheck(context);
+    if (type1 != type2) {
+        error("Incompatible types");
+    }
+    return type2;
 }
 
 Modulo::Modulo(rvalue *operand1, rvalue *operand2)
@@ -173,6 +227,15 @@ void Modulo::compile(FILE *outfile) {
     fprintf(outfile, ")");
 }
 
+Type Modulo::typeCheck(CodeBlock *context) {
+    Type type1 = operand1->typeCheck(context);
+    Type type2 = operand2->typeCheck(context);
+    if (type1 != type2) {
+        error("Incompatible types");
+    }
+    return type2;
+}
+
 Expression::Expression(rvalue *rval) : rval(rval) {
 }
 
@@ -187,21 +250,8 @@ void Expression::compile(FILE *outfile) {
     fprintf(outfile, ";\n");
 }
 
-Print::Print(rvalue *expression)
-    : rvalue(expression->source, expression->row, expression->col),
-      expression(expression) {
-}
-
-void Print::show() {
-    fprintf(stderr, "Print: ");
-    expression->show();
-    fprintf(stderr, "\n");
-}
-
-void Print::compile(FILE *outfile) {
-    fprintf(outfile, "printf(\"%%d\\n\",");
-    expression->compile(outfile);
-    fprintf(outfile, ")");
+Type Expression::typeCheck(CodeBlock *context, Type returnType) {
+    return rval->typeCheck(context);
 }
 
 FunctionCall::FunctionCall(Variable *name)
@@ -237,7 +287,21 @@ void FunctionCall::compile(FILE *outfile) {
     fprintf(outfile, ")");
 }
 
-Return::Return(rvalue *rval) : rval(rval) {
+Type FunctionCall::typeCheck(CodeBlock *context) {
+    std::unordered_map<std::string, Function *>::iterator function
+          = context->global->functions.find(name->variable->s);
+    if (function == context->global->functions.end()) {
+        throw std::invalid_argument("Could not find function");
+    }
+    for (size_t i = 0; i < arguments.size(); i++) {
+        if (arguments[i]->typeCheck(context) != function->second->parameters[i].second) {
+            arguments[i]->error("Incorrect argument type");
+        }
+    }
+    return function->second->type;
+}
+
+Return::Return(rvalue *rval, Token *token) : rval(rval), token(token) {
 }
 
 void Return::show() {
@@ -260,8 +324,22 @@ void Return::compile(FILE *outfile) {
     }
 }
 
+Type Return::typeCheck(CodeBlock *context, Type returnType) {
+    if (rval == nullptr) {
+        if (returnType != Type::VOID) {
+            token->error("Invalid return from non-void function");
+        }
+        return Type::VOID;
+    }
+    Type type = rval->typeCheck(context);
+    if (type != returnType) {
+        token->error("Invalid return type");
+    }
+    return type;
+}
+
 CodeBlock::CodeBlock(AST *global)
-    : locals(new std::unordered_map<Identifier *, std::tuple<Primitive *, bool>, Hasher,
+    : locals(new std::unordered_map<Identifier *, std::tuple<Type, bool>, Hasher,
           Comparator>),
       global(global) {
 }
@@ -269,11 +347,11 @@ CodeBlock::CodeBlock(AST *global)
 void CodeBlock::compile(FILE *outfile) {
     for (std::pair var : *locals) {
         Identifier *name = var.first;
-        std::tuple<Primitive *, bool> info = var.second;
+        std::tuple<Type, bool> info = var.second;
         if (!std::get<1>(info)) {
-            Primitive *type = std::get<0>(var.second);
+            Type type = std::get<0>(info);
             fprintf(outfile, "    ");
-            type->compile(outfile);
+            Primitive::compile(outfile, type);
             fprintf(outfile, " ");
             name->compile(outfile);
             fprintf(outfile, ";\n");
@@ -290,10 +368,6 @@ void CodeBlock::defer(Variable *rval) {
 }
 
 CodeBlock::IdentifierStatus CodeBlock::find(Variable *id) {
-    if (id->variable->s == "print") {
-        // Hardcode builtin print function
-        return FUNCTION;
-    }
     if (locals->find(id->variable) != locals->end()) {
         return VARIABLE;
     }
@@ -315,6 +389,25 @@ void CodeBlock::resolve() {
     }
 }
 
+Type CodeBlock::getType(Identifier *var) {
+    std::unordered_map<Identifier *, std::tuple<Type, bool>, Hasher, Comparator>::iterator
+          local
+          = locals->find(var);
+    if (local != locals->end()) {
+        return std::get<0>(local->second);
+    }
+    if (parent == nullptr) {
+        throw std::invalid_argument("Could not find variable type and no parent context");
+    }
+    return parent->getType(var);
+}
+
+void CodeBlock::typeCheck(Type returnType) {
+    for (Statement *s : statements) {
+        s->typeCheck(this, returnType);
+    }
+}
+
 Function::Function(AST *ast) : body(new CodeBlock(ast)) {
 }
 
@@ -324,14 +417,14 @@ void Function::compile(FILE *outfile, std::string name) {
     size_t size = parameters.size();
     if (size > 0) {
         for (size_t i = 0; i < size - 1; i++) {
-            std::pair<Identifier *, Primitive *> param = parameters[i];
-            param.second->compile(outfile);
+            std::pair<Identifier *, Type> param = parameters[i];
+            Primitive::compile(outfile, param.second);
             fprintf(outfile, " ");
             param.first->compile(outfile);
             fprintf(outfile, ",");
         }
-        std::pair<Identifier *, Primitive *> param = parameters[size - 1];
-        param.second->compile(outfile);
+        std::pair<Identifier *, Type> param = parameters[size - 1];
+        Primitive::compile(outfile, param.second);
         fprintf(outfile, " ");
         param.first->compile(outfile);
     }
@@ -346,18 +439,30 @@ void Function::forward(FILE *outfile, std::string name) {
     size_t size = parameters.size();
     if (size > 0) {
         for (size_t i = 0; i < size - 1; i++) {
-            std::pair<Identifier *, Primitive *> param = parameters[i];
-            param.second->compile(outfile);
+            std::pair<Identifier *, Type> param = parameters[i];
+            Primitive::compile(outfile, param.second);
             fprintf(outfile, " ");
             param.first->compile(outfile);
             fprintf(outfile, ",");
         }
-        std::pair<Identifier *, Primitive *> param = parameters[size - 1];
-        param.second->compile(outfile);
+        std::pair<Identifier *, Type> param = parameters[size - 1];
+        Primitive::compile(outfile, param.second);
         fprintf(outfile, " ");
         param.first->compile(outfile);
     }
     fprintf(outfile, ");\n");
+}
+
+void Function::resolve() {
+    body->resolve();
+}
+
+void Function::typeCheck() {
+    body->typeCheck(type);
+}
+
+AST::AST() {
+    functions["print"] = new Print(this);
 }
 
 void AST::compile(FILE *outfile) {
@@ -369,9 +474,6 @@ void AST::compile(FILE *outfile) {
     fprintf(outfile, "int main(int argc, char **argv) {\n"
                      "    canyonMain();\n"
                      "    return 0;\n"
-                     "}\n"
-                     "void print(int x) {\n"
-                     "    printf(\"%%d\\n\", x);\n"
                      "}\n");
     // Actual code
     for (std::pair<std::string, Function *> f : functions) {
@@ -381,7 +483,7 @@ void AST::compile(FILE *outfile) {
 
 void AST::resolve() {
     for (std::pair<std::string, Function *> f : functions) {
-        f.second->body->resolve();
+        f.second->resolve();
     }
     for (FunctionCall *call : functionCalls) {
         if (call->name->variable->s == "print") {
@@ -406,6 +508,9 @@ void AST::resolve() {
                       arg_size, param_size);
             }
         }
+    }
+    for (std::pair<std::string, Function *> f : functions) {
+        f.second->typeCheck();
     }
 }
 

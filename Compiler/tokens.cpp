@@ -4,6 +4,41 @@
 #include <stdexcept>
 #include <string>
 
+const char *const typeStr(Type type) {
+    switch (type) {
+        case Type::INT: {
+            return "int";
+        }
+        case Type::BYTE: {
+            return "byte";
+        }
+        case Type::SHORT: {
+            return "short";
+        }
+        case Type::LONG: {
+            return "long";
+        }
+        case Type::FLOAT: {
+            return "float";
+        }
+        case Type::DOUBLE: {
+            return "double";
+        }
+        case Type::BOOL: {
+            return "bool";
+        }
+        case Type::CHAR: {
+            return "unsigned char";
+        }
+        case Type::VOID: {
+            return "void";
+        }
+        default: {
+            return "UNKNOWN";
+        }
+    }
+}
+
 Slice::Slice(char *start, char *end, char *source, size_t row, size_t col)
     : start(start), len(end - start + 1), row(row), col(col), source(source) {
 }
@@ -114,45 +149,7 @@ Primitive::Primitive(Slice s) : Token(s.source, s.row, s.col) {
 }
 
 void Primitive::show() {
-    fprintf(stderr, "Primitive: ");
-    switch (type) {
-        case Type::INT: {
-            fprintf(stderr, "int");
-            return;
-        }
-        case Type::BYTE: {
-            fprintf(stderr, "byte");
-            return;
-        }
-        case Type::SHORT: {
-            fprintf(stderr, "short");
-            return;
-        }
-        case Type::LONG: {
-            fprintf(stderr, "long");
-            return;
-        }
-        case Type::FLOAT: {
-            fprintf(stderr, "float");
-            return;
-        }
-        case Type::DOUBLE: {
-            fprintf(stderr, "double");
-            return;
-        }
-        case Type::BOOL: {
-            fprintf(stderr, "bool");
-            return;
-        }
-        case Type::CHAR: {
-            fprintf(stderr, "char");
-            return;
-        }
-        case Type::VOID: {
-            fprintf(stderr, "void");
-            return;
-        }
-    }
+    fprintf(stderr, "Primitive: %s", typeStr(type));
 }
 
 void Primitive::compile(FILE *outfile) {
@@ -193,7 +190,15 @@ void Primitive::compile(FILE *outfile) {
             fprintf(outfile, "void");
             return;
         }
+        default: {
+            fprintf(stderr, "Unknown type");
+            exit(EXIT_FAILURE);
+        }
     }
+}
+
+void Primitive::show(Type t) {
+    fprintf(stderr, "Primitive: %s", typeStr(t));
 }
 
 void Primitive::compile(FILE *outfile, Type t) {
@@ -233,6 +238,10 @@ void Primitive::compile(FILE *outfile, Type t) {
         case Type::VOID: {
             fprintf(outfile, "void");
             return;
+        }
+        default: {
+            fprintf(stderr, "Unknown type");
+            exit(EXIT_FAILURE);
         }
     }
 }

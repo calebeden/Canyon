@@ -9,6 +9,8 @@
 
 namespace AST {
 
+class CodeBlock;
+
 struct rvalue {
     char *source;
     size_t row;
@@ -16,27 +18,32 @@ struct rvalue {
     virtual void show() = 0;
     virtual void compile(FILE *outfile) = 0;
     void error(const char *const error, ...);
+    virtual Type typeCheck(CodeBlock *context) = 0;
 protected:
     rvalue(char *source, size_t row, size_t col);
 };
 
 struct Literal : public rvalue {
-    uint64_t value;
+    int32_t value;
     Literal(Identifier *value);
     virtual void show();
     virtual void compile(FILE *outfile);
+    virtual Type typeCheck(CodeBlock *context);
 };
 
 struct Statement {
     virtual void show() = 0;
     virtual void compile(FILE *outfile) = 0;
+    virtual Type typeCheck(CodeBlock *context, Type returnType) = 0;
 };
 
 struct Variable : public rvalue {
     Identifier *variable;
     Variable(Identifier *variable);
+    Type type = Type::UNKNOWN;
     virtual void show();
     virtual void compile(FILE *outfile);
+    virtual Type typeCheck(CodeBlock *context);
 };
 
 struct Assignment : public rvalue {
@@ -45,6 +52,7 @@ struct Assignment : public rvalue {
     Assignment(Identifier *variable, rvalue *expression);
     virtual void show();
     virtual void compile(FILE *outfile);
+    virtual Type typeCheck(CodeBlock *context);
 };
 
 struct Addition : public rvalue {
@@ -53,6 +61,7 @@ struct Addition : public rvalue {
     Addition(rvalue *operand1, rvalue *operand2);
     virtual void show();
     virtual void compile(FILE *outfile);
+    virtual Type typeCheck(CodeBlock *context);
 };
 
 struct Subtraction : public rvalue {
@@ -61,6 +70,7 @@ struct Subtraction : public rvalue {
     Subtraction(rvalue *operand1, rvalue *operand2);
     virtual void show();
     virtual void compile(FILE *outfile);
+    virtual Type typeCheck(CodeBlock *context);
 };
 
 struct Multiplication : public rvalue {
@@ -69,6 +79,7 @@ struct Multiplication : public rvalue {
     Multiplication(rvalue *operand1, rvalue *operand2);
     virtual void show();
     virtual void compile(FILE *outfile);
+    virtual Type typeCheck(CodeBlock *context);
 };
 
 struct Division : public rvalue {
@@ -77,6 +88,7 @@ struct Division : public rvalue {
     Division(rvalue *operand1, rvalue *operand2);
     virtual void show();
     virtual void compile(FILE *outfile);
+    virtual Type typeCheck(CodeBlock *context);
 };
 
 struct Modulo : public rvalue {
@@ -85,6 +97,7 @@ struct Modulo : public rvalue {
     Modulo(rvalue *operand1, rvalue *operand2);
     virtual void show();
     virtual void compile(FILE *outfile);
+    virtual Type typeCheck(CodeBlock *context);
 };
 
 struct Expression : public Statement {
@@ -92,13 +105,7 @@ struct Expression : public Statement {
     Expression(rvalue *rval);
     virtual void show();
     virtual void compile(FILE *outfile);
-};
-
-struct Print : public rvalue {
-    rvalue *expression;
-    Print(rvalue *expression);
-    virtual void show();
-    virtual void compile(FILE *outfile);
+    virtual Type typeCheck(CodeBlock *context, Type returnType);
 };
 
 struct FunctionCall : public rvalue {
@@ -107,13 +114,16 @@ struct FunctionCall : public rvalue {
     FunctionCall(Variable *name);
     virtual void show();
     virtual void compile(FILE *outfile);
+    virtual Type typeCheck(CodeBlock *context);
 };
 
 struct Return : public Statement {
     rvalue *rval;
-    Return(rvalue *rval);
+    Token *token;
+    Return(rvalue *rval, Token *token);
     virtual void show();
     virtual void compile(FILE *outfile);
+    virtual Type typeCheck(CodeBlock *context, Type returnType);
 };
 
 // TODO: eventually have arbitrary code blocks for precise scoping but for now just
@@ -127,8 +137,7 @@ struct CodeBlock {
 
     std::vector<Statement *> statements;
     // For each local, the info tuple says the type and whether it is a parameter
-    std::unordered_map<Identifier *, std::tuple<Primitive *, bool>, Hasher, Comparator>
-          *locals;
+    std::unordered_map<Identifier *, std::tuple<Type, bool>, Hasher, Comparator> *locals;
     std::vector<Variable *> deferred;
     CodeBlock *parent = nullptr;
     struct AST *global;
@@ -145,30 +154,36 @@ struct CodeBlock {
     // TODO global vars
     /**
      * @brief Resolves deferred identifiers by looking at functions found in the module's
-     * global scope
+     * global scope. Also performs type checking on rvalues
      *
      */
-    void resolve();
+    virtual void resolve();
+    Type getType(Identifier *var);
+    virtual void typeCheck(Type returnType);
 };
 
 struct Function {
     CodeBlock *body;
-    Primitive::Type type;
-    std::vector<std::pair<Identifier *, Primitive *>> parameters;
+    Type type = Type::UNKNOWN;
+    std::vector<std::pair<Identifier *, Type>> parameters;
     Function(AST *ast);
-    void compile(FILE *outfile, std::string name);
-    void forward(FILE *outfile, std::string name);
+    virtual void compile(FILE *outfile, std::string name);
+    virtual void forward(FILE *outfile, std::string name);
+    virtual void resolve();
+    void typeCheck();
 };
 
 struct AST {
+    AST();
     std::unordered_map<std::string, Function *> functions;
     std::vector<FunctionCall *> functionCalls;
     void compile(FILE *outfile);
     // TODO global vars
     /**
      * @brief Resolves all deferred identifiers from all CodeBlocks in the AST by looking
-     * at functions found in the module's global scope. Also resolves functionCalls to
-     * check whether they call a function that exists with the correct arguments
+     * at functions found in the module's global scope. Includes resolving functionCalls
+     * to check whether they call a function that exists with the correct arguments. Also
+     * performs type checking on rvalues
      *
      */
     void resolve();

@@ -142,7 +142,7 @@ static AST::AST *parse(std::vector<Slice> slices) {
         fprintf(stderr, "\n");
     }
 
-    AST::AST *ast = new AST::AST;
+    AST::AST *ast = new AST::AST();
     parseFunctions(tokens, ast);
     if (ast->functions.find("canyonMain") == ast->functions.end()) {
         fprintf(stderr, "Parse error: no main function\n");
@@ -160,12 +160,12 @@ static void parseFunctions(std::vector<Token *> tokens, AST::AST *ast) {
 }
 
 static void parseFunction(std::vector<Token *> tokens, size_t &i, AST::AST *ast) {
-    Primitive::Type type;
+    Type type;
     if (typeid(*tokens[i]) == typeid(Primitive)) {
         type = static_cast<Primitive *>(tokens[i])->type;
     } else if (typeid(*tokens[i]) == typeid(Keyword)
                && static_cast<Keyword *>(tokens[i])->type == Keyword::Type::VOID) {
-        type = Primitive::Type::VOID;
+        type = Type::VOID;
     } else {
         tokens[i]->error("Expected function type");
     }
@@ -224,9 +224,9 @@ static void parseParameters(std::vector<Token *> tokens, size_t &i, Function *fu
                           id->s.start);
                 }
                 context->locals->insert({
-                      id, {type, true}
+                      id, {type->type, true}
                 });
-                function->parameters.push_back({id, type});
+                function->parameters.push_back({id, type->type});
             } else {
                 tokens[i]->error("Unexpected token following primitive");
             }
@@ -288,7 +288,7 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
                       id->s.start);
             }
             context->locals->insert({
-                  id, {type, false}
+                  id, {type->type, false}
             });
             size_t i2 = i;
             rval = parseRvalue(tokens, i, context);
@@ -305,6 +305,7 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
         }
     } else if (typeid(*tokens[i]) == typeid(Keyword)
                && static_cast<Keyword *>(tokens[i])->type == Keyword::Type::RETURN) {
+        size_t return_i = i;
         i++;
         rval = parseRvalue(tokens, i, context);
         if (typeid(*tokens[i]) != typeid(Punctuation)
@@ -316,7 +317,8 @@ static Statement *parseStatement(std::vector<Token *> tokens, size_t &i,
             }
             tokens[i]->error("Expected ';' after statement");
         }
-        return new Return(rval);
+        Return *ret = new Return(rval, tokens[return_i]);
+        return ret;
     } else {
         rval = parseRvalue(tokens, i, context);
     }

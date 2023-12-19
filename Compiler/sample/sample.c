@@ -4,12 +4,10 @@ int function4(int x,int y);
 int function3(int x);
 int function2();
 void canyonMain();
+void print(int x);
 int main(int argc, char **argv) {
     canyonMain();
     return 0;
-}
-void print(int x) {
-    printf("%d\n", x);
 }
 void print2(int one,int two){
     print(one);
@@ -79,4 +77,7 @@ void canyonMain(){
     print(function4(1,3));
     print2((1+1),(2+2));
     return;
+}
+void print(int x) {
+    printf("%d\n", x);
 }

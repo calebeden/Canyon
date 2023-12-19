@@ -11,6 +11,21 @@
 #include <typeinfo>
 #include <vector>
 
+enum class Type {
+    INT,
+    BYTE,
+    SHORT,
+    LONG,
+    FLOAT,
+    DOUBLE,
+    BOOL,
+    CHAR,
+    VOID,
+    UNKNOWN,
+};
+
+const char *const typeStr(Type type);
+
 struct Slice {
     char *start;
     size_t len;
@@ -64,22 +79,12 @@ struct Keyword : public Token {
 };
 
 struct Primitive : public Token {
-    enum class Type {
-        INT,
-        BYTE,
-        SHORT,
-        LONG,
-        FLOAT,
-        DOUBLE,
-        BOOL,
-        CHAR,
-        VOID,
-    };
     Type type;
     Primitive(Slice s);
     virtual void show();
     void compile(FILE *outfile);
 
+    static void show(Type t);
     static void compile(FILE *outfile, Type t);
     static bool isPrimitive(Slice s);
 };
