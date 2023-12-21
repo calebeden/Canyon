@@ -138,6 +138,7 @@ include(cmake-pytest-module/Pytest.cmake)
 pytest_discover_tests(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test
     EXECUTION_ARGS --rootdir=${CMAKE_CURRENT_SOURCE_DIR}/test
+    TEST_PREFIX end_to_end_tests.
 )
 
 # #######################################
