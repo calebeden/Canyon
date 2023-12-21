@@ -1,3 +1,4 @@
+import difflib
 import os
 import pathlib
 import subprocess
@@ -47,7 +48,8 @@ def test_success(test_name, monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.P
     assert out.decode() == ""
     assert err.decode() == ""
 
-    process = subprocess.Popen("./a.out", stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(
+        "./a.out", stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = process.communicate()
     assert process.wait() == 0
 
@@ -62,11 +64,10 @@ def test_success(test_name, monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.P
         assert out.decode() == expected_stdout
     except AssertionError:
         pathlib.Path(os.path.join(source, "failure")).mkdir(exist_ok=True)
-        diff = subprocess.Popen(
-            ["diff", "-N", exp_out_file, "-"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        diff_out, diff_err = diff.communicate(input=out)
+        diff = difflib.unified_diff(
+            expected_stdout.splitlines(), out.decode().splitlines())
         with open(os.path.join(source, "failure/stdout"), "w") as fail_out:
-            fail_out.write(diff_out.decode())
+            fail_out.write("\n".join(diff))
         raise
 
     try:
@@ -78,9 +79,8 @@ def test_success(test_name, monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.P
         assert err.decode() == expected_stderr
     except AssertionError:
         pathlib.Path(os.path.join(source, "failure")).mkdir(exist_ok=True)
-        diff = subprocess.Popen(
-            ["diff", "-N", exp_err_file, "-"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        diff_out, diff_err = diff.communicate(input=err)
-        with open(os.path.join(source, "failure/stderr"), "w") as fail_out:
-            fail_out.write(diff_out.decode())
+        diff = difflib.unified_diff(
+            expected_stderr.splitlines(), err.decode().splitlines())
+        with open(os.path.join(source, "failure/stderr"), "w") as fail_err:
+            fail_err.write("\n".join(diff))
         raise
