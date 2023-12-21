@@ -1,0 +1,7 @@
+{
+    "python.testing.pytestArgs": [
+        "end_to_end_tests",
+    ],
+    "python.testing.pytestEnabled": true,
+    "python.testing.cwd": "${workspaceFolder}/test",
+}

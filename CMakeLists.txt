@@ -108,7 +108,7 @@ include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 # #######################################
 # Test files
 # #######################################
-file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
+file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/unit_tests/*.cpp)
 
 # #######################################
 # Unit Tests
@@ -126,6 +126,19 @@ target_link_libraries(${PROJECT_TESTS} ${PROJECT_LIBRARY})
 # manually running the executable ${PROJECT_TESTS} to see those specific tests.
 include(GoogleTest)
 gtest_discover_tests(${PROJECT_TESTS})
+
+# #######################################
+# End to End Tests
+# #######################################
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
+
+# Using https://github.com/c4deszes/cmake-pytest-module
+include(cmake-pytest-module/Pytest.cmake)
+
+pytest_discover_tests(
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test
+    EXECUTION_ARGS --rootdir=${CMAKE_CURRENT_SOURCE_DIR}/test
+)
 
 # #######################################
 # Install to /usr/local/bin with `sudo make install`
