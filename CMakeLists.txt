@@ -129,6 +129,8 @@ file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
 # Unit Tests
 # #######################################
 add_executable(${PROJECT_TESTS} ${TEST_SRC_FILES})
+target_include_directories(${PROJECT_TESTS} PUBLIC ${PROJECT_SOURCE_DIR}/src)
+target_include_directories(${PROJECT_TESTS} PUBLIC ${COMMON_INCLUDES})
 target_include_directories(${PROJECT_TESTS} PUBLIC ${PROJECT_BINARY_DIR})
 
 # #######################################
