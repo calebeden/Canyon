@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-20.04 # Specify Ubuntu 20.04 as the runner
+    runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v3
@@ -31,7 +31,7 @@ jobs:
       - name: Install Dependencies
         if: steps.cache-packages.outputs.cache-hit != 'true'
         env:
-            SOURCE: ${{ runner.temp }}/cache-linux
+          SOURCE: ${{ runner.temp }}/cache-linux
         run: |
           sudo apt-get install -y gcc g++ cmake
           echo "# --------------------------------------------------------"
@@ -50,7 +50,7 @@ jobs:
       - name: Copy Dependencies
         if: steps.cache-packages.outputs.cache-hit == 'true'
         env:
-            SOURCE: ${{ runner.temp }}/cache-linux
+          SOURCE: ${{ runner.temp }}/cache-linux
         run: |
           echo "# --------------------------------------------------------"
           echo "# Using Cached packages"
