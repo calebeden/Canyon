@@ -1,0 +1,45 @@
+name: Unit Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04 # Specify Ubuntu 20.04 as the runner
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Cache Apt Packages
+        uses: actions/cache@v2
+        with:
+          path: /var/cache/apt/archives/
+          key: ${{ runner.os }}-apt-${{ hashFiles('**/apt-packages.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      - name: Add PPA for GCC and Update Package Lists
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          sudo apt-get update
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get install -y gcc g++ cmake
+
+      - name: Configure
+        working-directory: ${{github.workspace}}
+        run: mkdir -p build; cmake -DINSTALL_GTEST=OFF -DBUILD_GMOCK=OFF -S . -B build
+
+      - name: Build
+        working-directory: ${{github.workspace}}/build
+        run: make
+
+      - name: Run tests
+        run: |
+          make test
