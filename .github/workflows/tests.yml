@@ -9,11 +9,13 @@ on:
       - main
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-20.04 # Specify Ubuntu 20.04 as the runner
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Cache Apt Packages
         uses: actions/cache@v2
