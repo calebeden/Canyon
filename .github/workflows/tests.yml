@@ -23,7 +23,19 @@ jobs:
           path: ${{ runner.temp }}/cache-linux
           key: ${{ runner.os }}-cache-packages-v2.1
 
+      - name: Copy Dependencies
+        if: steps.cache-packages.outputs.cache-hit == 'true'
+        env:
+          SOURCE: ${{ runner.temp }}/cache-linux
+        run: |
+          echo "# --------------------------------------------------------"
+          echo "# Using Cached packages"
+          ls -lha "${SOURCE}"
+          sudo cp --force --recursive "${SOURCE}"/. /
+          echo "# --------------------------------------------------------"
+
       - name: Add PPA for GCC and Update Package Lists
+        if: steps.cache-packages.outputs.cache-hit == 'true'
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
           sudo apt-get update
@@ -45,17 +57,6 @@ jobs:
           ls -lha "${SOURCE}"
           echo ""
           sudo du -sh "${SOURCE}" || true
-          echo "# --------------------------------------------------------"
-
-      - name: Copy Dependencies
-        if: steps.cache-packages.outputs.cache-hit == 'true'
-        env:
-          SOURCE: ${{ runner.temp }}/cache-linux
-        run: |
-          echo "# --------------------------------------------------------"
-          echo "# Using Cached packages"
-          ls -lha "${SOURCE}"
-          sudo cp --force --recursive "${SOURCE}"/. /
           echo "# --------------------------------------------------------"
 
       - name: Configure
