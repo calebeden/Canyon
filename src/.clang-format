@@ -1,0 +1,169 @@
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
+Language: Cpp
+AccessModifierOffset: -4
+AlignAfterOpenBracket: DontAlign
+AlignArrayOfStructures: Left
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: Consecutive
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
+AlignEscapedNewlines: Left
+AlignOperands: Align
+# AlignTrailingComments:
+#   Kind: Always # clang v16+
+AlignTrailingComments: true # clang v3.7-15
+AllowAllArgumentsOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: Yes # Maybe revist after have more C++ experience
+# AttributeMacros: # Not sure
+BinPackArguments: true
+BinPackParameters: true
+BitFieldColonSpacing: Both
+# BraceWrapping: # Not needed due to BreakBeforeBraces not being set to Custom
+# BracedInitializerIndentWidth # clang v17+
+# BreakAfterAttributes: # clang v16+
+BreakAfterJavaFieldAnnotations: true
+BreakArrays: false # JSON
+BreakBeforeBinaryOperators: All
+BreakBeforeBraces: Attach
+# BreakBeforeConceptDeclarations: # clang v12+
+BreakBeforeInlineASMColon: OnlyMultiline
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeColon # Not sure
+BreakInheritanceList: AfterColon # Not sure
+BreakStringLiterals: true
+ColumnLimit: 90
+# CommentPragmas: # No need for this I think
+CompactNamespaces: false # Not sure
+ConstructorInitializerIndentWidth: 4 # Not sure - C++ I think
+ContinuationIndentWidth: 6
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false # Not sure whether I want this
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: Leave # Not sure
+# FixNamespaceComments: # Not sure - C++
+# ForEachMacros: # Not sure
+# IfMacros: # Not sure
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '^"(llvm|llvm-c|clang|clang-c)/'
+    Priority:        2
+    SortPriority:    2
+    CaseSensitive:   true
+  - Regex:           '^((<|")(gtest|gmock|isl|json)/)'
+    Priority:        3
+  - Regex:           '<[[:alnum:].]+>'
+    Priority:        4
+  - Regex:           '.*'
+    Priority:        1
+    SortPriority:    0
+# IncludeIsMainRegex: # Not sure - .h files that correspond to 2 .c files - ex. a.c and a_test.c
+# IncludeIsMainSourceRegex: # Not sure
+# IndentAccessModifiers: # Not sure - C++ and clang v13+
+IndentCaseBlocks: false
+IndentCaseLabels: true
+# IndentExternBlock: # Not sure and clang v11+
+IndentGotoLabels: false
+IndentPPDirectives: AfterHash
+# IndentRequiresClause: # Not sure - C++ templates and clang v15+
+IndentWidth: 4
+IndentWrappedFunctionNames: true
+InsertBraces: true
+InsertNewlineAtEOF: true
+InsertTrailingCommas: None
+# IntegerLiteralSeparator:
+#   Binary: 0
+#   Decimal: 3
+#   Hex: -1
+# JavaImportGroups: # Not sure - Java
+JavaScriptQuotes: Leave
+# JavaScriptWrapImports: # Not sure - JavaScript
+# KeepEmptyLinesAtEOF: # clang v17+
+KeepEmptyLinesAtTheStartOfBlocks: false
+LambdaBodyIndentation: Signature
+# LineEnding: # Not sure whether I should have this one sync across platforms
+# MacroBlockBegin: # Not sure
+# MacroBlockEnd: # Not sure
+MaxEmptyLinesToKeep: 1
+# NamespaceIndentation: All # Not sure - C++
+# NamespaceMacros: # Not sure - C++
+# ObjCBinPackProtocolList: # Not sure - Obj-C
+# ObjCBlockIndentWidth: # Not sure - Obj-C
+# ObjCBreakBeforeNestedBlockParam: # Not sure - Obj-C
+# ObjCSpaceAfterProperty: # Not sure - Obj-C
+# ObjCSpaceBeforeProtocolList: # Not sure - Obj-C
+PPIndentWidth: 2 # -1 means same as regular indention width
+# PackConstructorInitializers: # Not sure and clang v14+
+
+# TODO: Assign penalty values
+# PenaltyBreakAssignment:
+# PenaltyBreakBeforeFirstCallParameter:
+# PenaltyBreakComment:
+# PenaltyBreakFirstLessLess:
+# PenaltyBreakOpenParenthesis:
+# PenaltyBreakString:
+# PenaltyBreakTemplateDeclaration:
+# PenaltyExcessCharacter:
+# PenaltyIndentedWhitespace:
+# PenaltyReturnTypeOnItsOwnLine: 999999999999 # Not sure about this but someone online suggested an absurdly high number
+PointerAlignment: Right
+QualifierAlignment: Left
+# QualifierAlignment: Custom
+# QualifierOrder: ['static', 'inline', 'const', 'constexpr', 'volatile', 'friend', 'type' ]
+# RawStringFormats: # Not sure what this even means
+ReferenceAlignment: Pointer
+ReflowComments: true
+RemoveBracesLLVM: false
+RemoveParenthesis: Leave
+RemoveSemicolon: true
+# RequiresClausePosition: # Not sure - C++ template
+# RequiresExpressionIndentation: # Not sure - C++ template
+SeparateDefinitionBlocks: Always
+# ShortNamespaceLines: # Not sure - C++
+SortIncludes: CaseInsensitive
+# SortJavaStaticImport: # Not sure - Java
+# SortUsingDeclarations: # Not sure - C++
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceAroundPointerQualifiers: Default # Not sure
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: true # Not sure
+SpaceBeforeInheritanceColon: true # Not sure
+# SpaceBeforeJsonColon: # Not sure - JSON
+SpaceBeforeParens: ControlStatements # Not sure about macros
+# SpaceBeforeParensOptions: # Only need if above is Custom
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: true
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 1
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInConditionalStatement: false
+# SpacesInContainerLiterals: false # Not sure - maybe Obj-C and JS
+SpacesInLineCommentPrefix:
+  Maximum: 1
+  Minimum: 1
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+# Standard: # Not sure - C++
+# StatementAttributeLikeMacros: # Not sure
+# StatementMacros: # Not sure
+TabWidth: 4
+# TypenameMacros: # Not sure
+UseTab: Never
+# WhitespaceSensitiveMacros: # Not sure

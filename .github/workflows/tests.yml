@@ -1,0 +1,73 @@
+name: Unit Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - uses: actions/cache@v2
+        id: cache-packages
+        with:
+          path: ${{ runner.temp }}/cache-linux
+          key: ${{ runner.os }}-cache-packages-v2.1
+
+      - name: Copy Dependencies
+        if: steps.cache-packages.outputs.cache-hit == 'true'
+        env:
+          SOURCE: ${{ runner.temp }}/cache-linux
+        run: |
+          echo "# --------------------------------------------------------"
+          echo "# Using Cached packages"
+          ls -lha "${SOURCE}"
+          sudo cp --force --recursive "${SOURCE}"/. /
+          echo "# --------------------------------------------------------"
+
+      - name: Add PPA for GCC and Update Package Lists
+        if: steps.cache-packages.outputs.cache-hit == 'true'
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          sudo apt-get update
+
+      - name: Install Dependencies
+        if: steps.cache-packages.outputs.cache-hit != 'true'
+        env:
+          SOURCE: ${{ runner.temp }}/cache-linux
+        run: |
+          sudo apt-get install -y gcc g++ cmake
+          echo "# --------------------------------------------------------"
+          echo "# Make cache directory"
+          rm -fR "${SOURCE}"
+          mkdir -p "${SOURCE}"
+          while IFS= read -r LINE
+          do
+            sudo cp -a --parent "${LINE}" "${SOURCE}"
+          done < "${{ runner.temp }}"/snapshots/snapshot_new_files.txt
+          ls -lha "${SOURCE}"
+          echo ""
+          sudo du -sh "${SOURCE}" || true
+          echo "# --------------------------------------------------------"
+
+      - name: Configure
+        working-directory: ${{github.workspace}}
+        run: mkdir -p build; cmake -DINSTALL_GTEST=OFF -DBUILD_GMOCK=OFF -S . -B build
+
+      - name: Build
+        working-directory: ${{github.workspace}}/build
+        run: make
+
+      - name: Run tests
+        working-directory: ${{github.workspace}}/build
+        run: |
+          make test
