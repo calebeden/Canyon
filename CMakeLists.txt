@@ -145,7 +145,8 @@ target_link_libraries(${PROJECT_TESTS} ${PROJECT_LIBRARY})
 
 # This is so you can do 'make test' to see all your tests run, instead of
 # manually running the executable ${PROJECT_TESTS} to see those specific tests.
-add_test(UnitTests ${PROJECT_TESTS})
+include(GoogleTest)
+gtest_discover_tests(${PROJECT_TESTS})
 
 # #######################################
 # Install to /usr/local/bin with `sudo make install`
