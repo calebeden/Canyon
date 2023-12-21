@@ -12,7 +12,14 @@ set(PROJECT_LIBRARY ${PROJECT_NAME}_lib)
 set(PROJECT_TESTS ${PROJECT_NAME}_test)
 
 # Compiler flags
-set(CMAKE_CXX_FLAGS "-g -Wall -Werror")
+option(DEBUG "compile with debugging symbols" OFF)
+
+if(DEBUG)
+    set(CMAKE_CXX_FLAGS "-g -Wall -Werror")
+else()
+    set(CMAKE_CXX_FLAGS "-Wall -Werror")
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 
 # Define include directories
@@ -23,6 +30,7 @@ include_directories(${COMMON_INCLUDES})
 # Source files
 # #######################################
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+
 # Main - separate executable so that tests can have own main
 list(REMOVE_ITEM SRC_FILES ${PROJECT_SOURCE_DIR}/src/main.cpp)
 
