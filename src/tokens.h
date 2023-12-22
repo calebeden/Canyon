@@ -27,18 +27,19 @@ enum class Type {
 const char *const typeStr(Type type);
 
 struct Slice {
-    char *start;
+    const char *start;
     size_t len;
     size_t row;
     size_t col;
-    char *source;
+    const char *source;
     /**
      * @brief Construct a new Slice object based on pointers to its start and end
      *
      * @param start a pointer to the first character in the Slice
      * @param end a pointer to the final character of the Slice (inclusive)
      */
-    Slice(char *start, char *end, char *source, size_t row, size_t col);
+    Slice(const char *const start, const char *const end, const char *const source, size_t row, size_t col);
+    Slice(const char *const start, size_t len, const char *const source, size_t row, size_t col);
     void show();
     /**
      * @brief Compares a Slice to a string
@@ -47,17 +48,17 @@ struct Slice {
      * @return whether the Slice and string contain the same characters and are the same
      * length
      */
-    bool operator==(const std::string &rhs);
+    bool operator==(const std::string &rhs) const;
 
-    bool operator==(const Slice &other);
+    bool operator==(const Slice &other) const;
 
-    bool operator==(const char *const other);
+    bool operator==(const char *const other) const;
 
     operator std::string();
 };
 
 struct Token {
-    char *source;
+    const char *source;
     size_t row;
     size_t col;
     static Token *createToken(Slice s);
@@ -65,7 +66,7 @@ struct Token {
     virtual void show();
     void error(const char *const error, ...);
 protected:
-    Token(char *source, size_t row, size_t col);
+    Token(const char *const source, size_t row, size_t col);
 };
 
 struct Keyword : public Token {

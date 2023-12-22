@@ -39,8 +39,14 @@ const char *const typeStr(Type type) {
     }
 }
 
-Slice::Slice(char *start, char *end, char *source, size_t row, size_t col)
+Slice::Slice(const char *const start, const char *const end, const char *const source,
+      size_t row, size_t col)
     : start(start), len(end - start + 1), row(row), col(col), source(source) {
+}
+
+Slice::Slice(const char *const start, size_t len, const char *const source, size_t row,
+      size_t col)
+    : start(start), len(len), row(row), col(col), source(source) {
 }
 
 void Slice::show() {
@@ -50,7 +56,7 @@ void Slice::show() {
     fprintf(stderr, "%s", buf);
 }
 
-bool Slice::operator==(const std::string &rhs) {
+bool Slice::operator==(const std::string &rhs) const {
     for (size_t i = 0; i < this->len; i++) {
         if (rhs[i] != this->start[i]) {
             return false;
@@ -59,7 +65,7 @@ bool Slice::operator==(const std::string &rhs) {
     return rhs[this->len] == '\0';
 }
 
-bool Slice::operator==(const Slice &other) {
+bool Slice::operator==(const Slice &other) const {
     size_t length = std::min(this->len, other.len);
     if (this->len != other.len) {
         return false;
@@ -72,7 +78,7 @@ bool Slice::operator==(const Slice &other) {
     return true;
 }
 
-bool Slice::operator==(const char *const other) {
+bool Slice::operator==(const char *const other) const {
     return strncmp(this->start, other, this->len) == 0 && other[this->len] == '\0';
 }
 
@@ -97,7 +103,8 @@ void Token::show() {
     fprintf(stderr, "Class: %s\n", typeid(*this).name());
 }
 
-Token::Token(char *source, size_t row, size_t col) : source(source), row(row), col(col) {
+Token::Token(const char *const source, size_t row, size_t col)
+    : source(source), row(row), col(col) {
 }
 
 void Token::error(const char *const format, ...) {

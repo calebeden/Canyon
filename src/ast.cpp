@@ -8,7 +8,7 @@
 
 namespace AST {
 
-rvalue::rvalue(char *source, size_t row, size_t col)
+rvalue::rvalue(const char *const source, size_t row, size_t col)
     : source(source), row(row), col(col) {
 }
 

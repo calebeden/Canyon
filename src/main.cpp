@@ -1,5 +1,7 @@
 #include "ast.h"
-#include "parse.h"
+#include "lexer.h"
+#include "parser.h"
+#include "tokens.h"
 #include <sys/mman.h>
 #include <sys/stat.h>
 
@@ -50,7 +52,11 @@ int main(int argc, char **argv) {
     close(infile);
 
     // printf("File contents: %s\n", fileData);
-    AST::AST *ast = tokenize(fileData, fileInfo.st_size, argv[1]);
+    Lexer l = Lexer(fileData, fileInfo.st_size, argv[1]);
+    std::vector<Token *> *tokens = l.tokenize();
+
+    Parser p;
+    AST::AST *ast = p.parseModule(tokens);
 
     FILE *outfile = fopen(argv[2], "w");
     if (outfile == nullptr) {

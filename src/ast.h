@@ -12,7 +12,7 @@ namespace AST {
 class CodeBlock;
 
 struct rvalue {
-    char *source;
+    const char *source;
     size_t row;
     size_t col;
     virtual void show() = 0;
@@ -20,7 +20,7 @@ struct rvalue {
     void error(const char *const error, ...);
     virtual Type typeCheck(CodeBlock *context) = 0;
 protected:
-    rvalue(char *source, size_t row, size_t col);
+    rvalue(const char *const source, size_t row, size_t col);
 };
 
 struct Literal : public rvalue {
