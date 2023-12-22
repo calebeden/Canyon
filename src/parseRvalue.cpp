@@ -74,14 +74,16 @@ Precedence          Operator            Associativity
 /**
  * @brief Deeper than any operators - identifiers and literals
  *
- * @param tokens
- * @param i
- * @return rvalue*
+ * @param it a reference to the iterator of Tokens to use. Expected to point to the first
+ * token of the expression when this function is called. When this function returns it
+ * will point to the token IMMEDIATELY AFTER the rvalue
+ * @param context the CodeBlock in which the current expression occurs
+ * @return the parsed rvalue
  */
-static rvalue *e0(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    if (typeid(*tokens[i]) == typeid(Identifier)) {
-        Identifier *id = static_cast<Identifier *>(tokens[i]);
-        i++;
+static rvalue *e0(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    if (typeid(**it) == typeid(Identifier)) {
+        Identifier *id = static_cast<Identifier *>(*it);
+        it++;
         bool isInt = true;
         for (size_t i = 0; i < id->s.len; i++) {
             if (!isdigit(id->s.start[i])) {
@@ -101,20 +103,19 @@ static rvalue *e0(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
 /**
  * @brief () - grouping for precedence and function calls
  *
- * @param tokens the vector of tokens to parse from
- * @param i a reference to the index in the vector corresponding to the first token of the
- * expression. By the end of the function it will contain the index corresponding to the
- * token IMMEDIATELY AFTER the rvalue
+ * @param it a reference to the iterator of Tokens to use. Expected to point to the first
+ * token of the expression when this function is called. When this function returns it
+ * will point to the token IMMEDIATELY AFTER the rvalue
+ * @param context the CodeBlock in which the current expression occurs
  * @return the parsed rvalue
  */
-static rvalue *e1(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    rvalue *temp = e0(tokens, i, context);
+static rvalue *e1(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    rvalue *temp = e0(it, context);
 
-    if (typeid(*tokens[i]) == typeid(Punctuation)
-          && static_cast<Punctuation *>(tokens[i])->type
-                   == Punctuation::Type::OpenParen) {
-        i++;
-        rvalue *rval = parseRvalue(tokens, i, context);
+    if (typeid(**it) == typeid(Punctuation)
+          && static_cast<Punctuation *>(*it)->type == Punctuation::Type::OpenParen) {
+        it++;
+        rvalue *rval = parseRvalue(it, context);
         if (temp != nullptr && typeid(*temp) == typeid(Variable)) {
             Variable *id = static_cast<Variable *>(temp);
             CodeBlock::IdentifierStatus status = context->find(id);
@@ -133,13 +134,13 @@ static rvalue *e1(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
             FunctionCall *call = new FunctionCall(id);
             while (rval) {
                 call->arguments.push_back(rval);
-                if (typeid(*tokens[i]) == typeid(Punctuation)
-                      && static_cast<Punctuation *>(tokens[i])->type
+                if (typeid(**it) == typeid(Punctuation)
+                      && static_cast<Punctuation *>(*it)->type
                                == Punctuation::Type::Comma) {
-                    i++;
-                    rval = parseRvalue(tokens, i, context);
+                    it++;
+                    rval = parseRvalue(it, context);
                     if (rval == nullptr) {
-                        tokens[i]->error("Expected expression");
+                        (*it)->error("Expected expression");
                     }
                 } else {
                     rval = nullptr;
@@ -149,14 +150,13 @@ static rvalue *e1(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
             rval = call;
         }
         if (rval == nullptr) {
-            tokens[i]->error("Expected expression");
+            (*it)->error("Expected expression");
         }
-        if (typeid(*tokens[i]) != typeid(Punctuation)
-              || static_cast<Punctuation *>(tokens[i])->type
-                       != Punctuation::Type::CloseParen) {
-            tokens[i]->error("Expected ')'");
+        if (typeid(**it) != typeid(Punctuation)
+              || static_cast<Punctuation *>(*it)->type != Punctuation::Type::CloseParen) {
+            (*it)->error("Expected ')'");
         }
-        i++;
+        it++;
         return rval;
     }
 
@@ -179,34 +179,33 @@ static rvalue *e1(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
     return temp;
 }
 
-static rvalue *e2(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    return e1(tokens, i, context);
+static rvalue *e2(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    return e1(it, context);
 }
 
 /**
  * @brief Multiplication, division, modulo operators * / % (LTR)
  *
- * @param tokens the vector of tokens to parse from
- * @param i a reference to the index in the vector corresponding to the first token of the
- * expression. By the end of the function it will contain the index corresponding to the
- * token IMMEDIATELY AFTER the rvalue
+ * @param it a reference to the iterator of Tokens to use. Expected to point to the first
+ * token of the expression when this function is called. When this function returns it
+ * will point to the token IMMEDIATELY AFTER the rvalue
+ * @param context the CodeBlock in which the current expression occurs
  * @return the parsed rvalue
  */
-static rvalue *e3(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    rvalue *operand1 = e2(tokens, i, context);
+static rvalue *e3(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    rvalue *operand1 = e2(it, context);
     while (true) {
-        if (typeid(*tokens[i]) == typeid(Punctuation)) {
-            if (static_cast<Punctuation *>(tokens[i])->type == Punctuation::Type::Times) {
-                i++;
-                operand1 = new Multiplication(operand1, e2(tokens, i, context));
-            } else if (static_cast<Punctuation *>(tokens[i])->type
+        if (typeid(**it) == typeid(Punctuation)) {
+            if (static_cast<Punctuation *>(*it)->type == Punctuation::Type::Times) {
+                it++;
+                operand1 = new Multiplication(operand1, e2(it, context));
+            } else if (static_cast<Punctuation *>(*it)->type
                        == Punctuation::Type::Divide) {
-                i++;
-                operand1 = new Division(operand1, e2(tokens, i, context));
-            } else if (static_cast<Punctuation *>(tokens[i])->type
-                       == Punctuation::Type::Mod) {
-                i++;
-                operand1 = new Modulo(operand1, e2(tokens, i, context));
+                it++;
+                operand1 = new Division(operand1, e2(it, context));
+            } else if (static_cast<Punctuation *>(*it)->type == Punctuation::Type::Mod) {
+                it++;
+                operand1 = new Modulo(operand1, e2(it, context));
             } else {
                 return operand1;
             }
@@ -214,29 +213,29 @@ static rvalue *e3(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
             return operand1;
         }
     }
-    return e2(tokens, i, context);
+    return e2(it, context);
 }
 
 /**
  * @brief Addition and subtraction operators + - (LTR)
  *
- * @param tokens the vector of tokens to parse from
- * @param i a reference to the index in the vector corresponding to the first token of the
- * expression. By the end of the function it will contain the index corresponding to the
- * token IMMEDIATELY AFTER the rvalue
+ * @param it a reference to the iterator of Tokens to use. Expected to point to the first
+ * token of the expression when this function is called. When this function returns it
+ * will point to the token IMMEDIATELY AFTER the rvalue
+ * @param context the CodeBlock in which the current expression occurs
  * @return the parsed rvalue
  */
-static rvalue *e4(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    rvalue *operand1 = e3(tokens, i, context);
+static rvalue *e4(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    rvalue *operand1 = e3(it, context);
     while (true) {
-        if (typeid(*tokens[i]) == typeid(Punctuation)) {
-            if (static_cast<Punctuation *>(tokens[i])->type == Punctuation::Type::Plus) {
-                i++;
-                operand1 = new Addition(operand1, e3(tokens, i, context));
-            } else if (static_cast<Punctuation *>(tokens[i])->type
+        if (typeid(**it) == typeid(Punctuation)) {
+            if (static_cast<Punctuation *>(*it)->type == Punctuation::Type::Plus) {
+                it++;
+                operand1 = new Addition(operand1, e3(it, context));
+            } else if (static_cast<Punctuation *>(*it)->type
                        == Punctuation::Type::Minus) {
-                i++;
-                operand1 = new Subtraction(operand1, e3(tokens, i, context));
+                it++;
+                operand1 = new Subtraction(operand1, e3(it, context));
             } else {
                 return operand1;
             }
@@ -244,76 +243,76 @@ static rvalue *e4(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
             return operand1;
         }
     }
-    return e3(tokens, i, context);
+    return e3(it, context);
 }
 
-static rvalue *e5(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    return e4(tokens, i, context);
+static rvalue *e5(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    return e4(it, context);
 }
 
-static rvalue *e6(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    return e5(tokens, i, context);
+static rvalue *e6(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    return e5(it, context);
 }
 
-static rvalue *e7(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    return e6(tokens, i, context);
+static rvalue *e7(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    return e6(it, context);
 }
 
-static rvalue *e8(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    return e7(tokens, i, context);
+static rvalue *e8(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    return e7(it, context);
 }
 
-static rvalue *e9(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    return e8(tokens, i, context);
+static rvalue *e9(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    return e8(it, context);
 }
 
-static rvalue *e10(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    return e9(tokens, i, context);
+static rvalue *e10(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    return e9(it, context);
 }
 
-static rvalue *e11(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    return e10(tokens, i, context);
+static rvalue *e11(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    return e10(it, context);
 }
 
-static rvalue *e12(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    return e11(tokens, i, context);
+static rvalue *e12(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    return e11(it, context);
 }
 
-static rvalue *e13(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    return e12(tokens, i, context);
+static rvalue *e13(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    return e12(it, context);
 }
 
 /**
  * @brief Assignment operators = += -= *= /= %= <<= >>= &= ^= |= (RTL)
  *
- * @param tokens the vector of tokens to parse from
- * @param i a reference to the index in the vector corresponding to the first token of the
- * expression. By the end of the function it will contain the index corresponding to the
- * token IMMEDIATELY AFTER the rvalue
+ * @param it a reference to the iterator of Tokens to use. Expected to point to the first
+ * token of the expression when this function is called. When this function returns it
+ * will point to the token IMMEDIATELY AFTER the rvalue
+ * @param context the CodeBlock in which the current expression occurs
  * @return the parsed rvalue
  */
-static rvalue *e14(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    if (typeid(*tokens[i]) == typeid(Identifier)) {
-        Identifier *id = static_cast<Identifier *>(tokens[i]);
-        if (typeid(*tokens[i + 1]) == typeid(Punctuation)
-              && static_cast<Punctuation *>(tokens[i + 1])->type
+static rvalue *e14(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    if (typeid(**it) == typeid(Identifier)) {
+        Identifier *id = static_cast<Identifier *>(*it);
+        if (typeid(**(it + 1)) == typeid(Punctuation)
+              && static_cast<Punctuation *>(*(it + 1))->type
                        == Punctuation::Type::Equals) {
             if (context->locals->find(id) == context->locals->end()) {
                 id->error("Undeclared variable %.*s", id->s.len, id->s.start);
             }
-            i += 2;
-            return new Assignment(id, e14(tokens, i, context));
+            it += 2;
+            return new Assignment(id, e14(it, context));
         } else {
-            return e13(tokens, i, context);
+            return e13(it, context);
         }
     }
-    return e13(tokens, i, context);
+    return e13(it, context);
 }
 
-static rvalue *e15(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    return e14(tokens, i, context);
+static rvalue *e15(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    return e14(it, context);
 }
 
-rvalue *parseRvalue(std::vector<Token *> tokens, size_t &i, CodeBlock *context) {
-    return e15(tokens, i, context);
+rvalue *parseRvalue(std::vector<Token *>::iterator &it, CodeBlock *context) {
+    return e15(it, context);
 }

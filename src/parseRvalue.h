@@ -8,6 +8,15 @@
 #include <cstdint>
 #include <vector>
 
-AST::rvalue *parseRvalue(std::vector<Token *> tokens, size_t &i, AST::CodeBlock *context);
+/**
+ * @brief Parses entire rvalues, taking operator precedence into consideration
+ *
+ * @param it a reference to the iterator of Tokens to use. Expected to point to the first
+ * token of the expression when this function is called. When this function returns it
+ * will point to the token IMMEDIATELY AFTER the rvalue
+ * @param context the CodeBlock in which the current expression occurs
+ * @return the parsed rvalue
+ */
+AST::rvalue *parseRvalue(std::vector<Token *>::iterator &it, AST::CodeBlock *context);
 
 #endif
