@@ -28,7 +28,7 @@ const char *const typeStr(Type type) {
             return "bool";
         }
         case Type::CHAR: {
-            return "unsigned char";
+            return "char";
         }
         case Type::VOID: {
             return "void";
