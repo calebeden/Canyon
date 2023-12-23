@@ -56,7 +56,7 @@ void Lexer::slice() {
         do {
             current++;
             col++;
-        } while (!isSep(current) && current - program < size);
+        } while (current - program < size && !isSep(current));
         slices.emplace_back(tokenStart, current - 1, source, line, startCol);
     }
 
