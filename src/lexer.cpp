@@ -65,11 +65,6 @@ void Lexer::slice() {
         } while (current - program < size && !isSep(current));
         slices.emplace_back(tokenStart, current - 1, source, line, startCol);
     }
-
-    if (slices.size() == 0) {
-        fprintf(stderr, "File does not contain any source code");
-        exit(1);
-    }
 }
 
 bool Lexer::isSep(const char *const c) {
