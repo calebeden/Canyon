@@ -122,20 +122,11 @@ struct Identifier : public Token {
 };
 
 struct Hasher {
-    std::size_t operator()(Identifier *const id) const {
-        // djb2
-        size_t hash = 5381;
-        for (size_t i = 0; i < id->s.len; i++) {
-            hash = hash * 33 + id->s.start[i];
-        }
-        return hash;
-    }
+    std::size_t operator()(Identifier *const id) const;
 };
 
 struct Comparator {
-    bool operator()(Identifier *a, Identifier *b) const {
-        return a->s == b->s;
-    }
+    bool operator()(Identifier *a, Identifier *b) const;
 };
 
 #endif

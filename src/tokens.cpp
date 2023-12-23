@@ -310,3 +310,16 @@ void Identifier::compile(FILE *outfile) {
 bool Identifier::operator==(const Identifier &other) {
     return this->s == other.s;
 }
+
+std::size_t Hasher::operator()(Identifier *const id) const {
+    // djb2
+    size_t hash = 5381;
+    for (size_t i = 0; i < id->s.len; i++) {
+        hash = hash * 33 + id->s.start[i];
+    }
+    return hash;
+}
+
+bool Comparator::operator()(Identifier *a, Identifier *b) const {
+    return a->s == b->s;
+}
