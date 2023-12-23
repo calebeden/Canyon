@@ -14,6 +14,7 @@ class Lexer {
     const char *source;
     const char *current;
     std::vector<Slice> slices;
+    uint32_t tabSize;
 public:
     /**
      * @brief Construct a new Lexer object to tokenize Canyon source code
@@ -21,8 +22,10 @@ public:
      * @param program the source code to tokenize
      * @param size the length of the source code
      * @param source the name of the source code file
+     * @param tabSize the width of a tab stop (default = 4)
      */
-    Lexer(const char *const program, off_t size, const char *const source);
+    Lexer(const char *const program, off_t size, const char *const source,
+          uint32_t tabSize = 4);
     /**
      * @brief Tokenizes the Canyon source code
      *

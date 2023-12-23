@@ -2,10 +2,15 @@
 
 #include "ast.h"
 
+#include <stdexcept>
 #include <vector>
 
-Lexer::Lexer(const char *const program, off_t size, const char *const source)
-    : program(program), size(size), source(source) {
+Lexer::Lexer(const char *const program, off_t size, const char *const source,
+      uint32_t tabSize)
+    : program(program), size(size), source(source), tabSize(tabSize) {
+    if (tabSize == 0) {
+        throw std::invalid_argument("Tab size must be greater than 0");
+    }
 }
 
 std::vector<Token *> *Lexer::tokenize() {
@@ -37,7 +42,7 @@ void Lexer::slice() {
                 line++;
                 col = 1;
             } else if (*current == '\t') {
-                col = ((col + TAB_WIDTH - 1) / TAB_WIDTH) * TAB_WIDTH + 1;
+                col = ((col + tabSize - 1) / tabSize) * tabSize + 1;
             } else {
                 col++;
             }
