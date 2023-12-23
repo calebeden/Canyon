@@ -6,9 +6,16 @@
 #include <cstdint>
 #include <vector>
 
-#define TAB_WIDTH 4
+#ifdef DEBUG_TEST_MODE
+#  define mockable virtual
+#else
+#  define mockable
+#endif
 
 class Lexer {
+#ifdef DEBUG_TEST_MODE
+public:
+#endif
     const char *program;
     off_t size;
     const char *source;
@@ -31,22 +38,25 @@ public:
      *
      * @return the source code as a series of Tokens, stored in a vector
      */
-    std::vector<Token *> *tokenize();
+    mockable std::vector<Token *> *tokenize();
+#ifndef DEBUG_TEST_MODE
 private:
+#endif
     /**
      * @brief Splits the input source file into Slices based on whitespace and other token
      * separator rules
      */
-    void slice();
+    mockable void slice();
 
     /**
      * @brief Determines whether the character pointed to by c represents the start of a
-     * new token
+     * new token. If c points to the first character of a string and if isalnum(*c)
+     * returns true, this is considered UB
      *
      * @param c the character to test at
      * @returns whether `c` is at the start of a new token
      */
-    static inline bool isSep(const char *const c);
+    mockable bool isSep(const char *const c);
 };
 
 #endif
