@@ -37,7 +37,7 @@ void Lexer::slice() {
                 line++;
                 col = 1;
             } else if (*current == '\t') {
-                col += TAB_WIDTH;
+                col = ((col + TAB_WIDTH - 1) / TAB_WIDTH) * TAB_WIDTH + 1;
             } else {
                 col++;
             }
