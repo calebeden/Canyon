@@ -34,14 +34,9 @@ int main(int argc, char **argv) {
         close(infile);
         return 1;
     }
-    if (fileInfo.st_size == 0) {
-        fprintf(stderr, "Empty source code file %s\n", argv[1]);
-        close(infile);
-        return 1;
-    }
 
     // Read the file into memory.
-    char *fileData = (char *) mmap(NULL, fileInfo.st_size, PROT_READ,
+    char *fileData = (char *) mmap(NULL, std::max(1L, fileInfo.st_size), PROT_READ,
           MAP_PRIVATE | MAP_FILE, infile, 0);
     if (fileData == MAP_FAILED) {
         fprintf(stderr, "Failed to map the file %s into memory: %s\n", argv[1],
