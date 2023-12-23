@@ -18,12 +18,12 @@ int main(int argc, char **argv) {
     if (argc != 3) {
         fprintf(stderr,
               "Unexpected argument count. Usage: ./build/main infile outfile\n");
-        return 1;
+        return EXIT_FAILURE;
     }
     int infile = open(argv[1], O_RDONLY);
     if (infile == -1) {
         fprintf(stderr, "Failed to open %s: %s\n", argv[1], strerror(errno));
-        return 1;
+        return EXIT_FAILURE;
     }
 
     // Get the size of the file.
@@ -31,8 +31,7 @@ int main(int argc, char **argv) {
     if (fstat(infile, &fileInfo) != 0) {
         fprintf(stderr, "Failed to get file information for %s: %s\n", argv[1],
               strerror(errno));
-        close(infile);
-        return 1;
+        return EXIT_FAILURE;
     }
 
     // Read the file into memory.
@@ -41,10 +40,12 @@ int main(int argc, char **argv) {
     if (fileData == MAP_FAILED) {
         fprintf(stderr, "Failed to map the file %s into memory: %s\n", argv[1],
               strerror(errno));
-        close(infile);
-        return 1;
+        return EXIT_FAILURE;
     }
-    close(infile);
+    if (close(infile) != 0) {
+        fprintf(stderr, "Failed to close %s: %s\n", argv[1], strerror(errno));
+        return EXIT_FAILURE;
+    }
 
     // printf("File contents: %s\n", fileData);
     Lexer l = Lexer(fileData, fileInfo.st_size, argv[1]);
@@ -56,17 +57,20 @@ int main(int argc, char **argv) {
     FILE *outfile = fopen(argv[2], "w");
     if (outfile == nullptr) {
         fprintf(stderr, "Failed to open outfile %s: %s\n", argv[2], strerror(errno));
-        return 1;
+        return EXIT_FAILURE;
     }
 
     ast->compile(outfile);
 
-    // Unmap and close the file
-    if (munmap(fileData, fileInfo.st_size) == -1) {
+    // Unmap and close the files
+    if (fclose(outfile) != 0) {
+        fprintf(stderr, "Error closing outfile %s: %s\n", argv[2], strerror(errno));
+        return EXIT_FAILURE;
+    }
+    if (munmap(fileData, std::max(1L, fileInfo.st_size)) == -1) {
         fprintf(stderr, "Error un-mmapping infile %s: %s\n", argv[1], strerror(errno));
-        close(infile);
-        return -1;
+        return EXIT_FAILURE;
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
