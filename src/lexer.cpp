@@ -37,10 +37,16 @@ void Lexer::slice() {
     size_t col = 1;
 
     while (current - program < size) {
-        while (*current == ' ' || *current == '\t' || *current == '\n') {
+        while (isspace(*current)) {
             if (*current == '\n') {
                 line++;
                 col = 1;
+            } else if (*current == '\r') {
+                line++;
+                col = 1;
+                if (current + 1 - program < size && current[1] == '\n') {
+                    current++;
+                }
             } else if (*current == '\t') {
                 col = ((col + tabSize - 1) / tabSize) * tabSize + 1;
             } else {
@@ -68,9 +74,9 @@ void Lexer::slice() {
 
 bool Lexer::isSep(const char *const c) {
     // If c is any of these characters, it is by default a separator
-    if (c[0] == ' ' || c[0] == '\t' || c[0] == '\n' || c[0] == '(' || c[0] == ')'
-          || c[0] == ';' || c[0] == '{' || c[0] == '}' || c[0] == ',' || c[0] == '+'
-          || c[0] == '-' || c[0] == '*' || c[0] == '/' || c[0] == '%' || c[0] == '=') {
+    if (isspace(c[0]) || c[0] == '(' || c[0] == ')' || c[0] == ';' || c[0] == '{'
+          || c[0] == '}' || c[0] == ',' || c[0] == '+' || c[0] == '-' || c[0] == '*'
+          || c[0] == '/' || c[0] == '%' || c[0] == '=') {
         return true;
     }
 
