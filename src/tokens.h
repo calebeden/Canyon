@@ -11,6 +11,12 @@
 #include <typeinfo>
 #include <vector>
 
+#ifdef DEBUG_TEST_MODE
+#  define mockable virtual
+#else
+#  define mockable
+#endif
+
 enum class Type {
     INT,
     BYTE,
@@ -38,23 +44,15 @@ struct Slice {
      * @param start a pointer to the first character in the Slice
      * @param end a pointer to the final character of the Slice (inclusive)
      */
-    Slice(const char *const start, const char *const end, const char *const source, size_t row, size_t col);
-    Slice(const char *const start, size_t len, const char *const source, size_t row, size_t col);
-    void show();
-    /**
-     * @brief Compares a Slice to a string
-     *
-     * @param rhs the std::string to compare to
-     * @return whether the Slice and string contain the same characters and are the same
-     * length
-     */
+    Slice(const char *const start, const char *const end, const char *const source,
+          size_t row, size_t col);
+    Slice(const char *const start, size_t len, const char *const source, size_t row,
+          size_t col);
+    void show() const;
     bool operator==(const std::string &rhs) const;
-
     bool operator==(const Slice &other) const;
-
     bool operator==(const char *const other) const;
-
-    operator std::string();
+    operator std::string() const;
 };
 
 struct Token {
@@ -63,8 +61,8 @@ struct Token {
     size_t col;
     static Token *createToken(Slice s);
 
-    virtual void show();
-    void error(const char *const error, ...);
+    virtual void show() const;
+    mockable void error(const char *const error, ...) const __attribute__((noreturn));
 protected:
     Token(const char *const source, size_t row, size_t col);
 };

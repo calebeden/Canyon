@@ -49,7 +49,7 @@ Slice::Slice(const char *const start, size_t len, const char *const source, size
     : start(start), len(len), row(row), col(col), source(source) {
 }
 
-void Slice::show() {
+void Slice::show() const {
     char buf[len + 1];
     strncpy(buf, start, len);
     buf[len] = '\0';
@@ -82,7 +82,7 @@ bool Slice::operator==(const char *const other) const {
     return strncmp(this->start, other, this->len) == 0 && other[this->len] == '\0';
 }
 
-Slice::operator std::string() {
+Slice::operator std::string() const {
     return std::string(start, len);
 }
 
@@ -99,7 +99,7 @@ Token *Token::createToken(Slice s) {
     return new Identifier(s);
 }
 
-void Token::show() {
+void Token::show() const {
     fprintf(stderr, "Class: %s\n", typeid(*this).name());
 }
 
@@ -107,7 +107,7 @@ Token::Token(const char *const source, size_t row, size_t col)
     : source(source), row(row), col(col) {
 }
 
-void Token::error(const char *const format, ...) {
+void Token::error(const char *const format, ...) const {
     fprintf(stderr, "Error at %s:%ld:%ld: ", source, row, col);
     va_list args;
     va_start(args, format);
