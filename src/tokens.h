@@ -111,7 +111,6 @@ struct Identifier : public Token {
 
     virtual void show();
     void compile(FILE *outfile);
-    bool operator==(const Identifier &other);
 };
 
 struct Hasher {

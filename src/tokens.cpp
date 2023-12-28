@@ -224,10 +224,6 @@ void Identifier::compile(FILE *outfile) {
     fprintf(outfile, "%.*s", (int) s.len, s.start);
 }
 
-bool Identifier::operator==(const Identifier &other) {
-    return this->s == other.s;
-}
-
 std::size_t Hasher::operator()(Identifier *const id) const {
     // djb2
     size_t hash = 5381;
