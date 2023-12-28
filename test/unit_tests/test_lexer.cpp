@@ -403,45 +403,42 @@ TEST(test_lexer, test_tokenize) {
         }
 
         MOCK_METHOD(void, slice, ());
-    } mocked;
+    };
 
     // Test 1: Keywords
-    EXPECT_CALL(mocked, slice).WillOnce(::testing::Invoke([&mocked] {
+    MockLexer l1;
+    EXPECT_CALL(l1, slice).WillOnce(::testing::Invoke([&l1] {
         for (const char *const keyword : keywords) {
-            mocked.slices.emplace_back(keyword, strlen(keyword), "", 0, 0);
+            l1.slices.emplace_back(keyword, strlen(keyword), "", 0, 0);
         }
     }));
-    std::vector<Token *> *tokens = mocked.tokenize();
+    std::vector<Token *> *tokens = l1.tokenize();
     ASSERT_EQ(tokens->size(), sizeof(keywords) / sizeof(*keywords));
     for (size_t i = 0; i < sizeof(keywords) / sizeof(*keywords); i++) {
         EXPECT_TRUE(dynamic_cast<Keyword *>((*tokens)[i]));
     }
 
-    ::testing::Mock::VerifyAndClearExpectations(&mocked);
-    mocked.slices = {};
-
     // Test 2: Primitives
-    EXPECT_CALL(mocked, slice).WillOnce(::testing::Invoke([&mocked] {
+    MockLexer l2;
+    EXPECT_CALL(l2, slice).WillOnce(::testing::Invoke([&l2] {
         for (const char *const primitive : primitives) {
-            mocked.slices.emplace_back(primitive, strlen(primitive), "", 0, 0);
+            l2.slices.emplace_back(primitive, strlen(primitive), "", 0, 0);
         }
     }));
-    tokens = mocked.tokenize();
+    tokens = l2.tokenize();
     ASSERT_EQ(tokens->size(), sizeof(primitives) / sizeof(*primitives));
     for (size_t i = 0; i < sizeof(primitives) / sizeof(*primitives); i++) {
         EXPECT_TRUE(dynamic_cast<Primitive *>((*tokens)[i]));
     }
 
-    ::testing::Mock::VerifyAndClearExpectations(&mocked);
-    mocked.slices = {};
-
-    // Test 2: Punctuation
-    EXPECT_CALL(mocked, slice).WillOnce(::testing::Invoke([&mocked] {
+    // Test 3: Punctuation
+    MockLexer l3;
+    EXPECT_CALL(l3, slice).WillOnce(::testing::Invoke([&l3] {
         for (const char *const punctuation : punctuations) {
-            mocked.slices.emplace_back(punctuation, strlen(punctuation), "", 0, 0);
+            l3.slices.emplace_back(punctuation, strlen(punctuation), "", 0, 0);
         }
     }));
-    tokens = mocked.tokenize();
+    tokens = l3.tokenize();
     ASSERT_EQ(tokens->size(), sizeof(punctuations) / sizeof(*punctuations));
     for (size_t i = 0; i < sizeof(punctuations) / sizeof(*punctuations); i++) {
         EXPECT_TRUE(dynamic_cast<Punctuation *>((*tokens)[i]));
