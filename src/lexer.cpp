@@ -20,7 +20,24 @@ std::vector<Token *> *Lexer::tokenize() {
     for (Slice s : slices) {
         s.show();
         fprintf(stderr, "\n");
-        tokens->push_back(Token::createToken(s));
+        Token *token;
+        Keyword *keyword = createKeyword(s);
+        if (keyword) {
+            token = keyword;
+        } else {
+            Primitive *primitive = createPrimitive(s);
+            if (primitive) {
+                token = primitive;
+            } else {
+                Punctuation *punctuation = createPunctuation(s);
+                if (punctuation) {
+                    token = punctuation;
+                } else {
+                    token = createIdentifier(s);
+                }
+            }
+        }
+        tokens->push_back(token);
     }
 
     for (Token *t : *tokens) {
@@ -81,4 +98,86 @@ bool Lexer::isSep(const char *const c) {
     }
 
     return false;
+}
+
+Keyword *Lexer::createKeyword(Slice s) {
+    if (s == "void") {
+        return new Keyword(s, Keyword::Type::VOID);
+    }
+    if (s == "return") {
+        return new Keyword(s, Keyword::Type::RETURN);
+    }
+    return nullptr;
+}
+
+Primitive *Lexer::createPrimitive(Slice s) {
+    if (s == "int") {
+        return new Primitive(s, Type::INT);
+    }
+    if (s == "byte") {
+        return new Primitive(s, Type::BYTE);
+    }
+    if (s == "short") {
+        return new Primitive(s, Type::SHORT);
+    }
+    if (s == "long") {
+        return new Primitive(s, Type::LONG);
+    }
+    if (s == "float") {
+        return new Primitive(s, Type::FLOAT);
+    }
+    if (s == "double") {
+        return new Primitive(s, Type::DOUBLE);
+    }
+    if (s == "bool") {
+        return new Primitive(s, Type::BOOL);
+    }
+    if (s == "char") {
+        return new Primitive(s, Type::CHAR);
+    }
+    return nullptr;
+}
+
+Punctuation *Lexer::createPunctuation(Slice s) {
+    if (s == "(") {
+        return new Punctuation(s, Punctuation::Type::OpenParen);
+    }
+    if (s == ")") {
+        return new Punctuation(s, Punctuation::Type::CloseParen);
+    }
+    if (s == ";") {
+        return new Punctuation(s, Punctuation::Type::Semicolon);
+    }
+    if (s == "{") {
+        return new Punctuation(s, Punctuation::Type::OpenBrace);
+    }
+    if (s == "}") {
+        return new Punctuation(s, Punctuation::Type::CloseBrace);
+    }
+    if (s == ",") {
+        return new Punctuation(s, Punctuation::Type::Comma);
+    }
+    if (s == "=") {
+        return new Punctuation(s, Punctuation::Type::Equals);
+    }
+    if (s == "+") {
+        return new Punctuation(s, Punctuation::Type::Plus);
+    }
+    if (s == "-") {
+        return new Punctuation(s, Punctuation::Type::Minus);
+    }
+    if (s == "*") {
+        return new Punctuation(s, Punctuation::Type::Times);
+    }
+    if (s == "/") {
+        return new Punctuation(s, Punctuation::Type::Divide);
+    }
+    if (s == "%") {
+        return new Punctuation(s, Punctuation::Type::Mod);
+    }
+    return nullptr;
+}
+
+Identifier *Lexer::createIdentifier(Slice s) {
+    return new Identifier(s);
 }

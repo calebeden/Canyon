@@ -59,7 +59,6 @@ struct Token {
     const char *source;
     size_t row;
     size_t col;
-    static Token *createToken(Slice s);
 
     virtual void show() const;
     mockable void error(const char *const error, ...) const __attribute__((noreturn));
@@ -73,19 +72,17 @@ struct Keyword : public Token {
         RETURN
     };
     Type type;
-    Keyword(Slice s);
-    static bool isKeyword(Slice s);
+    Keyword(Slice s, Type type);
 };
 
 struct Primitive : public Token {
     Type type;
-    Primitive(Slice s);
+    Primitive(Slice s, Type type);
     virtual void show();
     void compile(FILE *outfile);
 
     static void show(Type t);
     static void compile(FILE *outfile, Type t);
-    static bool isPrimitive(Slice s);
 };
 
 struct Punctuation : public Token {
@@ -104,9 +101,7 @@ struct Punctuation : public Token {
         Mod
     };
     Type type;
-    Punctuation(Slice s);
-
-    static bool isPunctuation(Slice s);
+    Punctuation(Slice s, Type type);
 };
 
 struct Identifier : public Token {

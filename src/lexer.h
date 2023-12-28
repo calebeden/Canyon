@@ -57,6 +57,11 @@ private:
      * @returns whether `c` is at the start of a new token
      */
     mockable bool isSep(const char *const c);
+
+    mockable Keyword *createKeyword(Slice s);
+    mockable Primitive *createPrimitive(Slice s);
+    mockable Punctuation *createPunctuation(Slice s);
+    mockable Identifier *createIdentifier(Slice s);
 };
 
 #endif

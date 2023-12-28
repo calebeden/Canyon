@@ -272,3 +272,178 @@ TEST(test_lexer, test_slice) {
         }
     }
 }
+
+const char *const keywords[] = {"void", "return"};
+
+TEST(test_lexer, test_createKeyword) {
+    Lexer l = Lexer("", 0, "");
+    Keyword *keyword;
+    keyword = l.createKeyword(Slice("void", 4, "", 0, 0));
+    ASSERT_NE(keyword, nullptr);
+    EXPECT_EQ(keyword->type, Keyword::Type::VOID);
+    keyword = l.createKeyword(Slice("return", 6, "", 0, 0));
+    ASSERT_NE(keyword, nullptr);
+    EXPECT_EQ(keyword->type, Keyword::Type::RETURN);
+}
+
+const char *const primitives[]
+      = {"int", "byte", "short", "long", "float", "double", "bool", "char"};
+
+TEST(test_lexer, test_createPrimitive) {
+    Lexer l = Lexer("", 0, "");
+    Primitive *primitive;
+    primitive = l.createPrimitive(Slice("int", 3, "", 0, 0));
+    ASSERT_NE(primitive, nullptr);
+    EXPECT_EQ(primitive->type, Type::INT);
+    primitive = l.createPrimitive(Slice("byte", 4, "", 0, 0));
+    ASSERT_NE(primitive, nullptr);
+    EXPECT_EQ(primitive->type, Type::BYTE);
+    primitive = l.createPrimitive(Slice("short", 5, "", 0, 0));
+    ASSERT_NE(primitive, nullptr);
+    EXPECT_EQ(primitive->type, Type::SHORT);
+    primitive = l.createPrimitive(Slice("long", 4, "", 0, 0));
+    ASSERT_NE(primitive, nullptr);
+    EXPECT_EQ(primitive->type, Type::LONG);
+    primitive = l.createPrimitive(Slice("float", 5, "", 0, 0));
+    ASSERT_NE(primitive, nullptr);
+    EXPECT_EQ(primitive->type, Type::FLOAT);
+    primitive = l.createPrimitive(Slice("double", 6, "", 0, 0));
+    ASSERT_NE(primitive, nullptr);
+    EXPECT_EQ(primitive->type, Type::DOUBLE);
+    primitive = l.createPrimitive(Slice("bool", 4, "", 0, 0));
+    ASSERT_NE(primitive, nullptr);
+    EXPECT_EQ(primitive->type, Type::BOOL);
+    primitive = l.createPrimitive(Slice("char", 4, "", 0, 0));
+    ASSERT_NE(primitive, nullptr);
+    EXPECT_EQ(primitive->type, Type::CHAR);
+
+    // Type enum values that shouldn't be created by createPrimitive
+    primitive = l.createPrimitive(Slice("void", 4, "", 0, 0));
+    ASSERT_EQ(primitive, nullptr);
+    primitive = l.createPrimitive(Slice("unknown", 7, "", 0, 0));
+    ASSERT_EQ(primitive, nullptr);
+}
+
+const char *const punctuations[]
+      = {"(", ")", ";", "{", "}", ",", "=", "+", "-", "*", "/", "%"};
+
+TEST(test_lexer, test_createPunctuation) {
+    Lexer l = Lexer("", 0, "");
+    Punctuation *punctuation;
+    punctuation = l.createPunctuation(Slice("(", 1, "", 0, 0));
+    ASSERT_NE(punctuation, nullptr);
+    EXPECT_EQ(punctuation->type, Punctuation::Type::OpenParen);
+    punctuation = l.createPunctuation(Slice(")", 1, "", 0, 0));
+    ASSERT_NE(punctuation, nullptr);
+    EXPECT_EQ(punctuation->type, Punctuation::Type::CloseParen);
+    punctuation = l.createPunctuation(Slice(";", 1, "", 0, 0));
+    ASSERT_NE(punctuation, nullptr);
+    EXPECT_EQ(punctuation->type, Punctuation::Type::Semicolon);
+    punctuation = l.createPunctuation(Slice("{", 1, "", 0, 0));
+    ASSERT_NE(punctuation, nullptr);
+    EXPECT_EQ(punctuation->type, Punctuation::Type::OpenBrace);
+    punctuation = l.createPunctuation(Slice("}", 1, "", 0, 0));
+    ASSERT_NE(punctuation, nullptr);
+    EXPECT_EQ(punctuation->type, Punctuation::Type::CloseBrace);
+    punctuation = l.createPunctuation(Slice(",", 1, "", 0, 0));
+    ASSERT_NE(punctuation, nullptr);
+    EXPECT_EQ(punctuation->type, Punctuation::Type::Comma);
+    punctuation = l.createPunctuation(Slice("=", 1, "", 0, 0));
+    ASSERT_NE(punctuation, nullptr);
+    EXPECT_EQ(punctuation->type, Punctuation::Type::Equals);
+    punctuation = l.createPunctuation(Slice("+", 1, "", 0, 0));
+    ASSERT_NE(punctuation, nullptr);
+    EXPECT_EQ(punctuation->type, Punctuation::Type::Plus);
+    punctuation = l.createPunctuation(Slice("-", 1, "", 0, 0));
+    ASSERT_NE(punctuation, nullptr);
+    EXPECT_EQ(punctuation->type, Punctuation::Type::Minus);
+    punctuation = l.createPunctuation(Slice("*", 1, "", 0, 0));
+    ASSERT_NE(punctuation, nullptr);
+    EXPECT_EQ(punctuation->type, Punctuation::Type::Times);
+    punctuation = l.createPunctuation(Slice("/", 1, "", 0, 0));
+    ASSERT_NE(punctuation, nullptr);
+    EXPECT_EQ(punctuation->type, Punctuation::Type::Divide);
+    punctuation = l.createPunctuation(Slice("%", 1, "", 0, 0));
+    ASSERT_NE(punctuation, nullptr);
+    EXPECT_EQ(punctuation->type, Punctuation::Type::Mod);
+}
+
+TEST(test_lexer, test_createIdentifier) {
+    Lexer l = Lexer("", 0, "");
+    Identifier *id;
+    id = l.createIdentifier(Slice("x", 1, "", 0, 0));
+    ASSERT_NE(id, nullptr);
+    EXPECT_EQ(id->s, "x");
+    id = l.createIdentifier(Slice("abcd", 4, "", 0, 0));
+    ASSERT_NE(id, nullptr);
+    EXPECT_EQ(id->s, "abcd");
+    id = l.createIdentifier(Slice("1234", 4, "", 0, 0));
+    ASSERT_NE(id, nullptr);
+    EXPECT_EQ(id->s, "1234");
+
+    // It shouldn't care whether the "identifier" is another token type
+    id = l.createIdentifier(Slice("int", 3, "", 0, 0));
+    ASSERT_NE(id, nullptr);
+    EXPECT_EQ(id->s, "int");
+    id = l.createIdentifier(Slice("void", 4, "", 0, 0));
+    ASSERT_NE(id, nullptr);
+    EXPECT_EQ(id->s, "void");
+    id = l.createIdentifier(Slice("return", 6, "", 0, 0));
+    ASSERT_NE(id, nullptr);
+    EXPECT_EQ(id->s, "return");
+    id = l.createIdentifier(Slice("float", 5, "", 0, 0));
+    ASSERT_NE(id, nullptr);
+    EXPECT_EQ(id->s, "float");
+}
+
+TEST(test_lexer, test_tokenize) {
+    class MockLexer : public Lexer {
+    public:
+        MockLexer() : Lexer("", 0, "") {
+        }
+
+        MOCK_METHOD(void, slice, ());
+    } mocked;
+
+    // Test 1: Keywords
+    EXPECT_CALL(mocked, slice).WillOnce(::testing::Invoke([&mocked] {
+        for (const char *const keyword : keywords) {
+            mocked.slices.emplace_back(keyword, strlen(keyword), "", 0, 0);
+        }
+    }));
+    std::vector<Token *> *tokens = mocked.tokenize();
+    ASSERT_EQ(tokens->size(), sizeof(keywords) / sizeof(*keywords));
+    for (size_t i = 0; i < sizeof(keywords) / sizeof(*keywords); i++) {
+        EXPECT_TRUE(dynamic_cast<Keyword *>((*tokens)[i]));
+    }
+
+    ::testing::Mock::VerifyAndClearExpectations(&mocked);
+    mocked.slices = {};
+
+    // Test 2: Primitives
+    EXPECT_CALL(mocked, slice).WillOnce(::testing::Invoke([&mocked] {
+        for (const char *const primitive : primitives) {
+            mocked.slices.emplace_back(primitive, strlen(primitive), "", 0, 0);
+        }
+    }));
+    tokens = mocked.tokenize();
+    ASSERT_EQ(tokens->size(), sizeof(primitives) / sizeof(*primitives));
+    for (size_t i = 0; i < sizeof(primitives) / sizeof(*primitives); i++) {
+        EXPECT_TRUE(dynamic_cast<Primitive *>((*tokens)[i]));
+    }
+
+    ::testing::Mock::VerifyAndClearExpectations(&mocked);
+    mocked.slices = {};
+
+    // Test 2: Punctuation
+    EXPECT_CALL(mocked, slice).WillOnce(::testing::Invoke([&mocked] {
+        for (const char *const punctuation : punctuations) {
+            mocked.slices.emplace_back(punctuation, strlen(punctuation), "", 0, 0);
+        }
+    }));
+    tokens = mocked.tokenize();
+    ASSERT_EQ(tokens->size(), sizeof(punctuations) / sizeof(*punctuations));
+    for (size_t i = 0; i < sizeof(punctuations) / sizeof(*punctuations); i++) {
+        EXPECT_TRUE(dynamic_cast<Punctuation *>((*tokens)[i]));
+    }
+}

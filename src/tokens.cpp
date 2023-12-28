@@ -86,19 +86,6 @@ Slice::operator std::string() const {
     return std::string(start, len);
 }
 
-Token *Token::createToken(Slice s) {
-    if (Keyword::isKeyword(s)) {
-        return new Keyword(s);
-    }
-    if (Primitive::isPrimitive(s)) {
-        return new Primitive(s);
-    }
-    if (Punctuation::isPunctuation(s)) {
-        return new Punctuation(s);
-    }
-    return new Identifier(s);
-}
-
 void Token::show() const {
     fprintf(stderr, "Class: %s\n", typeid(*this).name());
 }
@@ -117,42 +104,10 @@ void Token::error(const char *const format, ...) const {
     exit(EXIT_FAILURE);
 }
 
-Keyword::Keyword(Slice s) : Token(s.source, s.row, s.col) {
-    if (s == "void") {
-        type = Type::VOID;
-    } else if (s == "return") {
-        type = Type::RETURN;
-    } else {
-        throw std::invalid_argument(
-              "Unknown slice argument: " + static_cast<std::string>(s));
-    }
+Keyword::Keyword(Slice s, Type type) : Token(s.source, s.row, s.col), type(type) {
 }
 
-bool Keyword::isKeyword(Slice s) {
-    return s == "void" || s == "return";
-}
-
-Primitive::Primitive(Slice s) : Token(s.source, s.row, s.col) {
-    if (s == "int") {
-        type = Type::INT;
-    } else if (s == "byte") {
-        type = Type::BYTE;
-    } else if (s == "short") {
-        type = Type::SHORT;
-    } else if (s == "long") {
-        type = Type::LONG;
-    } else if (s == "float") {
-        type = Type::FLOAT;
-    } else if (s == "double") {
-        type = Type::DOUBLE;
-    } else if (s == "bool") {
-        type = Type::BOOL;
-    } else if (s == "char") {
-        type = Type::CHAR;
-    } else {
-        throw std::invalid_argument(
-              "Unknown slice argument: " + static_cast<std::string>(s));
-    }
+Primitive::Primitive(Slice s, Type type) : Token(s.source, s.row, s.col), type(type) {
 }
 
 void Primitive::show() {
@@ -253,45 +208,7 @@ void Primitive::compile(FILE *outfile, Type t) {
     }
 }
 
-bool Primitive::isPrimitive(Slice s) {
-    return s == "int" || s == "byte" || s == "short" || s == "long" || s == "float"
-           || s == "double" || s == "bool" || s == "char";
-}
-
-Punctuation::Punctuation(Slice s) : Token(s.source, s.row, s.col) {
-    if (s == "(") {
-        type = Type::OpenParen;
-    } else if (s == ")") {
-        type = Type::CloseParen;
-    } else if (s == ";") {
-        type = Type::Semicolon;
-    } else if (s == "{") {
-        type = Type::OpenBrace;
-    } else if (s == "}") {
-        type = Type::CloseBrace;
-    } else if (s == ",") {
-        type = Type::Comma;
-    } else if (s == "=") {
-        type = Type::Equals;
-    } else if (s == "+") {
-        type = Type::Plus;
-    } else if (s == "-") {
-        type = Type::Minus;
-    } else if (s == "*") {
-        type = Type::Times;
-    } else if (s == "/") {
-        type = Type::Divide;
-    } else if (s == "%") {
-        type = Type::Mod;
-    } else {
-        throw std::invalid_argument(
-              "Unknown slice argument: " + static_cast<std::string>(s));
-    }
-}
-
-bool Punctuation::isPunctuation(Slice s) {
-    return s == "(" || s == ")" || s == ";" || s == "{" || s == "}" || s == ","
-           || s == "=" || s == "+" || s == "-" || s == "*" || s == "/" || s == "%";
+Punctuation::Punctuation(Slice s, Type type) : Token(s.source, s.row, s.col), type(type) {
 }
 
 Identifier::Identifier(Slice s) : Token(s.source, s.row, s.col), s(s) {
