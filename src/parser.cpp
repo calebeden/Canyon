@@ -281,7 +281,8 @@ AST::rvalue *Parser::e1(std::vector<Token *>::iterator &it, CodeBlock *context) 
             CodeBlock::IdentifierStatus status = context->find(id);
             switch (status) {
                 case CodeBlock::IdentifierStatus::VARIABLE: {
-                    id->error("%s is not callable", id->variable->s);
+                    id->error("%.*s is not callable", id->variable->s.len,
+                          id->variable->s.start);
                     break;
                 }
                 case CodeBlock::IdentifierStatus::UNKNOWN: {
@@ -323,7 +324,8 @@ AST::rvalue *Parser::e1(std::vector<Token *>::iterator &it, CodeBlock *context) 
         CodeBlock::IdentifierStatus status = context->find(id);
         switch (status) {
             case CodeBlock::IdentifierStatus::FUNCTION: {
-                id->error("%s is not a variable", id->variable->s);
+                id->error("%.*s is not a variable", id->variable->s.len,
+                      id->variable->s.start);
                 break;
             }
             case CodeBlock::IdentifierStatus::UNKNOWN: {
