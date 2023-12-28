@@ -361,7 +361,6 @@ AST::rvalue *Parser::e3(std::vector<Token *>::iterator &it, CodeBlock *context) 
             return operand1;
         }
     }
-    return e2(it, context);
 }
 
 AST::rvalue *Parser::e4(std::vector<Token *>::iterator &it, CodeBlock *context) {
@@ -381,7 +380,6 @@ AST::rvalue *Parser::e4(std::vector<Token *>::iterator &it, CodeBlock *context) 
             return operand1;
         }
     }
-    return e3(it, context);
 }
 
 AST::rvalue *Parser::e5(std::vector<Token *>::iterator &it, CodeBlock *context) {
