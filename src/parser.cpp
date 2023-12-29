@@ -144,15 +144,21 @@ Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
             context->locals->insert({
                   id, {type->type, false}
             });
-            std::vector<Token *>::iterator it2 = it;
             rval = parseRvalue(it, context);
-            if (rval == nullptr) {
-                fprintf(stderr, "HELP\n");
-                exit(EXIT_FAILURE);
+            if (!rval) {
+                (*it)->error("parseRvalue should have at least returned the Variable we "
+                             "declared...");
+            }
+            if (dynamic_cast<Variable *>(rval)) {
+                if (Punctuation *punc = dynamic_cast<Punctuation *>(*it);
+                      !punc || punc->type != Punctuation::Type::Semicolon) {
+                    (*it)->error("Expected ';' after statement");
+                }
+                it++;
+                return nullptr;
             }
             if (!dynamic_cast<Assignment *>(rval)) {
-                it = it2 + 1;
-                return nullptr;
+                (*it)->error("Unexpected expression following declaration");
             }
         } else {
             (*it)->error("Unexpected token following primitive");
@@ -169,6 +175,7 @@ Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
             }
             (*it)->error("Expected ';' after statement");
         }
+        it++;
         Return *ret = new Return(rval, return_token);
         return ret;
     } else {
@@ -182,6 +189,7 @@ Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
         }
         (*it)->error("Expected ';' after statement");
     }
+    it++;
     if (rval != nullptr) {
         return new Expression(rval);
     }
@@ -300,7 +308,8 @@ AST::rvalue *Parser::e1(std::vector<Token *>::iterator &it, CodeBlock *context) 
                     it++;
                     rval = parseRvalue(it, context);
                     if (rval == nullptr) {
-                        (*it)->error("Expected expression");
+                        // Not tested since I'm not sure how this would even happen
+                        (*it)->error("How did parseRvalue return null?");
                     }
                 } else {
                     rval = nullptr;
