@@ -74,6 +74,12 @@ void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *funct
         (*it)->error("Expected '('");
     }
     it++;
+    if (Punctuation *punc = dynamic_cast<Punctuation *>(*it)) {
+        if (punc->type == Punctuation::Type::CloseParen) {
+            it++;
+            return;
+        }
+    }
 
     CodeBlock *context = function->body;
     while (true) {
@@ -82,8 +88,7 @@ void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *funct
             if (Identifier *id = dynamic_cast<Identifier *>(*it)) {
                 it++;
                 if (context->locals->find(id) != context->locals->end()) {
-                    (*it)->error("Re-declaration of parameter %.*s", id->s.len,
-                          id->s.start);
+                    id->error("Re-declaration of parameter %.*s", id->s.len, id->s.start);
                 }
                 context->locals->insert({
                       id, {type->type, true}
@@ -92,6 +97,8 @@ void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *funct
             } else {
                 (*it)->error("Unexpected token following primitive");
             }
+        } else {
+            (*it)->error("Expected primitive");
         }
         if (Punctuation *punc = dynamic_cast<Punctuation *>(*it)) {
             if (punc->type == Punctuation::Type::CloseParen) {
