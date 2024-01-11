@@ -17,7 +17,7 @@ option(DEBUG "compile with debugging symbols" OFF)
 if(DEBUG)
     set(CMAKE_CXX_FLAGS "-g -Wall -Werror -Wextra -Wpedantic")
 else()
-    set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -Wpedantic")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic")
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
