@@ -15,9 +15,9 @@ set(PROJECT_TESTS ${PROJECT_NAME}_test)
 option(DEBUG "compile with debugging symbols" OFF)
 
 if(DEBUG)
-    set(CMAKE_CXX_FLAGS "-g -Wall -Werror")
+    set(CMAKE_CXX_FLAGS "-g -Wall -Werror -Wextra -Wpedantic")
 else()
-    set(CMAKE_CXX_FLAGS "-Wall -Werror")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic")
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
