@@ -16,7 +16,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-set(CMAKE_CXX_FLAGS "-Wall -Werror")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic")
 set(CMAKE_CXX_STANDARD 17)
 
 # Define include directories
@@ -45,7 +45,7 @@ add_executable(${PROJECT_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/main.cpp)
 # Compiler Options
 # #######################################
 target_compile_options(${PROJECT_EXECUTABLE} PRIVATE
-    $<$<CONFIG:Debug>: -O0 -g>
+    $<$<CONFIG:Debug>: -O0 -g -Werror>
     $<$<CONFIG:Release>: -O3>
 )
 target_compile_definitions(${PROJECT_LIBRARY} PRIVATE

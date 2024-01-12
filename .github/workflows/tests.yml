@@ -17,49 +17,61 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/cache@v2
-        id: cache-packages
-        with:
-          path: ${{ runner.temp }}/cache-linux
-          key: ${{ runner.os }}-cache-packages-v2.1
+      # - uses: actions/cache@v2
+      #   id: cache-packages
+      #   with:
+      #     path: ${{ runner.temp }}/cache-linux
+      #     key: ${{ runner.os }}-cache-packages-v2.1
 
-      - name: Copy Dependencies
-        if: steps.cache-packages.outputs.cache-hit == 'true'
-        env:
-          SOURCE: ${{ runner.temp }}/cache-linux
-        run: |
-          echo "# --------------------------------------------------------"
-          echo "# Using Cached packages"
-          ls -lha "${SOURCE}"
-          sudo cp --force --recursive "${SOURCE}"/. /
-          echo "# --------------------------------------------------------"
+      # - name: Copy Dependencies
+        # if: steps.cache-packages.outputs.cache-hit == 'true'
+        # env:
+        #   SOURCE: ${{ runner.temp }}/cache-linux
+        # run: |
+        #   echo "# --------------------------------------------------------"
+        #   echo "# Using Cached packages"
+        #   ls -lha "${SOURCE}"
+        #   sudo cp --force --recursive "${SOURCE}"/. /
+        #   echo "# --------------------------------------------------------"
 
-      - name: Add PPA for GCC and Update Package Lists
-        if: steps.cache-packages.outputs.cache-hit == 'true'
+      - name: Add PPA for gcc and clang-format and Update Package Lists
+        # if: steps.cache-packages.outputs.cache-hit != 'true'
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          wget https://apt.llvm.org/llvm-snapshot.gpg.key
+          sudo apt-key add llvm-snapshot.gpg.key
+          sudo add-apt-repository 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main'
+          sudo bash -c "echo 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-13 main' >> /etc/apt/sources.list"
           sudo apt-get update
+          wget http://de.archive.ubuntu.com/ubuntu/pool/main/libf/libffi/libffi6_3.2.1-8_amd64.deb
+          sudo dpkg -i *.deb
           pip install --upgrade pytest
 
       - name: Install Dependencies
-        if: steps.cache-packages.outputs.cache-hit != 'true'
-        env:
-          SOURCE: ${{ runner.temp }}/cache-linux
+        # if: steps.cache-packages.outputs.cache-hit != 'true'
+        # env:
+        #   SOURCE: ${{ runner.temp }}/cache-linux
         run: |
-          sudo apt-get install -y gcc g++ cmake
+          sudo apt-get install -y gcc g++ cmake libclang-cpp18 libllvm18 libclang-common-18-dev clang-tools-18 clang-format-18 clang-tidy-18
           pip install --upgrade pytest
-          echo "# --------------------------------------------------------"
-          echo "# Make cache directory"
-          rm -fR "${SOURCE}"
-          mkdir -p "${SOURCE}"
-          while IFS= read -r LINE
-          do
-            sudo cp -a --parent "${LINE}" "${SOURCE}"
-          done < "${{ runner.temp }}"/snapshots/snapshot_new_files.txt
-          ls -lha "${SOURCE}"
-          echo ""
-          sudo du -sh "${SOURCE}" || true
-          echo "# --------------------------------------------------------"
+          # echo "# --------------------------------------------------------"
+          # echo "# Make cache directory"
+          # rm -fR "${SOURCE}"
+          # mkdir -p "${SOURCE}"
+          # while IFS= read -r LINE
+          # do
+          #   sudo cp -a --parent "${LINE}" "${SOURCE}"
+          # done < "${{ runner.temp }}"/snapshots/snapshot_new_files.txt
+          # ls -lha "${SOURCE}"
+          # echo ""
+          # sudo du -sh "${SOURCE}" || true
+          # echo "# --------------------------------------------------------"
+
+      - name: Lint
+        working-directory: ${{github.workspace}}
+        run: |
+          clang-format-18 --dry-run -Werror src/*.cpp test/*.cpp
+          clang-tidy src/*.cpp test/*.cpp -p ./build/compile-commands.json
 
       - name: Configure
         working-directory: ${{github.workspace}}
