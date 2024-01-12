@@ -48,6 +48,10 @@ target_compile_options(${PROJECT_EXECUTABLE} PRIVATE
     $<$<CONFIG:Debug>: -O0 -g -Werror>
     $<$<CONFIG:Release>: -O3>
 )
+target_compile_options(${PROJECT_LIBRARY} PRIVATE
+    $<$<CONFIG:Debug>: -O0 -g -Werror>
+    $<$<CONFIG:Release>: -O3>
+)
 target_compile_definitions(${PROJECT_LIBRARY} PRIVATE
     $<$<CONFIG:Debug>: DEBUG_TEST_MODE>
     $<$<CONFIG:Release>: RELEASE>
@@ -137,7 +141,7 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     target_link_libraries(${PROJECT_TESTS} gtest gtest_main gmock gmock_main)
     target_link_libraries(${PROJECT_TESTS} ${PROJECT_LIBRARY})
 
-    target_compile_options(${PROJECT_TESTS} PRIVATE -O0 -g)
+    target_compile_options(${PROJECT_TESTS} PRIVATE -Wall -Wextra -Wpedantic -g -O0 -Werror)
     target_compile_definitions(${PROJECT_TESTS} PRIVATE DEBUG_TEST_MODE)
 
     # This is so you can do 'make test' to see all your tests run, instead of
