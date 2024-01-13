@@ -266,7 +266,7 @@ Precedence          Operator            Associativity
     }
 */
 
-AST::rvalue *Parser::e0(std::vector<Token *>::iterator &it, CodeBlock *context) {
+AST::rvalue *Parser::e0(std::vector<Token *>::iterator &it) {
     if (Identifier *id = dynamic_cast<Identifier *>(*it)) {
         it++;
         bool isInt = true;
@@ -286,7 +286,7 @@ AST::rvalue *Parser::e0(std::vector<Token *>::iterator &it, CodeBlock *context) 
 }
 
 AST::rvalue *Parser::e1(std::vector<Token *>::iterator &it, CodeBlock *context) {
-    AST::rvalue *temp = e0(it, context);
+    AST::rvalue *temp = e0(it);
 
     if (Punctuation *punc = dynamic_cast<Punctuation *>(*it);
           punc && punc->type == Punctuation::Type::OpenParen) {

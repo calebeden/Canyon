@@ -37,7 +37,7 @@ void Literal::compile(FILE *outfile) {
     fprintf(outfile, "%d", value);
 }
 
-Type Literal::typeCheck(CodeBlock *context) {
+Type Literal::typeCheck([[maybe_unused]] CodeBlock *context) {
     return Type::INT;
 }
 
@@ -250,7 +250,7 @@ void Expression::compile(FILE *outfile) {
     fprintf(outfile, ";\n");
 }
 
-Type Expression::typeCheck(CodeBlock *context, Type returnType) {
+Type Expression::typeCheck(CodeBlock *context, [[maybe_unused]] Type returnType) {
     return rval->typeCheck(context);
 }
 

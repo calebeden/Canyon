@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <string>
 
-const char *const typeStr(Type type) {
+const char *typeStr(Type type) {
     switch (type) {
         case Type::INT: {
             return "int";
@@ -50,10 +50,7 @@ Slice::Slice(const char *const start, size_t len, const char *const source, size
 }
 
 void Slice::show() const {
-    char buf[len + 1];
-    strncpy(buf, start, len);
-    buf[len] = '\0';
-    fprintf(stderr, "%s", buf);
+    fprintf(stderr, "%*.s", static_cast<int>(len), start);
 }
 
 bool Slice::operator==(const std::string &rhs) const {

@@ -30,7 +30,7 @@ enum class Type {
     UNKNOWN,
 };
 
-const char *const typeStr(Type type);
+const char *typeStr(Type type);
 
 struct Slice {
     const char *start;

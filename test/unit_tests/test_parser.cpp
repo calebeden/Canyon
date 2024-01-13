@@ -23,10 +23,10 @@ struct EmptyRvalue : public rvalue {
     virtual void show() {
     }
 
-    virtual void compile(FILE *outfile) {
+    virtual void compile([[maybe_unused]] FILE *outfile) {
     }
 
-    virtual Type typeCheck(CodeBlock *context) {
+    virtual Type typeCheck([[maybe_unused]] CodeBlock *context) {
         return Type::UNKNOWN;
     }
 };
@@ -38,10 +38,10 @@ struct EmptyStatement : public Statement {
     virtual void show() {
     }
 
-    virtual void compile(FILE *outfile) {
+    virtual void compile([[maybe_unused]] FILE *outfile) {
     }
 
-    virtual Type typeCheck(CodeBlock *context, Type returnType) {
+    virtual Type typeCheck([[maybe_unused]] CodeBlock *context, [[maybe_unused]] Type returnType) {
         return Type::UNKNOWN;
     }
 };
@@ -63,7 +63,7 @@ TEST(test_parser, test_parseModule) {
     AST::Function *function;
     EXPECT_CALL(p, parseFunctions)
           .WillOnce(::testing::Invoke(
-                [&function](std::vector<Token *> *tokens, AST::AST *ast) {
+                [&function]([[maybe_unused]] std::vector<Token *> *tokens, [[maybe_unused]] AST::AST *ast) {
                     function = new EmptyFunction(ast);
                     ast->functions["canyonMain"] = function;
                 }));
@@ -105,7 +105,7 @@ TEST(test_parser, test_parseFunctions) {
           .WillOnce(::testing::DoDefault())
           .WillOnce(::testing::DoDefault())
           .WillOnce(::testing::Invoke(
-                [](std::vector<Token *>::iterator &it, AST::AST *ast) { it++; }));
+                [](std::vector<Token *>::iterator &it, [[maybe_unused]] AST::AST *ast) { it++; }));
 
     p.parseFunctions(&tokens, ast);
 }
@@ -136,13 +136,13 @@ TEST(test_parser, test_parseFunction) {
     param = new Identifier(Slice("x", 1, "", 0, 0));
     EXPECT_CALL(p1a, parseParameters)
           .WillOnce(::testing::Invoke(
-                [param](std::vector<Token *>::iterator &it, AST::Function *function) {
+                [param]([[maybe_unused]] std::vector<Token *>::iterator &it, AST::Function *function) {
                     function->parameters.push_back({param, Type::INT});
                 }));
     statement = new EmptyStatement;
     EXPECT_CALL(p1a, parseBlock)
           .WillOnce(::testing::Invoke(
-                [statement](std::vector<Token *>::iterator &it, AST::CodeBlock *context) {
+                [statement]([[maybe_unused]] std::vector<Token *>::iterator &it, AST::CodeBlock *context) {
                     context->statements.push_back(statement);
                 }));
     it = tokens.begin();
@@ -175,13 +175,13 @@ TEST(test_parser, test_parseFunction) {
     param = new Identifier(Slice("x", 1, "", 0, 0));
     EXPECT_CALL(p1b, parseParameters)
           .WillOnce(::testing::Invoke(
-                [param](std::vector<Token *>::iterator &it, AST::Function *function) {
+                [param]([[maybe_unused]] std::vector<Token *>::iterator &it, AST::Function *function) {
                     function->parameters.push_back({param, Type::INT});
                 }));
     statement = new EmptyStatement;
     EXPECT_CALL(p1b, parseBlock)
           .WillOnce(::testing::Invoke(
-                [statement](std::vector<Token *>::iterator &it, AST::CodeBlock *context) {
+                [statement]([[maybe_unused]] std::vector<Token *>::iterator &it, AST::CodeBlock *context) {
                     context->statements.push_back(statement);
                 }));
     it = tokens.begin();
@@ -471,7 +471,7 @@ TEST(test_parser, test_parseBlock) {
           .WillOnce(::testing::Return(statement6))
           .WillOnce(::testing::Return(statement7))
           .WillOnce(::testing::Invoke([statement8](std::vector<Token *>::iterator &it,
-                                            AST::CodeBlock *context) -> AST::Statement * {
+                                            [[maybe_unused]] AST::CodeBlock *context) -> AST::Statement * {
               it++;
               return statement8;
           }));
@@ -531,7 +531,7 @@ TEST(test_parser, test_parseStatement) {
     toReturn = new EmptyRvalue;
     EXPECT_CALL(p1, parseRvalue)
           .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
-                                            AST::CodeBlock *context) -> rvalue * {
+                                            [[maybe_unused]] AST::CodeBlock *context) -> rvalue * {
               it++;
               return toReturn;
           }));
@@ -574,7 +574,7 @@ TEST(test_parser, test_parseStatement) {
     toReturn = new EmptyRvalue;
     EXPECT_CALL(p3, parseRvalue)
           .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
-                                            AST::CodeBlock *context) -> rvalue * {
+                                            [[maybe_unused]] AST::CodeBlock *context) -> rvalue * {
               it++;
               return toReturn;
           }));
@@ -604,7 +604,7 @@ TEST(test_parser, test_parseStatement) {
     toReturn = new EmptyRvalue;
     EXPECT_CALL(p4, parseRvalue)
           .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
-                                            AST::CodeBlock *context) -> rvalue * {
+                                            [[maybe_unused]] AST::CodeBlock *context) -> rvalue * {
               it++;
               return toReturn;
           }));
@@ -642,7 +642,7 @@ TEST(test_parser, test_parseStatement) {
           new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
     EXPECT_CALL(p6, parseRvalue)
           .WillOnce(::testing::Invoke([](std::vector<Token *>::iterator &it,
-                                            AST::CodeBlock *context) -> rvalue * {
+                                            [[maybe_unused]] AST::CodeBlock *context) -> rvalue * {
               it++;
               return new Variable(new Identifier(Slice("x", 1, "", 0, 0)));
           }));
@@ -667,7 +667,7 @@ TEST(test_parser, test_parseStatement) {
           new Literal(new Identifier(Slice("1", 1, "", 0, 0))));
     EXPECT_CALL(p7, parseRvalue)
           .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
-                                            AST::CodeBlock *context) -> rvalue * {
+                                            [[maybe_unused]] AST::CodeBlock *context) -> rvalue * {
               it++;
               return toReturn;
           }));
@@ -857,7 +857,7 @@ TEST(test_parser, test_e0) {
     s = Slice(identifier, strlen(identifier), "", 0, 0);
     tokens.push_back(new Identifier(s));
     it = tokens.begin();
-    rval = p.e0(it, nullptr);
+    rval = p.e0(it);
     EXPECT_EQ(it, tokens.end());
     var = dynamic_cast<Variable *>(rval);
     EXPECT_NE(var, nullptr);
@@ -874,7 +874,7 @@ TEST(test_parser, test_e0) {
     s = Slice(identifier, strlen(identifier), "", 0, 0);
     tokens.push_back(new Identifier(s));
     it = tokens.begin();
-    rval = p.e0(it, nullptr);
+    rval = p.e0(it);
     EXPECT_EQ(it, tokens.end());
     val = dynamic_cast<Literal *>(rval);
     EXPECT_NE(val, nullptr);
@@ -888,7 +888,7 @@ TEST(test_parser, test_e0) {
     s = Slice(identifier, strlen(identifier), "", 0, 0);
     tokens.push_back(new Identifier(s));
     it = tokens.begin();
-    rval = p.e0(it, nullptr);
+    rval = p.e0(it);
     EXPECT_EQ(it, tokens.end());
     var = dynamic_cast<Variable *>(rval);
     EXPECT_NE(var, nullptr);
@@ -905,7 +905,7 @@ TEST(test_parser, test_e0) {
     s = Slice(identifier, strlen(identifier), "", 0, 0);
     tokens.push_back(new Primitive(s, Type::INT));
     it = tokens.begin();
-    rval = p.e0(it, nullptr);
+    rval = p.e0(it);
     // Should not have advanced the iterator if it was not an identifier
     EXPECT_EQ(it, tokens.begin());
     EXPECT_EQ(rval, nullptr);
@@ -914,8 +914,7 @@ TEST(test_parser, test_e0) {
 TEST(test_parser, test_e1) {
     class MockParser : public Parser {
     public:
-        MOCK_METHOD(AST::rvalue *, e0,
-              (std::vector<Token *>::iterator & it, AST::CodeBlock *context));
+        MOCK_METHOD(AST::rvalue *, e0, (std::vector<Token *>::iterator & it));
         MOCK_METHOD(AST::rvalue *, parseRvalue,
               (std::vector<Token *>::iterator & it, AST::CodeBlock *context));
     };

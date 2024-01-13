@@ -95,10 +95,9 @@ private:
      * @param it a reference to the iterator of Tokens to use. Expected to point to the
      * first token of the expression when this function is called. When this function
      * returns it will point to the token IMMEDIATELY AFTER the rvalue
-     * @param context the AST::CodeBlock in which the current expression occurs
      * @return the parsed rvalue
      */
-    mockable AST::rvalue *e0(std::vector<Token *>::iterator &it, AST::CodeBlock *context);
+    mockable AST::rvalue *e0(std::vector<Token *>::iterator &it);
     /**
      * @brief () - grouping for precedence and function calls
      *
