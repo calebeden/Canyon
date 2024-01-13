@@ -70,8 +70,8 @@ jobs:
       - name: Lint
         working-directory: ${{github.workspace}}
         run: |
-          clang-format-18 --dry-run -Werror src/*.cpp test/*.cpp
-          clang-tidy src/*.cpp test/*.cpp -p ./build/compile-commands.json
+          clang-format-18 --dry-run -Werror src/*.cpp test/unit_tests/*.cpp
+          clang-tidy src/*.cpp test/unit_tests/*.cpp -p ./build/compile-commands.json
 
       - name: Configure
         working-directory: ${{github.workspace}}
