@@ -415,7 +415,7 @@ void CodeBlock::typeCheck(Type returnType) const {
 Function::Function(AST *ast) : body(new CodeBlock(ast)) {
 }
 
-void Function::compile(FILE *outfile, std::string name) const {
+void Function::compile(FILE *outfile, const std::string &name) const {
 	Primitive::compile(outfile, type);
 	fprintf(outfile, " %s(", name.c_str());
 	size_t size = parameters.size();
@@ -437,7 +437,7 @@ void Function::compile(FILE *outfile, std::string name) const {
 	fprintf(outfile, "}\n");
 }
 
-void Function::forward(FILE *outfile, std::string name) const {
+void Function::forward(FILE *outfile, const std::string &name) const {
 	Primitive::compile(outfile, type);
 	fprintf(outfile, " %s(", name.c_str());
 	size_t size = parameters.size();

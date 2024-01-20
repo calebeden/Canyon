@@ -167,8 +167,8 @@ struct Function {
 	Type type = Type::UNKNOWN;
 	std::vector<std::pair<Identifier *, Type>> parameters;
 	explicit Function(AST *ast);
-	virtual void compile(FILE *outfile, std::string name) const;
-	virtual void forward(FILE *outfile, std::string name) const;
+	virtual void compile(FILE *outfile, const std::string &name) const;
+	virtual void forward(FILE *outfile, const std::string &name) const;
 	virtual void resolve();
 	void typeCheck() const;
 };
