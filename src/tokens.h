@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <typeinfo>
@@ -30,7 +31,7 @@ enum class Type {
 	UNKNOWN,
 };
 
-const char *typeStr(Type type);
+std::ostream &operator<<(std::ostream &os, const Type &type);
 
 struct Slice {
 	const char *start;
@@ -48,19 +49,20 @@ struct Slice {
 	      size_t row, size_t col);
 	Slice(const char *const start, size_t len, const char *const source, size_t row,
 	      size_t col);
-	void show() const;
 	bool operator==(const std::string &rhs) const;
 	bool operator==(const Slice &other) const;
 	bool operator==(const char *const other) const;
 	operator std::string() const;
 };
 
+std::ostream &operator<<(std::ostream &os, const Slice &slice);
+
 struct Token {
 	const char *source;
 	size_t row;
 	size_t col;
 
-	virtual void show() const;
+	virtual void print(std::ostream &os) const = 0;
 	mockable void error(const char *const error, ...) const __attribute__((noreturn));
 protected:
 	Token(const char *const source, size_t row, size_t col);
@@ -73,16 +75,15 @@ struct Keyword : public Token {
 	};
 	Type type;
 	Keyword(Slice s, Type type);
+	virtual void print(std::ostream &os) const;
 };
 
 struct Primitive : public Token {
 	Type type;
 	Primitive(Slice s, Type type);
-	virtual void show();
-	void compile(FILE *outfile);
-
-	static void show(Type t);
-	static void compile(FILE *outfile, Type t);
+	virtual void print(std::ostream &os) const;
+	void compile(std::ostream &outfie);
+	static void compile(std::ostream &outfile, Type t);
 };
 
 struct Punctuation : public Token {
@@ -102,15 +103,14 @@ struct Punctuation : public Token {
 	};
 	Type type;
 	Punctuation(Slice s, Type type);
+	virtual void print(std::ostream &os) const;
 };
 
 struct Identifier : public Token {
 	Slice s;
-
 	explicit Identifier(Slice s);
-
-	virtual void show();
-	void compile(FILE *outfile);
+	virtual void print(std::ostream &os) const;
+	void compile(std::ostream &outfile);
 };
 
 struct Hasher {

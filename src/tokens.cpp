@@ -1,40 +1,51 @@
 #include "tokens.h"
 
 #include <cstdarg>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
-const char *typeStr(Type type) {
+std::ostream &operator<<(std::ostream &os, const Type &type) {
 	switch (type) {
 		case Type::INT: {
-			return "int";
+			os << "int";
+			return os;
 		}
 		case Type::BYTE: {
-			return "byte";
+			os << "byte";
+			return os;
 		}
 		case Type::SHORT: {
-			return "short";
+			os << "short";
+			return os;
 		}
 		case Type::LONG: {
-			return "long";
+			os << "long";
+			return os;
 		}
 		case Type::FLOAT: {
-			return "float";
+			os << "float";
+			return os;
 		}
 		case Type::DOUBLE: {
-			return "double";
+			os << "double";
+			return os;
 		}
 		case Type::BOOL: {
-			return "bool";
+			os << "bool";
+			return os;
 		}
 		case Type::CHAR: {
-			return "char";
+			os << "char";
+			return os;
 		}
 		case Type::VOID: {
-			return "void";
+			os << "void";
+			return os;
 		}
 		default: {
-			return "UNKNOWN";
+			os << "UNKNOWN";
+			return os;
 		}
 	}
 }
@@ -47,10 +58,6 @@ Slice::Slice(const char *const start, const char *const end, const char *const s
 Slice::Slice(const char *const start, size_t len, const char *const source, size_t row,
       size_t col)
     : start(start), len(len), row(row), col(col), source(source) {
-}
-
-void Slice::show() const {
-	fprintf(stderr, "%*.s", static_cast<int>(len), start);
 }
 
 bool Slice::operator==(const std::string &rhs) const {
@@ -83,8 +90,9 @@ Slice::operator std::string() const {
 	return std::string(start, len);
 }
 
-void Token::show() const {
-	fprintf(stderr, "Class: %s\n", typeid(*this).name());
+std::ostream &operator<<(std::ostream &os, const Slice &slice) {
+	os.write(slice.start, slice.len);
+	return os;
 }
 
 Token::Token(const char *const source, size_t row, size_t col)
@@ -104,102 +112,116 @@ void Token::error(const char *const format, ...) const {
 Keyword::Keyword(Slice s, Type type) : Token(s.source, s.row, s.col), type(type) {
 }
 
-Primitive::Primitive(Slice s, Type type) : Token(s.source, s.row, s.col), type(type) {
-}
-
-void Primitive::show() {
-	fprintf(stderr, "Primitive: %s", typeStr(type));
-}
-
-void Primitive::compile(FILE *outfile) {
+void Keyword::print(std::ostream &os) const {
+	os << "Keyword: ";
 	switch (type) {
-		case Type::INT: {
-			fprintf(outfile, "int");
-			return;
-		}
-		case Type::BYTE: {
-			fprintf(outfile, "signed char");
-			return;
-		}
-		case Type::SHORT: {
-			fprintf(outfile, "short");
-			return;
-		}
-		case Type::LONG: {
-			fprintf(outfile, "long");
-			return;
-		}
-		case Type::FLOAT: {
-			fprintf(outfile, "float");
-			return;
-		}
-		case Type::DOUBLE: {
-			fprintf(outfile, "double");
-			return;
-		}
-		case Type::BOOL: {
-			fprintf(outfile, "bool");
-			return;
-		}
-		case Type::CHAR: {
-			fprintf(outfile, "unsigned char");
-			return;
-		}
 		case Type::VOID: {
-			fprintf(outfile, "void");
+			os << "void";
+			return;
+		}
+		case Type::RETURN: {
+			os << "return";
 			return;
 		}
 		default: {
-			fprintf(stderr, "Unknown type");
+			os << "UNKNOWN";
+			return;
+		}
+	}
+}
+
+Primitive::Primitive(Slice s, Type type) : Token(s.source, s.row, s.col), type(type) {
+}
+
+void Primitive::print(std::ostream &os) const {
+	os << "Primitive: " << type;
+}
+
+void Primitive::compile(std::ostream &outfile) {
+	switch (type) {
+		case Type::INT: {
+			outfile << "int";
+			return;
+		}
+		case Type::BYTE: {
+			outfile << "signed char";
+			return;
+		}
+		case Type::SHORT: {
+			outfile << "short";
+			return;
+		}
+		case Type::LONG: {
+			outfile << "long";
+			return;
+		}
+		case Type::FLOAT: {
+			outfile << "float";
+			return;
+		}
+		case Type::DOUBLE: {
+			outfile << "double";
+			return;
+		}
+		case Type::BOOL: {
+			outfile << "bool";
+			return;
+		}
+		case Type::CHAR: {
+			outfile << "unsigned char";
+			return;
+		}
+		case Type::VOID: {
+			outfile << "void";
+			return;
+		}
+		default: {
+			std::cerr << "Error compiling primitive: Unknown type\n";
 			exit(EXIT_FAILURE);
 		}
 	}
 }
 
-void Primitive::show(Type t) {
-	fprintf(stderr, "Primitive: %s", typeStr(t));
-}
-
-void Primitive::compile(FILE *outfile, Type t) {
+void Primitive::compile(std::ostream &outfile, Type t) {
 	switch (t) {
 		case Type::INT: {
-			fprintf(outfile, "int");
+			outfile << "int";
 			return;
 		}
 		case Type::BYTE: {
-			fprintf(outfile, "signed char");
+			outfile << "signed char";
 			return;
 		}
 		case Type::SHORT: {
-			fprintf(outfile, "short");
+			outfile << "short";
 			return;
 		}
 		case Type::LONG: {
-			fprintf(outfile, "long");
+			outfile << "long";
 			return;
 		}
 		case Type::FLOAT: {
-			fprintf(outfile, "float");
+			outfile << "float";
 			return;
 		}
 		case Type::DOUBLE: {
-			fprintf(outfile, "double");
+			outfile << "double";
 			return;
 		}
 		case Type::BOOL: {
-			fprintf(outfile, "bool");
+			outfile << "bool";
 			return;
 		}
 		case Type::CHAR: {
-			fprintf(outfile, "unsigned char");
+			outfile << "unsigned char";
 			return;
 		}
 		case Type::VOID: {
-			fprintf(outfile, "void");
+			outfile << "void";
 			return;
 		}
 		default: {
-			fprintf(stderr, "Unknown type");
+			std::cerr << "Error compiling primitive: Unknown type\n";
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -208,17 +230,72 @@ void Primitive::compile(FILE *outfile, Type t) {
 Punctuation::Punctuation(Slice s, Type type) : Token(s.source, s.row, s.col), type(type) {
 }
 
+void Punctuation::print(std::ostream &os) const {
+	switch (type) {
+		case Type::OpenParen: {
+			os << '(';
+			return;
+		}
+		case Type::CloseParen: {
+			os << ')';
+			return;
+		}
+		case Type::Semicolon: {
+			os << ';';
+			return;
+		}
+		case Type::OpenBrace: {
+			os << '{';
+			return;
+		}
+		case Type::CloseBrace: {
+			os << '}';
+			return;
+		}
+		case Type::Comma: {
+			os << ',';
+			return;
+		}
+		case Type::Equals: {
+			os << '=';
+			return;
+		}
+		case Type::Plus: {
+			os << '+';
+			return;
+		}
+		case Type::Minus: {
+			os << '-';
+			return;
+		}
+		case Type::Times: {
+			os << '*';
+			return;
+		}
+		case Type::Divide: {
+			os << '/';
+			return;
+		}
+		case Type::Mod: {
+			os << '%';
+			return;
+		}
+		default: {
+			os << "UNKNOWN PUNCTUATION";
+			return;
+		}
+	}
+}
+
 Identifier::Identifier(Slice s) : Token(s.source, s.row, s.col), s(s) {
 }
 
-void Identifier::show() {
-	fprintf(stderr, "Identifier: ");
-	s.show();
-	fprintf(stderr, "\n");
+void Identifier::print(std::ostream &os) const {
+	os << "Identifier: " << s << '\n';
 }
 
-void Identifier::compile(FILE *outfile) {
-	fprintf(outfile, "%.*s", static_cast<int>(s.len), s.start);
+void Identifier::compile(std::ostream &outfile) {
+	outfile << s;
 }
 
 std::size_t Hasher::operator()(Identifier *const id) const {

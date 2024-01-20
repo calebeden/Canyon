@@ -22,7 +22,7 @@ AST::AST *Parser::parseModule(std::vector<Token *> *tokens) {
 	AST::AST *ast = new AST::AST();
 	parseFunctions(tokens, ast);
 	if (ast->functions.find("canyonMain") == ast->functions.end()) {
-		fprintf(stderr, "Parse error: no main function\n");
+		std::cerr << "Parse error: no main function\n";
 		exit(EXIT_FAILURE);
 	}
 	ast->resolve();
@@ -62,7 +62,7 @@ void Parser::parseFunction(std::vector<Token *>::iterator &it, AST::AST *ast) {
 	parseBlock(it, function->body);
 
 	for (Statement *s : function->body->statements) {
-		s->show();
+		s->print(std::cerr);
 	}
 	function->type = type;
 	ast->functions[name] = function;

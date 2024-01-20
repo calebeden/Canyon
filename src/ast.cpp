@@ -5,6 +5,7 @@
 
 #include <cstdarg>
 #include <cstring>
+#include <iostream>
 
 namespace AST {
 
@@ -26,18 +27,18 @@ Literal::Literal(Identifier *value) : rvalue(value->source, value->row, value->c
 	char *end = nullptr;
 	long val = strtol(value->s.start, &end, 10);
 	if (end != value->s.start + value->s.len) {
-		fprintf(stderr, "Error creating Literal: Expected an integer\n");
+		std::cerr << "Error creating Literal: Expected an integer\n";
 		exit(EXIT_FAILURE);
 	}
 	this->value = static_cast<int32_t>(val);
 }
 
-void Literal::show() const {
-	fprintf(stderr, "%d", value);
+void Literal::print(std::ostream &os) const {
+	os << value;
 }
 
-void Literal::compile(FILE *outfile) const {
-	fprintf(outfile, "%d", value);
+void Literal::compile(std::ostream &outfile) const {
+	outfile << value;
 }
 
 Type Literal::typeCheck([[maybe_unused]] const CodeBlock *context) const {
@@ -48,13 +49,11 @@ Variable::Variable(Identifier *variable)
     : rvalue(variable->source, variable->row, variable->col), variable(variable) {
 }
 
-void Variable::show() const {
-	fprintf(stderr, "Variable: ");
-	variable->show();
-	fprintf(stderr, "\n");
+void Variable::print(std::ostream &os) const {
+	os << "Variable: " << variable->s << '\n';
 }
 
-void Variable::compile(FILE *outfile) const {
+void Variable::compile(std::ostream &outfile) const {
 	variable->compile(outfile);
 }
 
@@ -67,16 +66,14 @@ Assignment::Assignment(Identifier *variable, rvalue *expression)
       expression(expression) {
 }
 
-void Assignment::show() const {
-	fprintf(stderr, "Assignment Statement: ");
-	variable->show();
-	fprintf(stderr, " = ");
-	expression->show();
-	fprintf(stderr, "\n");
+void Assignment::print(std::ostream &os) const {
+	os << "Assignment Statement: " << variable->s << " = ";
+	expression->print(os);
+	os << '\n';
 }
 
-void Assignment::compile(FILE *outfile) const {
-	fprintf(outfile, "%.*s=", static_cast<int>(variable->s.len), variable->s.start);
+void Assignment::compile(std::ostream &outfile) const {
+	outfile << variable->s << '=';
 	expression->compile(outfile);
 }
 
@@ -94,20 +91,20 @@ Addition::Addition(rvalue *operand1, rvalue *operand2)
       operand2(operand2) {
 }
 
-void Addition::show() const {
-	fprintf(stderr, "(");
-	operand1->show();
-	fprintf(stderr, " + ");
-	operand2->show();
-	fprintf(stderr, ")");
+void Addition::print(std::ostream &os) const {
+	os << '(';
+	operand1->print(os);
+	os << " + ";
+	operand2->print(os);
+	os << ')';
 }
 
-void Addition::compile(FILE *outfile) const {
-	fprintf(outfile, "(");
+void Addition::compile(std::ostream &outfile) const {
+	outfile << '(';
 	operand1->compile(outfile);
-	fprintf(outfile, "+");
+	outfile << '+';
 	operand2->compile(outfile);
-	fprintf(outfile, ")");
+	outfile << ')';
 }
 
 Type Addition::typeCheck(const CodeBlock *context) const {
@@ -124,20 +121,20 @@ Subtraction::Subtraction(rvalue *operand1, rvalue *operand2)
       operand2(operand2) {
 }
 
-void Subtraction::show() const {
-	fprintf(stderr, "(");
-	operand1->show();
-	fprintf(stderr, " - ");
-	operand2->show();
-	fprintf(stderr, ")");
+void Subtraction::print(std::ostream &os) const {
+	os << '(';
+	operand1->print(os);
+	os << " - ";
+	operand2->print(os);
+	os << ')';
 }
 
-void Subtraction::compile(FILE *outfile) const {
-	fprintf(outfile, "(");
+void Subtraction::compile(std::ostream &outfile) const {
+	outfile << '(';
 	operand1->compile(outfile);
-	fprintf(outfile, "-");
+	outfile << '-';
 	operand2->compile(outfile);
-	fprintf(outfile, ")");
+	outfile << ')';
 }
 
 Type Subtraction::typeCheck(const CodeBlock *context) const {
@@ -154,20 +151,20 @@ Multiplication::Multiplication(rvalue *operand1, rvalue *operand2)
       operand2(operand2) {
 }
 
-void Multiplication::show() const {
-	fprintf(stderr, "(");
-	operand1->show();
-	fprintf(stderr, " * ");
-	operand2->show();
-	fprintf(stderr, ")");
+void Multiplication::print(std::ostream &os) const {
+	os << '(';
+	operand1->print(os);
+	os << " * ";
+	operand2->print(os);
+	os << ')';
 }
 
-void Multiplication::compile(FILE *outfile) const {
-	fprintf(outfile, "(");
+void Multiplication::compile(std::ostream &outfile) const {
+	outfile << '(';
 	operand1->compile(outfile);
-	fprintf(outfile, "*");
+	outfile << '*';
 	operand2->compile(outfile);
-	fprintf(outfile, ")");
+	outfile << ')';
 }
 
 Type Multiplication::typeCheck(const CodeBlock *context) const {
@@ -184,20 +181,20 @@ Division::Division(rvalue *operand1, rvalue *operand2)
       operand2(operand2) {
 }
 
-void Division::show() const {
-	fprintf(stderr, "(");
-	operand1->show();
-	fprintf(stderr, " / ");
-	operand2->show();
-	fprintf(stderr, ")");
+void Division::print(std::ostream &os) const {
+	os << '(';
+	operand1->print(os);
+	os << " / ";
+	operand2->print(os);
+	os << ')';
 }
 
-void Division::compile(FILE *outfile) const {
-	fprintf(outfile, "(");
+void Division::compile(std::ostream &outfile) const {
+	outfile << '(';
 	operand1->compile(outfile);
-	fprintf(outfile, "/");
+	outfile << '/';
 	operand2->compile(outfile);
-	fprintf(outfile, ")");
+	outfile << ')';
 }
 
 Type Division::typeCheck(const CodeBlock *context) const {
@@ -214,20 +211,20 @@ Modulo::Modulo(rvalue *operand1, rvalue *operand2)
       operand2(operand2) {
 }
 
-void Modulo::show() const {
-	fprintf(stderr, "(");
-	operand1->show();
-	fprintf(stderr, " %% ");
-	operand2->show();
-	fprintf(stderr, ")");
+void Modulo::print(std::ostream &os) const {
+	os << '(';
+	operand1->print(os);
+	os << " % ";
+	operand2->print(os);
+	os << ')';
 }
 
-void Modulo::compile(FILE *outfile) const {
-	fprintf(outfile, "(");
+void Modulo::compile(std::ostream &outfile) const {
+	outfile << '(';
 	operand1->compile(outfile);
-	fprintf(outfile, "%%");
+	outfile << '%';
 	operand2->compile(outfile);
-	fprintf(outfile, ")");
+	outfile << ')';
 }
 
 Type Modulo::typeCheck(const CodeBlock *context) const {
@@ -242,15 +239,15 @@ Type Modulo::typeCheck(const CodeBlock *context) const {
 Expression::Expression(rvalue *rval) : rval(rval) {
 }
 
-void Expression::show() const {
-	fprintf(stderr, "Expression Statement: ");
-	rval->show();
-	fprintf(stderr, "\n");
+void Expression::print(std::ostream &os) const {
+	os << "Expression Statement: ";
+	rval->print(os);
+	os << '\n';
 }
 
-void Expression::compile(FILE *outfile) const {
+void Expression::compile(std::ostream &outfile) const {
 	rval->compile(outfile);
-	fprintf(outfile, ";\n");
+	outfile << ";\n";
 }
 
 Type Expression::typeCheck(const CodeBlock *context,
@@ -262,33 +259,33 @@ FunctionCall::FunctionCall(Variable *name)
     : rvalue(name->source, name->row, name->col), name(name) {
 }
 
-void FunctionCall::show() const {
-	fprintf(stderr, "Function Call: ");
-	name->show();
-	fprintf(stderr, "(");
+void FunctionCall::print(std::ostream &os) const {
+	os << "Function Call: ";
+	name->print(os);
+	os << '(';
 	size_t size = arguments.size();
 	if (size > 0) {
 		for (size_t i = 0; i < arguments.size() - 1; i++) {
-			arguments[i]->show();
-			fprintf(stderr, ",");
+			arguments[i]->print(os);
+			os << ',';
 		}
-		arguments[size - 1]->show();
+		arguments[size - 1]->print(os);
 	}
-	fprintf(stderr, ")");
+	os << ')';
 }
 
-void FunctionCall::compile(FILE *outfile) const {
+void FunctionCall::compile(std::ostream &outfile) const {
 	name->compile(outfile);
-	fprintf(outfile, "(");
+	outfile << '(';
 	size_t size = arguments.size();
 	if (size > 0) {
 		for (size_t i = 0; i < size - 1; i++) {
 			arguments[i]->compile(outfile);
-			fprintf(outfile, ",");
+			outfile << ',';
 		}
 		arguments[size - 1]->compile(outfile);
 	}
-	fprintf(outfile, ")");
+	outfile << ')';
 }
 
 Type FunctionCall::typeCheck(const CodeBlock *context) const {
@@ -308,23 +305,23 @@ Type FunctionCall::typeCheck(const CodeBlock *context) const {
 Return::Return(rvalue *rval, Token *token) : rval(rval), token(token) {
 }
 
-void Return::show() const {
+void Return::print(std::ostream &os) const {
 	if (rval == nullptr) {
-		fprintf(stderr, "Return (void)\n");
+		os << "Return (void)\n";
 	} else {
-		fprintf(stderr, "Return: ");
-		rval->show();
-		fprintf(stderr, "\n");
+		os << "Return: ";
+		rval->print(os);
+		os << '\n';
 	}
 }
 
-void Return::compile(FILE *outfile) const {
+void Return::compile(std::ostream &outfile) const {
 	if (rval == nullptr) {
-		fprintf(outfile, "return;\n");
+		outfile << "return;\n";
 	} else {
-		fprintf(outfile, "return ");
+		outfile << "return ";
 		rval->compile(outfile);
-		fprintf(outfile, ";\n");
+		outfile << ";\n";
 	}
 }
 
@@ -348,21 +345,21 @@ CodeBlock::CodeBlock(AST *global)
       global(global) {
 }
 
-void CodeBlock::compile(FILE *outfile) const {
+void CodeBlock::compile(std::ostream &outfile) const {
 	for (std::pair<Identifier *, std::tuple<Type, bool>> var : *locals) {
 		Identifier *name = var.first;
 		std::tuple<Type, bool> info = var.second;
 		if (!std::get<1>(info)) {
 			Type type = std::get<0>(info);
-			fprintf(outfile, "    ");
+			outfile << "    ";
 			Primitive::compile(outfile, type);
-			fprintf(outfile, " ");
+			outfile << " ";
 			name->compile(outfile);
-			fprintf(outfile, ";\n");
+			outfile << ";\n";
 		}
 	}
 	for (Statement *s : statements) {
-		fprintf(outfile, "    ");
+		outfile << "    ";
 		s->compile(outfile);
 	}
 }
@@ -415,46 +412,46 @@ void CodeBlock::typeCheck(Type returnType) const {
 Function::Function(AST *ast) : body(new CodeBlock(ast)) {
 }
 
-void Function::compile(FILE *outfile, const std::string &name) const {
+void Function::compile(std::ostream &outfile, const std::string &name) const {
 	Primitive::compile(outfile, type);
-	fprintf(outfile, " %s(", name.c_str());
+	outfile << ' ' << name << '(';
 	size_t size = parameters.size();
 	if (size > 0) {
 		for (size_t i = 0; i < size - 1; i++) {
 			std::pair<Identifier *, Type> param = parameters[i];
 			Primitive::compile(outfile, param.second);
-			fprintf(outfile, " ");
+			outfile << ' ';
 			param.first->compile(outfile);
-			fprintf(outfile, ",");
+			outfile << ',';
 		}
 		std::pair<Identifier *, Type> param = parameters[size - 1];
 		Primitive::compile(outfile, param.second);
-		fprintf(outfile, " ");
+		outfile << ' ';
 		param.first->compile(outfile);
 	}
-	fprintf(outfile, "){\n");
+	outfile << "){\n";
 	body->compile(outfile);
-	fprintf(outfile, "}\n");
+	outfile << "}\n";
 }
 
-void Function::forward(FILE *outfile, const std::string &name) const {
+void Function::forward(std::ostream &outfile, const std::string &name) const {
 	Primitive::compile(outfile, type);
-	fprintf(outfile, " %s(", name.c_str());
+	outfile << ' ' << name << '(';
 	size_t size = parameters.size();
 	if (size > 0) {
 		for (size_t i = 0; i < size - 1; i++) {
 			std::pair<Identifier *, Type> param = parameters[i];
 			Primitive::compile(outfile, param.second);
-			fprintf(outfile, " ");
+			outfile << ' ';
 			param.first->compile(outfile);
-			fprintf(outfile, ",");
+			outfile << ',';
 		}
 		std::pair<Identifier *, Type> param = parameters[size - 1];
 		Primitive::compile(outfile, param.second);
-		fprintf(outfile, " ");
+		outfile << ' ';
 		param.first->compile(outfile);
 	}
-	fprintf(outfile, ");\n");
+	outfile << ");\n";
 }
 
 void Function::resolve() {
@@ -469,16 +466,16 @@ AST::AST() {
 	functions["print"] = new Print(this);
 }
 
-void AST::compile(FILE *outfile) const {
-	fprintf(outfile, "#include <stdio.h>\n");
+void AST::compile(std::ostream &outfile) const {
+	outfile << "#include <stdio.h>\n";
 	// Forward declarations
 	for (std::pair<std::string, Function *> f : functions) {
 		f.second->forward(outfile, f.first);
 	}
-	fprintf(outfile, "int main(int argc, char **argv) {\n"
-	                 "    canyonMain();\n"
-	                 "    return 0;\n"
-	                 "}\n");
+	outfile << "int main(int argc, char **argv) {\n"
+	           "    canyonMain();\n"
+	           "    return 0;\n"
+	           "}\n";
 	// Actual code
 	for (std::pair<std::string, Function *> f : functions) {
 		f.second->compile(outfile, f.first);

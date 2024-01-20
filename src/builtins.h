@@ -5,8 +5,8 @@
 
 struct Print : public AST::Function {
 	explicit Print(AST::AST *ast);
-	void compile(FILE *outfile, const std::string &name) const override;
-	void forward(FILE *outfile, const std::string &name) const override;
+	void compile(std::ostream &outfile, const std::string &name) const override;
+	void forward(std::ostream &outfile, const std::string &name) const override;
 };
 
 #endif

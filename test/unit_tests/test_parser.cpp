@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <vector>
 
 using namespace AST;
@@ -20,10 +21,10 @@ struct EmptyRvalue : public rvalue {
 	EmptyRvalue() : rvalue("", 0, 0) {
 	}
 
-	virtual void show() const {
+	virtual void print([[maybe_unused]] std::ostream &os) const {
 	}
 
-	virtual void compile([[maybe_unused]] FILE *outfile) const {
+	virtual void compile([[maybe_unused]] std::ostream &outfile) const {
 	}
 
 	virtual Type typeCheck([[maybe_unused]] const CodeBlock *context) const {
@@ -35,10 +36,10 @@ struct EmptyStatement : public Statement {
 	EmptyStatement() {
 	}
 
-	virtual void show() const {
+	virtual void print([[maybe_unused]] std::ostream &os) const {
 	}
 
-	virtual void compile([[maybe_unused]] FILE *outfile) const {
+	virtual void compile([[maybe_unused]] std::ostream &outfile) const {
 	}
 
 	virtual Type typeCheck([[maybe_unused]] const CodeBlock *context,

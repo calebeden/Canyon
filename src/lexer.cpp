@@ -18,8 +18,7 @@ std::vector<Token *> *Lexer::tokenize() {
 
 	std::vector<Token *> *tokens = new std::vector<Token *>();
 	for (Slice s : slices) {
-		s.show();
-		fprintf(stderr, "\n");
+		std::cerr << s << '\n';
 		Keyword *keyword = createKeyword(s);
 		if (keyword) {
 			tokens->push_back(keyword);
@@ -39,8 +38,8 @@ std::vector<Token *> *Lexer::tokenize() {
 	}
 
 	for (Token *t : *tokens) {
-		t->show();
-		fprintf(stderr, "\n");
+		t->print(std::cerr);
+		std::cerr << '\n';
 	}
 
 	return tokens;
