@@ -31,8 +31,7 @@ public:
 	 * @param source the name of the source code file
 	 * @param tabSize the width of a tab stop (default = 4)
 	 */
-	Lexer(const char *const program, off_t size, const char *const source,
-	      uint32_t tabSize = 4);
+	Lexer(const char *program, off_t size, const char *source, uint32_t tabSize = 4);
 	/**
 	 * @brief Tokenizes the Canyon source code
 	 *
@@ -56,7 +55,7 @@ private:
 	 * @param c the character to test at
 	 * @returns whether `c` is at the start of a new token
 	 */
-	mockable bool isSep(const char *const c);
+	mockable bool isSep(const char *c);
 
 	mockable Keyword *createKeyword(Slice s);
 	mockable Primitive *createPrimitive(Slice s);
