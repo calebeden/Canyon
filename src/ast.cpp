@@ -3,8 +3,8 @@
 #include "builtins.h"
 #include "tokens.h"
 
+#include <cstdarg>
 #include <cstring>
-#include <stdarg.h>
 
 namespace AST {
 

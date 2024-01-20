@@ -1,6 +1,6 @@
 #include "tokens.h"
 
-#include <stdarg.h>
+#include <cstdarg>
 #include <stdexcept>
 #include <string>
 
