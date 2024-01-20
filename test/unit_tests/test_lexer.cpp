@@ -7,8 +7,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <cstdio>
 #include <cstring>
-#include <stdio.h>
 #include <string>
 #include <vector>
 

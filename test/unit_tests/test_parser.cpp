@@ -9,9 +9,9 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
-#include <stdio.h>
-#include <stdlib.h>
 #include <vector>
 
 using namespace AST;

@@ -1,12 +1,12 @@
 #ifndef TOKENS_H
 #define TOKENS_H
 
+#include <cstddef>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
-#include <stddef.h>
 #include <stdexcept>
-#include <stdlib.h>
 #include <string>
 #include <typeinfo>
 #include <vector>

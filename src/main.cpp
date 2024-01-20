@@ -5,13 +5,13 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
+#include <cctype>
+#include <cerrno>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
-#include <ctype.h>
-#include <errno.h>
 #include <fcntl.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 int main(int argc, char **argv) {
