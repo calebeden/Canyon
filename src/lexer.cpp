@@ -20,24 +20,22 @@ std::vector<Token *> *Lexer::tokenize() {
 	for (Slice s : slices) {
 		s.show();
 		fprintf(stderr, "\n");
-		Token *token;
 		Keyword *keyword = createKeyword(s);
 		if (keyword) {
-			token = keyword;
-		} else {
-			Primitive *primitive = createPrimitive(s);
-			if (primitive) {
-				token = primitive;
-			} else {
-				Punctuation *punctuation = createPunctuation(s);
-				if (punctuation) {
-					token = punctuation;
-				} else {
-					token = createIdentifier(s);
-				}
-			}
+			tokens->push_back(keyword);
+			continue;
 		}
-		tokens->push_back(token);
+		Primitive *primitive = createPrimitive(s);
+		if (primitive) {
+			tokens->push_back(primitive);
+			continue;
+		}
+		Punctuation *punctuation = createPunctuation(s);
+		if (punctuation) {
+			tokens->push_back(punctuation);
+			continue;
+		}
+		tokens->push_back(createIdentifier(s));
 	}
 
 	for (Token *t : *tokens) {
