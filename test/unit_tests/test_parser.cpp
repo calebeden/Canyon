@@ -20,13 +20,13 @@ struct EmptyRvalue : public rvalue {
 	EmptyRvalue() : rvalue("", 0, 0) {
 	}
 
-	virtual void show() {
+	virtual void show() const {
 	}
 
-	virtual void compile([[maybe_unused]] FILE *outfile) {
+	virtual void compile([[maybe_unused]] FILE *outfile) const {
 	}
 
-	virtual Type typeCheck([[maybe_unused]] CodeBlock *context) {
+	virtual Type typeCheck([[maybe_unused]] const CodeBlock *context) const {
 		return Type::UNKNOWN;
 	}
 };
@@ -35,14 +35,14 @@ struct EmptyStatement : public Statement {
 	EmptyStatement() {
 	}
 
-	virtual void show() {
+	virtual void show() const {
 	}
 
-	virtual void compile([[maybe_unused]] FILE *outfile) {
+	virtual void compile([[maybe_unused]] FILE *outfile) const {
 	}
 
-	virtual Type typeCheck([[maybe_unused]] CodeBlock *context,
-	      [[maybe_unused]] Type returnType) {
+	virtual Type typeCheck([[maybe_unused]] const CodeBlock *context,
+	      [[maybe_unused]] Type returnType) const {
 		return Type::UNKNOWN;
 	}
 };

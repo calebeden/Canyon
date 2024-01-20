@@ -12,7 +12,7 @@ rvalue::rvalue(const char *const source, size_t row, size_t col)
     : source(source), row(row), col(col) {
 }
 
-void rvalue::error(const char *const format, ...) {
+void rvalue::error(const char *const format, ...) const {
 	fprintf(stderr, "Error at %s:%ld:%ld: ", source, row, col);
 	va_list args;
 	va_start(args, format);
@@ -32,15 +32,15 @@ Literal::Literal(Identifier *value) : rvalue(value->source, value->row, value->c
 	this->value = static_cast<int32_t>(val);
 }
 
-void Literal::show() {
+void Literal::show() const {
 	fprintf(stderr, "%d", value);
 }
 
-void Literal::compile(FILE *outfile) {
+void Literal::compile(FILE *outfile) const {
 	fprintf(outfile, "%d", value);
 }
 
-Type Literal::typeCheck([[maybe_unused]] CodeBlock *context) {
+Type Literal::typeCheck([[maybe_unused]] const CodeBlock *context) const {
 	return Type::INT;
 }
 
@@ -48,17 +48,17 @@ Variable::Variable(Identifier *variable)
     : rvalue(variable->source, variable->row, variable->col), variable(variable) {
 }
 
-void Variable::show() {
+void Variable::show() const {
 	fprintf(stderr, "Variable: ");
 	variable->show();
 	fprintf(stderr, "\n");
 }
 
-void Variable::compile(FILE *outfile) {
+void Variable::compile(FILE *outfile) const {
 	variable->compile(outfile);
 }
 
-Type Variable::typeCheck(CodeBlock *context) {
+Type Variable::typeCheck(const CodeBlock *context) const {
 	return context->getType(variable);
 }
 
@@ -67,7 +67,7 @@ Assignment::Assignment(Identifier *variable, rvalue *expression)
       expression(expression) {
 }
 
-void Assignment::show() {
+void Assignment::show() const {
 	fprintf(stderr, "Assignment Statement: ");
 	variable->show();
 	fprintf(stderr, " = ");
@@ -75,12 +75,12 @@ void Assignment::show() {
 	fprintf(stderr, "\n");
 }
 
-void Assignment::compile(FILE *outfile) {
+void Assignment::compile(FILE *outfile) const {
 	fprintf(outfile, "%.*s=", (int) variable->s.len, variable->s.start);
 	expression->compile(outfile);
 }
 
-Type Assignment::typeCheck(CodeBlock *context) {
+Type Assignment::typeCheck(const CodeBlock *context) const {
 	Type varType = context->getType(variable);
 	Type expType = expression->typeCheck(context);
 	if (varType != expType) {
@@ -94,7 +94,7 @@ Addition::Addition(rvalue *operand1, rvalue *operand2)
       operand2(operand2) {
 }
 
-void Addition::show() {
+void Addition::show() const {
 	fprintf(stderr, "(");
 	operand1->show();
 	fprintf(stderr, " + ");
@@ -102,7 +102,7 @@ void Addition::show() {
 	fprintf(stderr, ")");
 }
 
-void Addition::compile(FILE *outfile) {
+void Addition::compile(FILE *outfile) const {
 	fprintf(outfile, "(");
 	operand1->compile(outfile);
 	fprintf(outfile, "+");
@@ -110,7 +110,7 @@ void Addition::compile(FILE *outfile) {
 	fprintf(outfile, ")");
 }
 
-Type Addition::typeCheck(CodeBlock *context) {
+Type Addition::typeCheck(const CodeBlock *context) const {
 	Type type1 = operand1->typeCheck(context);
 	Type type2 = operand2->typeCheck(context);
 	if (type1 != type2) {
@@ -124,7 +124,7 @@ Subtraction::Subtraction(rvalue *operand1, rvalue *operand2)
       operand2(operand2) {
 }
 
-void Subtraction::show() {
+void Subtraction::show() const {
 	fprintf(stderr, "(");
 	operand1->show();
 	fprintf(stderr, " - ");
@@ -132,7 +132,7 @@ void Subtraction::show() {
 	fprintf(stderr, ")");
 }
 
-void Subtraction::compile(FILE *outfile) {
+void Subtraction::compile(FILE *outfile) const {
 	fprintf(outfile, "(");
 	operand1->compile(outfile);
 	fprintf(outfile, "-");
@@ -140,7 +140,7 @@ void Subtraction::compile(FILE *outfile) {
 	fprintf(outfile, ")");
 }
 
-Type Subtraction::typeCheck(CodeBlock *context) {
+Type Subtraction::typeCheck(const CodeBlock *context) const {
 	Type type1 = operand1->typeCheck(context);
 	Type type2 = operand2->typeCheck(context);
 	if (type1 != type2) {
@@ -154,7 +154,7 @@ Multiplication::Multiplication(rvalue *operand1, rvalue *operand2)
       operand2(operand2) {
 }
 
-void Multiplication::show() {
+void Multiplication::show() const {
 	fprintf(stderr, "(");
 	operand1->show();
 	fprintf(stderr, " * ");
@@ -162,7 +162,7 @@ void Multiplication::show() {
 	fprintf(stderr, ")");
 }
 
-void Multiplication::compile(FILE *outfile) {
+void Multiplication::compile(FILE *outfile) const {
 	fprintf(outfile, "(");
 	operand1->compile(outfile);
 	fprintf(outfile, "*");
@@ -170,7 +170,7 @@ void Multiplication::compile(FILE *outfile) {
 	fprintf(outfile, ")");
 }
 
-Type Multiplication::typeCheck(CodeBlock *context) {
+Type Multiplication::typeCheck(const CodeBlock *context) const {
 	Type type1 = operand1->typeCheck(context);
 	Type type2 = operand2->typeCheck(context);
 	if (type1 != type2) {
@@ -184,7 +184,7 @@ Division::Division(rvalue *operand1, rvalue *operand2)
       operand2(operand2) {
 }
 
-void Division::show() {
+void Division::show() const {
 	fprintf(stderr, "(");
 	operand1->show();
 	fprintf(stderr, " / ");
@@ -192,7 +192,7 @@ void Division::show() {
 	fprintf(stderr, ")");
 }
 
-void Division::compile(FILE *outfile) {
+void Division::compile(FILE *outfile) const {
 	fprintf(outfile, "(");
 	operand1->compile(outfile);
 	fprintf(outfile, "/");
@@ -200,7 +200,7 @@ void Division::compile(FILE *outfile) {
 	fprintf(outfile, ")");
 }
 
-Type Division::typeCheck(CodeBlock *context) {
+Type Division::typeCheck(const CodeBlock *context) const {
 	Type type1 = operand1->typeCheck(context);
 	Type type2 = operand2->typeCheck(context);
 	if (type1 != type2) {
@@ -214,7 +214,7 @@ Modulo::Modulo(rvalue *operand1, rvalue *operand2)
       operand2(operand2) {
 }
 
-void Modulo::show() {
+void Modulo::show() const {
 	fprintf(stderr, "(");
 	operand1->show();
 	fprintf(stderr, " %% ");
@@ -222,7 +222,7 @@ void Modulo::show() {
 	fprintf(stderr, ")");
 }
 
-void Modulo::compile(FILE *outfile) {
+void Modulo::compile(FILE *outfile) const {
 	fprintf(outfile, "(");
 	operand1->compile(outfile);
 	fprintf(outfile, "%%");
@@ -230,7 +230,7 @@ void Modulo::compile(FILE *outfile) {
 	fprintf(outfile, ")");
 }
 
-Type Modulo::typeCheck(CodeBlock *context) {
+Type Modulo::typeCheck(const CodeBlock *context) const {
 	Type type1 = operand1->typeCheck(context);
 	Type type2 = operand2->typeCheck(context);
 	if (type1 != type2) {
@@ -242,18 +242,19 @@ Type Modulo::typeCheck(CodeBlock *context) {
 Expression::Expression(rvalue *rval) : rval(rval) {
 }
 
-void Expression::show() {
+void Expression::show() const {
 	fprintf(stderr, "Expression Statement: ");
 	rval->show();
 	fprintf(stderr, "\n");
 }
 
-void Expression::compile(FILE *outfile) {
+void Expression::compile(FILE *outfile) const {
 	rval->compile(outfile);
 	fprintf(outfile, ";\n");
 }
 
-Type Expression::typeCheck(CodeBlock *context, [[maybe_unused]] Type returnType) {
+Type Expression::typeCheck(const CodeBlock *context,
+      [[maybe_unused]] Type returnType) const {
 	return rval->typeCheck(context);
 }
 
@@ -261,7 +262,7 @@ FunctionCall::FunctionCall(Variable *name)
     : rvalue(name->source, name->row, name->col), name(name) {
 }
 
-void FunctionCall::show() {
+void FunctionCall::show() const {
 	fprintf(stderr, "Function Call: ");
 	name->show();
 	fprintf(stderr, "(");
@@ -276,7 +277,7 @@ void FunctionCall::show() {
 	fprintf(stderr, ")");
 }
 
-void FunctionCall::compile(FILE *outfile) {
+void FunctionCall::compile(FILE *outfile) const {
 	name->compile(outfile);
 	fprintf(outfile, "(");
 	size_t size = arguments.size();
@@ -290,7 +291,7 @@ void FunctionCall::compile(FILE *outfile) {
 	fprintf(outfile, ")");
 }
 
-Type FunctionCall::typeCheck(CodeBlock *context) {
+Type FunctionCall::typeCheck(const CodeBlock *context) const {
 	std::unordered_map<std::string, Function *>::iterator function
 	      = context->global->functions.find(name->variable->s);
 	if (function == context->global->functions.end()) {
@@ -307,7 +308,7 @@ Type FunctionCall::typeCheck(CodeBlock *context) {
 Return::Return(rvalue *rval, Token *token) : rval(rval), token(token) {
 }
 
-void Return::show() {
+void Return::show() const {
 	if (rval == nullptr) {
 		fprintf(stderr, "Return (void)\n");
 	} else {
@@ -317,7 +318,7 @@ void Return::show() {
 	}
 }
 
-void Return::compile(FILE *outfile) {
+void Return::compile(FILE *outfile) const {
 	if (rval == nullptr) {
 		fprintf(outfile, "return;\n");
 	} else {
@@ -327,7 +328,7 @@ void Return::compile(FILE *outfile) {
 	}
 }
 
-Type Return::typeCheck(CodeBlock *context, Type returnType) {
+Type Return::typeCheck(const CodeBlock *context, Type returnType) const {
 	if (rval == nullptr) {
 		if (returnType != Type::VOID) {
 			token->error("Invalid return from non-void function");
@@ -347,7 +348,7 @@ CodeBlock::CodeBlock(AST *global)
       global(global) {
 }
 
-void CodeBlock::compile(FILE *outfile) {
+void CodeBlock::compile(FILE *outfile) const {
 	for (std::pair<Identifier *, std::tuple<Type, bool>> var : *locals) {
 		Identifier *name = var.first;
 		std::tuple<Type, bool> info = var.second;
@@ -370,7 +371,7 @@ void CodeBlock::defer(Variable *rval) {
 	deferred.push_back(rval);
 }
 
-CodeBlock::IdentifierStatus CodeBlock::find(Variable *id) {
+CodeBlock::IdentifierStatus CodeBlock::find(Variable *id) const {
 	if (locals->find(id->variable) != locals->end()) {
 		return VARIABLE;
 	}
@@ -392,7 +393,7 @@ void CodeBlock::resolve() {
 	}
 }
 
-Type CodeBlock::getType(Identifier *var) {
+Type CodeBlock::getType(Identifier *var) const {
 	std::unordered_map<Identifier *, std::tuple<Type, bool>, Hasher, Comparator>::iterator
 	      local
 	      = locals->find(var);
@@ -405,7 +406,7 @@ Type CodeBlock::getType(Identifier *var) {
 	return parent->getType(var);
 }
 
-void CodeBlock::typeCheck(Type returnType) {
+void CodeBlock::typeCheck(Type returnType) const {
 	for (Statement *s : statements) {
 		s->typeCheck(this, returnType);
 	}
@@ -414,7 +415,7 @@ void CodeBlock::typeCheck(Type returnType) {
 Function::Function(AST *ast) : body(new CodeBlock(ast)) {
 }
 
-void Function::compile(FILE *outfile, std::string name) {
+void Function::compile(FILE *outfile, std::string name) const {
 	Primitive::compile(outfile, type);
 	fprintf(outfile, " %s(", name.c_str());
 	size_t size = parameters.size();
@@ -436,7 +437,7 @@ void Function::compile(FILE *outfile, std::string name) {
 	fprintf(outfile, "}\n");
 }
 
-void Function::forward(FILE *outfile, std::string name) {
+void Function::forward(FILE *outfile, std::string name) const {
 	Primitive::compile(outfile, type);
 	fprintf(outfile, " %s(", name.c_str());
 	size_t size = parameters.size();
@@ -460,7 +461,7 @@ void Function::resolve() {
 	body->resolve();
 }
 
-void Function::typeCheck() {
+void Function::typeCheck() const {
 	body->typeCheck(type);
 }
 
@@ -468,7 +469,7 @@ AST::AST() {
 	functions["print"] = new Print(this);
 }
 
-void AST::compile(FILE *outfile) {
+void AST::compile(FILE *outfile) const {
 	fprintf(outfile, "#include <stdio.h>\n");
 	// Forward declarations
 	for (std::pair<std::string, Function *> f : functions) {
