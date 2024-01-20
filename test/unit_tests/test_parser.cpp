@@ -895,7 +895,7 @@ TEST(test_parser, test_e0) {
 	val = dynamic_cast<Literal *>(rval);
 	EXPECT_NE(val, nullptr);
 	if (val != nullptr) {
-		EXPECT_EQ(val->value, atoi(identifier));
+		EXPECT_EQ(val->value, 123);
 	}
 
 	// Test 3: Alphanumeric identifier

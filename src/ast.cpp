@@ -23,10 +23,13 @@ void rvalue::error(const char *const format, ...) {
 }
 
 Literal::Literal(Identifier *value) : rvalue(value->source, value->row, value->col) {
-	char *buf = new char[value->s.len];
-	strncpy(buf, value->s.start, value->s.len);
-	this->value = atoi(buf);
-	delete buf;
+	char *end = nullptr;
+	long val = strtol(value->s.start, &end, 10);
+	if (end != value->s.start + value->s.len) {
+		fprintf(stderr, "Error creating Literal: Expected an integer\n");
+		exit(EXIT_FAILURE);
+	}
+	this->value = static_cast<int32_t>(val);
 }
 
 void Literal::show() {
