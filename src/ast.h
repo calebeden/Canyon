@@ -17,10 +17,10 @@ struct rvalue {
 	size_t col;
 	virtual void show() = 0;
 	virtual void compile(FILE *outfile) = 0;
-	void error(const char *const error, ...);
+	void error(const char *format, ...);
 	virtual Type typeCheck(CodeBlock *context) = 0;
 protected:
-	rvalue(const char *const source, size_t row, size_t col);
+	rvalue(const char *source, size_t row, size_t col);
 };
 
 struct Literal : public rvalue {
