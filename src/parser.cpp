@@ -266,7 +266,7 @@ Precedence          Operator            Associativity
     }
 */
 
-AST::rvalue *Parser::e0(std::vector<Token *>::iterator &it) {
+rvalue *Parser::e0(std::vector<Token *>::iterator &it) {
 	if (Identifier *id = dynamic_cast<Identifier *>(*it)) {
 		it++;
 		bool isInt = true;
@@ -285,13 +285,13 @@ AST::rvalue *Parser::e0(std::vector<Token *>::iterator &it) {
 	return nullptr;
 }
 
-AST::rvalue *Parser::e1(std::vector<Token *>::iterator &it, CodeBlock *context) {
-	AST::rvalue *temp = e0(it);
+rvalue *Parser::e1(std::vector<Token *>::iterator &it, CodeBlock *context) {
+	rvalue *temp = e0(it);
 
 	if (Punctuation *punc = dynamic_cast<Punctuation *>(*it);
 	      punc && punc->type == Punctuation::Type::OpenParen) {
 		it++;
-		AST::rvalue *rval = parseRvalue(it, context);
+		rvalue *rval = parseRvalue(it, context);
 		if (Variable *id = dynamic_cast<Variable *>(temp)) {
 			CodeBlock::IdentifierStatus status = context->find(id);
 			switch (status) {
@@ -355,12 +355,12 @@ AST::rvalue *Parser::e1(std::vector<Token *>::iterator &it, CodeBlock *context) 
 	return temp;
 }
 
-AST::rvalue *Parser::e2(std::vector<Token *>::iterator &it, CodeBlock *context) {
+rvalue *Parser::e2(std::vector<Token *>::iterator &it, CodeBlock *context) {
 	return e1(it, context);
 }
 
-AST::rvalue *Parser::e3(std::vector<Token *>::iterator &it, CodeBlock *context) {
-	AST::rvalue *operand1 = e2(it, context);
+rvalue *Parser::e3(std::vector<Token *>::iterator &it, CodeBlock *context) {
+	rvalue *operand1 = e2(it, context);
 	while (true) {
 		if (Punctuation *punc = dynamic_cast<Punctuation *>(*it)) {
 			if (punc->type == Punctuation::Type::Times) {
@@ -381,8 +381,8 @@ AST::rvalue *Parser::e3(std::vector<Token *>::iterator &it, CodeBlock *context) 
 	}
 }
 
-AST::rvalue *Parser::e4(std::vector<Token *>::iterator &it, CodeBlock *context) {
-	AST::rvalue *operand1 = e3(it, context);
+rvalue *Parser::e4(std::vector<Token *>::iterator &it, CodeBlock *context) {
+	rvalue *operand1 = e3(it, context);
 	while (true) {
 		if (Punctuation *punc = dynamic_cast<Punctuation *>(*it)) {
 			if (punc->type == Punctuation::Type::Plus) {
@@ -400,43 +400,43 @@ AST::rvalue *Parser::e4(std::vector<Token *>::iterator &it, CodeBlock *context) 
 	}
 }
 
-AST::rvalue *Parser::e5(std::vector<Token *>::iterator &it, CodeBlock *context) {
+rvalue *Parser::e5(std::vector<Token *>::iterator &it, CodeBlock *context) {
 	return e4(it, context);
 }
 
-AST::rvalue *Parser::e6(std::vector<Token *>::iterator &it, CodeBlock *context) {
+rvalue *Parser::e6(std::vector<Token *>::iterator &it, CodeBlock *context) {
 	return e5(it, context);
 }
 
-AST::rvalue *Parser::e7(std::vector<Token *>::iterator &it, CodeBlock *context) {
+rvalue *Parser::e7(std::vector<Token *>::iterator &it, CodeBlock *context) {
 	return e6(it, context);
 }
 
-AST::rvalue *Parser::e8(std::vector<Token *>::iterator &it, CodeBlock *context) {
+rvalue *Parser::e8(std::vector<Token *>::iterator &it, CodeBlock *context) {
 	return e7(it, context);
 }
 
-AST::rvalue *Parser::e9(std::vector<Token *>::iterator &it, CodeBlock *context) {
+rvalue *Parser::e9(std::vector<Token *>::iterator &it, CodeBlock *context) {
 	return e8(it, context);
 }
 
-AST::rvalue *Parser::e10(std::vector<Token *>::iterator &it, CodeBlock *context) {
+rvalue *Parser::e10(std::vector<Token *>::iterator &it, CodeBlock *context) {
 	return e9(it, context);
 }
 
-AST::rvalue *Parser::e11(std::vector<Token *>::iterator &it, CodeBlock *context) {
+rvalue *Parser::e11(std::vector<Token *>::iterator &it, CodeBlock *context) {
 	return e10(it, context);
 }
 
-AST::rvalue *Parser::e12(std::vector<Token *>::iterator &it, CodeBlock *context) {
+rvalue *Parser::e12(std::vector<Token *>::iterator &it, CodeBlock *context) {
 	return e11(it, context);
 }
 
-AST::rvalue *Parser::e13(std::vector<Token *>::iterator &it, CodeBlock *context) {
+rvalue *Parser::e13(std::vector<Token *>::iterator &it, CodeBlock *context) {
 	return e12(it, context);
 }
 
-AST::rvalue *Parser::e14(std::vector<Token *>::iterator &it, CodeBlock *context) {
+rvalue *Parser::e14(std::vector<Token *>::iterator &it, CodeBlock *context) {
 	if (Identifier *id = dynamic_cast<Identifier *>(*it)) {
 		if (Punctuation *punc = dynamic_cast<Punctuation *>(*(it + 1));
 		      punc && punc->type == Punctuation::Type::Equals) {
@@ -452,7 +452,7 @@ AST::rvalue *Parser::e14(std::vector<Token *>::iterator &it, CodeBlock *context)
 	return e13(it, context);
 }
 
-AST::rvalue *Parser::e15(std::vector<Token *>::iterator &it, CodeBlock *context) {
+rvalue *Parser::e15(std::vector<Token *>::iterator &it, CodeBlock *context) {
 	return e14(it, context);
 }
 
