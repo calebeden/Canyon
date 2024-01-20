@@ -25,7 +25,7 @@ protected:
 
 struct Literal : public rvalue {
 	int32_t value;
-	Literal(Identifier *value);
+	explicit Literal(Identifier *value);
 	virtual void show() const;
 	virtual void compile(FILE *outfile) const;
 	virtual Type typeCheck(const CodeBlock *context) const;
@@ -39,7 +39,7 @@ struct Statement {
 
 struct Variable : public rvalue {
 	Identifier *variable;
-	Variable(Identifier *variable);
+	explicit Variable(Identifier *variable);
 	Type type = Type::UNKNOWN;
 	virtual void show() const;
 	virtual void compile(FILE *outfile) const;
@@ -102,7 +102,7 @@ struct Modulo : public rvalue {
 
 struct Expression : public Statement {
 	rvalue *rval;
-	Expression(rvalue *rval);
+	explicit Expression(rvalue *rval);
 	virtual void show() const;
 	virtual void compile(FILE *outfile) const;
 	virtual Type typeCheck(const CodeBlock *context, Type returnType) const;
@@ -111,7 +111,7 @@ struct Expression : public Statement {
 struct FunctionCall : public rvalue {
 	Variable *name;
 	std::vector<rvalue *> arguments;
-	FunctionCall(Variable *name);
+	explicit FunctionCall(Variable *name);
 	virtual void show() const;
 	virtual void compile(FILE *outfile) const;
 	virtual Type typeCheck(const CodeBlock *context) const;
@@ -141,7 +141,7 @@ struct CodeBlock {
 	std::vector<Variable *> deferred;
 	CodeBlock *parent = nullptr;
 	struct AST *global;
-	CodeBlock(AST *global);
+	explicit CodeBlock(AST *global);
 	void compile(FILE *outfile) const;
 	/**
 	 * @brief Defers an identifier to be resolved within the global scope at the end of
@@ -166,7 +166,7 @@ struct Function {
 	CodeBlock *body;
 	Type type = Type::UNKNOWN;
 	std::vector<std::pair<Identifier *, Type>> parameters;
-	Function(AST *ast);
+	explicit Function(AST *ast);
 	virtual void compile(FILE *outfile, std::string name) const;
 	virtual void forward(FILE *outfile, std::string name) const;
 	virtual void resolve();

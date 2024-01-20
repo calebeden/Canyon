@@ -107,7 +107,7 @@ struct Punctuation : public Token {
 struct Identifier : public Token {
 	Slice s;
 
-	Identifier(Slice s);
+	explicit Identifier(Slice s);
 
 	virtual void show();
 	void compile(FILE *outfile);
