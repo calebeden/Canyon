@@ -93,7 +93,7 @@ void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *funct
 				context->locals->insert({
 				      id, {type->type, true}
                 });
-				function->parameters.push_back({id, type->type});
+				function->parameters.emplace_back(id, type->type);
 			} else {
 				(*it)->error("Unexpected token following primitive");
 			}

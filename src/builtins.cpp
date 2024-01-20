@@ -2,7 +2,7 @@
 
 Print::Print(AST::AST *ast) : Function(ast) {
 	type = Type::VOID;
-	parameters.push_back({nullptr, Type::INT});
+	parameters.emplace_back(nullptr, Type::INT);
 }
 
 void Print::compile(FILE *outfile, [[maybe_unused]] std::string name) {

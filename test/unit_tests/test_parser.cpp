@@ -144,7 +144,7 @@ TEST(test_parser, test_parseFunction) {
 	      .WillOnce(::testing::Invoke([param]([[maybe_unused]]
 	                                          std::vector<Token *>::iterator &it,
 	                                        AST::Function *function) {
-		      function->parameters.push_back({param, Type::INT});
+		      function->parameters.emplace_back(param, Type::INT);
 	      }));
 	statement = new EmptyStatement;
 	EXPECT_CALL(p1a, parseBlock)
@@ -185,7 +185,7 @@ TEST(test_parser, test_parseFunction) {
 	      .WillOnce(::testing::Invoke([param]([[maybe_unused]]
 	                                          std::vector<Token *>::iterator &it,
 	                                        AST::Function *function) {
-		      function->parameters.push_back({param, Type::INT});
+		      function->parameters.emplace_back(param, Type::INT);
 	      }));
 	statement = new EmptyStatement;
 	EXPECT_CALL(p1b, parseBlock)
