@@ -276,11 +276,8 @@ rvalue *Parser::e0(std::vector<Token *>::iterator &it) {
 				break;
 			}
 		}
-		if (isInt) {
-			return new Literal(id);
-		} else {
-			return new Variable(id);
-		}
+		return (isInt) ? dynamic_cast<rvalue *>(new Literal(id))
+		               : dynamic_cast<rvalue *>(new Variable(id));
 	}
 	return nullptr;
 }
