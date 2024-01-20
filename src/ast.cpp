@@ -348,7 +348,7 @@ CodeBlock::CodeBlock(AST *global)
 }
 
 void CodeBlock::compile(FILE *outfile) {
-	for (std::pair var : *locals) {
+	for (std::pair<Identifier *, std::tuple<Type, bool>> var : *locals) {
 		Identifier *name = var.first;
 		std::tuple<Type, bool> info = var.second;
 		if (!std::get<1>(info)) {
