@@ -340,7 +340,7 @@ Type Return::typeCheck(CodeBlock *context, Type returnType) {
 
 CodeBlock::CodeBlock(AST *global)
     : locals(new std::unordered_map<Identifier *, std::tuple<Type, bool>, Hasher,
-          Comparator>),
+            Comparator>),
       global(global) {
 }
 

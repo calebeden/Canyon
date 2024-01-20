@@ -65,7 +65,8 @@ TEST(test_parser, test_parseModule) {
 	EXPECT_CALL(p, parseFunctions)
 	      .WillOnce(::testing::Invoke(
 	            [&function]([[maybe_unused]] std::vector<Token *> *tokens,
-	                  [[maybe_unused]] AST::AST *ast) {
+	                  [[maybe_unused]]
+	                  AST::AST *ast) {
 		            function = new EmptyFunction(ast);
 		            ast->functions["canyonMain"] = function;
 	            }));
@@ -106,8 +107,9 @@ TEST(test_parser, test_parseFunctions) {
 	      .WillOnce(::testing::DoDefault())
 	      .WillOnce(::testing::DoDefault())
 	      .WillOnce(::testing::DoDefault())
-	      .WillOnce(::testing::Invoke(
-	            [](std::vector<Token *>::iterator &it, [[maybe_unused]] AST::AST *ast) {
+	      .WillOnce(
+	            ::testing::Invoke([](std::vector<Token *>::iterator &it, [[maybe_unused]]
+	                                                                     AST::AST *ast) {
 		            it++;
 	            }));
 
@@ -139,18 +141,18 @@ TEST(test_parser, test_parseFunction) {
 	tokens.push_back(new Identifier(Slice("foo", 3, "", 0, 0)));
 	param = new Identifier(Slice("x", 1, "", 0, 0));
 	EXPECT_CALL(p1a, parseParameters)
-	      .WillOnce(::testing::Invoke(
-	            [param]([[maybe_unused]] std::vector<Token *>::iterator &it,
-	                  AST::Function *function) {
-		            function->parameters.push_back({param, Type::INT});
-	            }));
+	      .WillOnce(::testing::Invoke([param]([[maybe_unused]]
+	                                          std::vector<Token *>::iterator &it,
+	                                        AST::Function *function) {
+		      function->parameters.push_back({param, Type::INT});
+	      }));
 	statement = new EmptyStatement;
 	EXPECT_CALL(p1a, parseBlock)
-	      .WillOnce(::testing::Invoke(
-	            [statement]([[maybe_unused]] std::vector<Token *>::iterator &it,
-	                  AST::CodeBlock *context) {
-		            context->statements.push_back(statement);
-	            }));
+	      .WillOnce(::testing::Invoke([statement]([[maybe_unused]]
+	                                              std::vector<Token *>::iterator &it,
+	                                        AST::CodeBlock *context) {
+		      context->statements.push_back(statement);
+	      }));
 	it = tokens.begin();
 
 	p1a.parseFunction(it, ast);
@@ -180,18 +182,18 @@ TEST(test_parser, test_parseFunction) {
 	tokens.push_back(new Identifier(Slice("foo", 3, "", 0, 0)));
 	param = new Identifier(Slice("x", 1, "", 0, 0));
 	EXPECT_CALL(p1b, parseParameters)
-	      .WillOnce(::testing::Invoke(
-	            [param]([[maybe_unused]] std::vector<Token *>::iterator &it,
-	                  AST::Function *function) {
-		            function->parameters.push_back({param, Type::INT});
-	            }));
+	      .WillOnce(::testing::Invoke([param]([[maybe_unused]]
+	                                          std::vector<Token *>::iterator &it,
+	                                        AST::Function *function) {
+		      function->parameters.push_back({param, Type::INT});
+	      }));
 	statement = new EmptyStatement;
 	EXPECT_CALL(p1b, parseBlock)
-	      .WillOnce(::testing::Invoke(
-	            [statement]([[maybe_unused]] std::vector<Token *>::iterator &it,
-	                  AST::CodeBlock *context) {
-		            context->statements.push_back(statement);
-	            }));
+	      .WillOnce(::testing::Invoke([statement]([[maybe_unused]]
+	                                              std::vector<Token *>::iterator &it,
+	                                        AST::CodeBlock *context) {
+		      context->statements.push_back(statement);
+	      }));
 	it = tokens.begin();
 
 	p1b.parseFunction(it, ast);
@@ -478,12 +480,12 @@ TEST(test_parser, test_parseBlock) {
 	      .WillOnce(::testing::Return(nullptr))
 	      .WillOnce(::testing::Return(statement6))
 	      .WillOnce(::testing::Return(statement7))
-	      .WillOnce(::testing::Invoke(
-	            [statement8](std::vector<Token *>::iterator &it,
-	                  [[maybe_unused]] AST::CodeBlock *context) -> AST::Statement * {
-		            it++;
-		            return statement8;
-	            }));
+	      .WillOnce(::testing::Invoke([statement8](std::vector<Token *>::iterator &it,
+	                                        [[maybe_unused]]
+	                                        AST::CodeBlock *context) -> AST::Statement * {
+		      it++;
+		      return statement8;
+	      }));
 	it = tokens.begin();
 
 	p.parseBlock(it, context);
@@ -539,12 +541,12 @@ TEST(test_parser, test_parseStatement) {
 	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p1, parseRvalue)
-	      .WillOnce(::testing::Invoke(
-	            [toReturn](std::vector<Token *>::iterator &it,
-	                  [[maybe_unused]] AST::CodeBlock *context) -> rvalue * {
-		            it++;
-		            return toReturn;
-	            }));
+	      .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
+	                                        [[maybe_unused]]
+	                                        AST::CodeBlock *context) -> rvalue * {
+		      it++;
+		      return toReturn;
+	      }));
 	it = tokens.begin();
 
 	statement = p1.parseStatement(it, context);
@@ -583,12 +585,12 @@ TEST(test_parser, test_parseStatement) {
 	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p3, parseRvalue)
-	      .WillOnce(::testing::Invoke(
-	            [toReturn](std::vector<Token *>::iterator &it,
-	                  [[maybe_unused]] AST::CodeBlock *context) -> rvalue * {
-		            it++;
-		            return toReturn;
-	            }));
+	      .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
+	                                        [[maybe_unused]]
+	                                        AST::CodeBlock *context) -> rvalue * {
+		      it++;
+		      return toReturn;
+	      }));
 	it = tokens.begin();
 
 	statement = p3.parseStatement(it, context);
@@ -614,12 +616,12 @@ TEST(test_parser, test_parseStatement) {
 	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p4, parseRvalue)
-	      .WillOnce(::testing::Invoke(
-	            [toReturn](std::vector<Token *>::iterator &it,
-	                  [[maybe_unused]] AST::CodeBlock *context) -> rvalue * {
-		            it++;
-		            return toReturn;
-	            }));
+	      .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
+	                                        [[maybe_unused]]
+	                                        AST::CodeBlock *context) -> rvalue * {
+		      it++;
+		      return toReturn;
+	      }));
 	it = tokens.begin();
 
 	statement = p4.parseStatement(it, context);
@@ -653,12 +655,12 @@ TEST(test_parser, test_parseStatement) {
 	tokens.push_back(
 	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
 	EXPECT_CALL(p6, parseRvalue)
-	      .WillOnce(::testing::Invoke(
-	            [](std::vector<Token *>::iterator &it,
-	                  [[maybe_unused]] AST::CodeBlock *context) -> rvalue * {
-		            it++;
-		            return new Variable(new Identifier(Slice("x", 1, "", 0, 0)));
-	            }));
+	      .WillOnce(::testing::Invoke([](std::vector<Token *>::iterator &it,
+	                                        [[maybe_unused]]
+	                                        AST::CodeBlock *context) -> rvalue * {
+		      it++;
+		      return new Variable(new Identifier(Slice("x", 1, "", 0, 0)));
+	      }));
 	it = tokens.begin();
 
 	statement = p6.parseStatement(it, context);
@@ -679,12 +681,12 @@ TEST(test_parser, test_parseStatement) {
 	toReturn = new Assignment(new Identifier(Slice("x", 1, "", 0, 0)),
 	      new Literal(new Identifier(Slice("1", 1, "", 0, 0))));
 	EXPECT_CALL(p7, parseRvalue)
-	      .WillOnce(::testing::Invoke(
-	            [toReturn](std::vector<Token *>::iterator &it,
-	                  [[maybe_unused]] AST::CodeBlock *context) -> rvalue * {
-		            it++;
-		            return toReturn;
-	            }));
+	      .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
+	                                        [[maybe_unused]]
+	                                        AST::CodeBlock *context) -> rvalue * {
+		      it++;
+		      return toReturn;
+	      }));
 	it = tokens.begin();
 
 	statement = p7.parseStatement(it, context);
