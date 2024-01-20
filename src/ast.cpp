@@ -76,7 +76,7 @@ void Assignment::show() const {
 }
 
 void Assignment::compile(FILE *outfile) const {
-	fprintf(outfile, "%.*s=", (int) variable->s.len, variable->s.start);
+	fprintf(outfile, "%.*s=", static_cast<int>(variable->s.len), variable->s.start);
 	expression->compile(outfile);
 }
 

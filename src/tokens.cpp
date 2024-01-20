@@ -218,7 +218,7 @@ void Identifier::show() {
 }
 
 void Identifier::compile(FILE *outfile) {
-	fprintf(outfile, "%.*s", (int) s.len, s.start);
+	fprintf(outfile, "%.*s", static_cast<int>(s.len), s.start);
 }
 
 std::size_t Hasher::operator()(Identifier *const id) const {
