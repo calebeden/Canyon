@@ -53,7 +53,7 @@ struct EmptyFunction : public Function {
 TEST(test_parser, test_parseModule) {
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(void, parseFunctions, (std::vector<Token *> & tokens, AST::AST *ast));
+		MOCK_METHOD(void, parseFunctions, (std::vector<Token *> & tokens, AST::AST &ast));
 	};
 
 	std::vector<Token *> tokens;
@@ -63,15 +63,15 @@ TEST(test_parser, test_parseModule) {
 	EXPECT_CALL(p, parseFunctions)
 	      .WillOnce(::testing::Invoke([&function]([[maybe_unused]]
 	                                              std::vector<Token *> &tokens,
-	                                        AST::AST *ast) {
-		      function = new EmptyFunction(ast);
-		      ast->functions["canyonMain"] = function;
+	                                        AST::AST &ast) {
+		      function = new EmptyFunction(&ast);
+		      ast.functions["canyonMain"] = function;
 	      }));
 
-	AST::AST *ast = p.parseModule(tokens);
+	AST::AST ast = p.parseModule(tokens);
 	// main + print
-	EXPECT_EQ(ast->functions.size(), 2);
-	AST::Function *main = ast->functions["canyonMain"];
+	EXPECT_EQ(ast.functions.size(), 2);
+	AST::Function *main = ast.functions["canyonMain"];
 	EXPECT_EQ(main, function);
 }
 
@@ -88,11 +88,11 @@ TEST(test_parser, test_parseFunctions) {
 	class MockParser : public Parser {
 	public:
 		MOCK_METHOD(void, parseFunction,
-		      (std::vector<Token *>::iterator & it, AST::AST *ast));
+		      (std::vector<Token *>::iterator & it, AST::AST &ast));
 	};
 
 	std::vector<Token *> tokens;
-	AST::AST *ast = new AST::AST;
+	AST::AST ast;
 
 	MockParser p;
 	tokens = {};
@@ -106,7 +106,7 @@ TEST(test_parser, test_parseFunctions) {
 	      .WillOnce(::testing::DoDefault())
 	      .WillOnce(
 	            ::testing::Invoke([](std::vector<Token *>::iterator &it, [[maybe_unused]]
-	                                                                     AST::AST *ast) {
+	                                                                     AST::AST &ast) {
 		            it++;
 	            }));
 
@@ -124,7 +124,7 @@ TEST(test_parser, test_parseFunction) {
 
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::AST *ast = new AST::AST;
+	AST::AST ast;
 	Identifier *param;
 	Statement *statement;
 	Function *function;
@@ -133,7 +133,7 @@ TEST(test_parser, test_parseFunction) {
 	// 1a: Primitive return type
 	MockParser p1a;
 	tokens = {};
-	ast = new AST::AST;
+	ast = {};
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("foo", "", 0, 0)));
 	param = new Identifier(Slice("x", "", 0, 0));
@@ -156,9 +156,9 @@ TEST(test_parser, test_parseFunction) {
 
 	EXPECT_EQ(it, tokens.end());
 	// foo + print
-	EXPECT_EQ(ast->functions.size(), 2);
-	if (ast->functions.size() >= 2) {
-		function = ast->functions["foo"];
+	EXPECT_EQ(ast.functions.size(), 2);
+	if (ast.functions.size() >= 2) {
+		function = ast.functions["foo"];
 		EXPECT_EQ(function->type, Type::INT);
 		EXPECT_EQ(function->parameters.size(), 1);
 		if (function->parameters.size() >= 1) {
@@ -174,7 +174,7 @@ TEST(test_parser, test_parseFunction) {
 	// 1b: void return type
 	MockParser p1b;
 	tokens = {};
-	ast = new AST::AST;
+	ast = {};
 	tokens.push_back(new Keyword(Slice("void", "", 0, 0), Keyword::Type::VOID));
 	tokens.push_back(new Identifier(Slice("foo", "", 0, 0)));
 	param = new Identifier(Slice("x", "", 0, 0));
@@ -197,9 +197,9 @@ TEST(test_parser, test_parseFunction) {
 
 	EXPECT_EQ(it, tokens.end());
 	// foo + print
-	EXPECT_EQ(ast->functions.size(), 2);
-	if (ast->functions.size() >= 2) {
-		function = ast->functions["foo"];
+	EXPECT_EQ(ast.functions.size(), 2);
+	if (ast.functions.size() >= 2) {
+		function = ast.functions["foo"];
 		EXPECT_EQ(function->type, Type::VOID);
 		EXPECT_EQ(function->parameters.size(), 1);
 		if (function->parameters.size() >= 1) {
@@ -215,7 +215,7 @@ TEST(test_parser, test_parseFunction) {
 	// Test 2: main gets mangled to canyonMain
 	MockParser p2;
 	tokens = {};
-	ast = new AST::AST;
+	ast = {};
 	tokens.push_back(new Keyword(Slice("void", "", 0, 0), Keyword::Type::VOID));
 	tokens.push_back(new Identifier(Slice("main", "", 0, 0)));
 	EXPECT_CALL(p2, parseParameters).Times(1);
@@ -226,9 +226,9 @@ TEST(test_parser, test_parseFunction) {
 
 	EXPECT_EQ(it, tokens.end());
 	// main + print
-	EXPECT_EQ(ast->functions.size(), 2);
-	if (ast->functions.size() >= 2) {
-		function = ast->functions["canyonMain"];
+	EXPECT_EQ(ast.functions.size(), 2);
+	if (ast.functions.size() >= 2) {
+		function = ast.functions["canyonMain"];
 		EXPECT_EQ(function->type, Type::VOID);
 		EXPECT_EQ(function->parameters.size(), 0);
 		EXPECT_EQ(function->body->statements.size(), 0);
@@ -238,7 +238,7 @@ TEST(test_parser, test_parseFunction) {
 TEST(test_parser, test_parseFunction_error) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::AST *ast = new AST::AST;
+	AST::AST ast;
 	Parser p;
 
 	// Test 1: Missing function type
@@ -272,7 +272,8 @@ TEST(test_parser, test_parseFunction_error) {
 TEST(test_parser, test_parseParameters) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::Function *function = new AST::Function(new AST::AST);
+	AST::AST ast;
+	AST::Function *function = new AST::Function(&ast);
 	Parser p;
 
 	tokens = {};
@@ -320,7 +321,8 @@ TEST(test_parser, test_parseParameters) {
 TEST(test_parser, test_parseParameters_error) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::Function *function = new AST::Function(new AST::AST);
+	AST::AST ast;
+	AST::Function *function = new AST::Function(&ast);
 	Parser p;
 
 	// Test 1: Missing open parenthesis
@@ -333,7 +335,8 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// Test 2: Redeclaration of parameter of same type
 	tokens = {};
-	function = new AST::Function(new AST::AST);
+	ast = {};
+	function = new AST::Function(&ast);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
@@ -347,7 +350,8 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// Test 3: Redeclaration of parameter of different type
 	tokens = {};
-	function = new AST::Function(new AST::AST);
+	ast = {};
+	function = new AST::Function(&ast);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
@@ -370,7 +374,8 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// Test 5: Missing parameter name
 	tokens = {};
-	function = new AST::Function(new AST::AST);
+	ast = {};
+	function = new AST::Function(&ast);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Punctuation(Slice(",", "", 0, 0), Punctuation::Type::Comma));
@@ -382,7 +387,8 @@ TEST(test_parser, test_parseParameters_error) {
 	// Test 6: Unexpected token following parameter declaration
 	// 6a: other punctuation
 	tokens = {};
-	function = new AST::Function(new AST::AST);
+	ast = {};
+	function = new AST::Function(&ast);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
@@ -394,7 +400,8 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// 6b: Identifier
 	tokens = {};
-	function = new AST::Function(new AST::AST);
+	ast = {};
+	function = new AST::Function(&ast);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
@@ -406,7 +413,8 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// 6c: Primitive
 	tokens = {};
-	function = new AST::Function(new AST::AST);
+	ast = {};
+	function = new AST::Function(&ast);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
@@ -418,7 +426,8 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// 6d: Keyword
 	tokens = {};
-	function = new AST::Function(new AST::AST);
+	ast = {};
+	function = new AST::Function(&ast);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
@@ -438,7 +447,8 @@ TEST(test_parser, test_parseBlock) {
 
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 	AST::Statement *statement1 = new EmptyStatement;
 	AST::Statement *statement2 = new EmptyStatement;
 	AST::Statement *statement3 = new EmptyStatement;
@@ -491,7 +501,8 @@ TEST(test_parser, test_parseBlock) {
 TEST(test_parser, test_parseBlock_error) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 	Parser p;
 
 	// Test 1: Missing open brace
@@ -513,7 +524,8 @@ TEST(test_parser, test_parseStatement) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	Statement *statement;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 	rvalue *toReturn;
 	Expression *expression;
 	Return *returnStatement;
@@ -627,7 +639,8 @@ TEST(test_parser, test_parseStatement) {
 	// Test 6: Variable declaration
 	MockParser p6;
 	tokens = {};
-	context = new AST::CodeBlock(new AST::AST);
+	ast = {};
+	context = new AST::CodeBlock(&ast);
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
@@ -650,7 +663,8 @@ TEST(test_parser, test_parseStatement) {
 	// Test 7: Variable declaration assignment
 	MockParser p7;
 	tokens = {};
-	context = new AST::CodeBlock(new AST::AST);
+	ast = {};
+	context = new AST::CodeBlock(&ast);
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
@@ -680,12 +694,14 @@ TEST(test_parser, test_parseStatement) {
 TEST(test_parser, test_parseStatement_error) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 	Parser p;
 
 	// Test 1: Redeclaration of variable of same type
 	tokens = {};
-	context = new AST::CodeBlock(new AST::AST);
+	ast = {};
+	context = new AST::CodeBlock(&ast);
 	context->locals.insert({
 	      new Identifier(Slice("x", "", 0, 0)), {Type::INT, false}
     });
@@ -699,7 +715,8 @@ TEST(test_parser, test_parseStatement_error) {
 
 	// Test 2: Redeclaration of variable with different type
 	tokens = {};
-	context = new AST::CodeBlock(new AST::AST);
+	ast = {};
+	context = new AST::CodeBlock(&ast);
 	context->locals.insert({
 	      new Identifier(Slice("x", "", 0, 0)), {Type::INT, false}
     });
@@ -712,7 +729,8 @@ TEST(test_parser, test_parseStatement_error) {
 	      "Re-declaration of variable x");
 
 	// Test 3: Statement is not declaration or declaration assignment
-	context = new AST::CodeBlock(new AST::AST);
+	ast = {};
+	context = new AST::CodeBlock(&ast);
 	// 3a: Literal
 	tokens = {};
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
@@ -900,7 +918,8 @@ TEST(test_parser, test_e1) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 	Variable *functionName;
 	FunctionCall *call;
 	rvalue *argument;
@@ -1043,7 +1062,8 @@ TEST(test_parser, test_e1_error) {
 
 	// Test 1: Using variable as function call
 	tokens = {};
-	context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	context = new AST::CodeBlock(&ast);
 	context->locals.insert({
 	      new Identifier(Slice("var", "", 0, 0)), {Type::INT, true}
     });
@@ -1057,10 +1077,10 @@ TEST(test_parser, test_e1_error) {
 	      "var is not callable");
 
 	// Test 2: Using function name as variable
-	AST::AST *ast = new AST::AST;
-	context = new AST::CodeBlock(ast);
-	Function *foo = new Function(ast);
-	ast->functions.insert({"foo", foo});
+	ast = {};
+	context = new AST::CodeBlock(&ast);
+	Function *foo = new Function(&ast);
+	ast.functions.insert({"foo", foo});
 	tokens = {};
 	tokens.push_back(new Identifier(Slice("foo", "", 0, 0)));
 	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
@@ -1071,7 +1091,8 @@ TEST(test_parser, test_e1_error) {
 
 	// Test 3: Empty parenthesis for non-function call
 	tokens = {};
-	context = new AST::CodeBlock(new AST::AST);
+	ast = {};
+	context = new AST::CodeBlock(&ast);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(
 	      new Punctuation(Slice(")", "", 0, 0), Punctuation::Type::CloseParen));
@@ -1082,7 +1103,8 @@ TEST(test_parser, test_e1_error) {
 
 	// Test 4: Unmatched parenthesis in grouping
 	tokens = {};
-	context = new AST::CodeBlock(new AST::AST);
+	ast = {};
+	context = new AST::CodeBlock(&ast);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Identifier(Slice("var", "", 0, 0)));
 	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
@@ -1093,7 +1115,8 @@ TEST(test_parser, test_e1_error) {
 
 	// Test 5: Unmatched parenthesis in function call
 	tokens = {};
-	context = new AST::CodeBlock(new AST::AST);
+	ast = {};
+	context = new AST::CodeBlock(&ast);
 	tokens.push_back(new Identifier(Slice("foo", "", 0, 0)));
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
@@ -1107,7 +1130,8 @@ TEST(test_parser, test_e2) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 
 	class MockParser : public Parser {
 	public:
@@ -1128,7 +1152,8 @@ TEST(test_parser, test_e3) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 	Multiplication *multiplication;
 	Division *division;
 	Modulo *modulo;
@@ -1313,7 +1338,8 @@ TEST(test_parser, test_e4) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 	Addition *addition;
 	Subtraction *subtraction;
 	rvalue *operand1;
@@ -1475,7 +1501,8 @@ TEST(test_parser, test_e5) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 
 	class MockParser : public Parser {
 	public:
@@ -1496,7 +1523,8 @@ TEST(test_parser, test_e6) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 
 	class MockParser : public Parser {
 	public:
@@ -1517,7 +1545,8 @@ TEST(test_parser, test_e7) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 
 	class MockParser : public Parser {
 	public:
@@ -1538,7 +1567,8 @@ TEST(test_parser, test_e8) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 
 	class MockParser : public Parser {
 	public:
@@ -1559,7 +1589,8 @@ TEST(test_parser, test_e9) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 
 	class MockParser : public Parser {
 	public:
@@ -1580,7 +1611,8 @@ TEST(test_parser, test_e10) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 
 	class MockParser : public Parser {
 	public:
@@ -1601,7 +1633,8 @@ TEST(test_parser, test_e11) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 
 	class MockParser : public Parser {
 	public:
@@ -1622,7 +1655,8 @@ TEST(test_parser, test_e12) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 
 	class MockParser : public Parser {
 	public:
@@ -1643,7 +1677,8 @@ TEST(test_parser, test_e13) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 
 	class MockParser : public Parser {
 	public:
@@ -1672,7 +1707,8 @@ TEST(test_parser, test_e14) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 	Assignment *assignment;
 	rvalue *toReturn;
 
@@ -1742,7 +1778,8 @@ TEST(test_parser, test_e14) {
 	// Test 4: Assignment to undeclared variable
 	Parser p4;
 	tokens = {};
-	context = new AST::CodeBlock(new AST::AST);
+	ast = {};
+	context = new AST::CodeBlock(&ast);
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	tokens.push_back(new Punctuation(Slice("=", "", 0, 0), Punctuation::Type::Equals));
 	it = tokens.begin();
@@ -1755,7 +1792,8 @@ TEST(test_parser, test_e15) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 
 	class MockParser : public Parser {
 	public:
@@ -1776,7 +1814,8 @@ TEST(test_parser, test_parseRvalue) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::CodeBlock *context = new AST::CodeBlock(new AST::AST);
+	AST::AST ast;
+	AST::CodeBlock *context = new AST::CodeBlock(&ast);
 
 	class MockParser : public Parser {
 	public:

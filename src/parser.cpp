@@ -19,25 +19,25 @@ using namespace AST;
 Parser::Parser() {
 }
 
-AST::AST *Parser::parseModule(std::vector<Token *> &tokens) {
-	AST::AST *ast = new AST::AST();
+AST::AST Parser::parseModule(std::vector<Token *> &tokens) {
+	AST::AST ast = AST::AST();
 	parseFunctions(tokens, ast);
-	if (ast->functions.find("canyonMain") == ast->functions.end()) {
+	if (ast.functions.find("canyonMain") == ast.functions.end()) {
 		std::cerr << "Parse error: no main function\n";
 		exit(EXIT_FAILURE);
 	}
-	ast->resolve();
+	ast.resolve();
 	return ast;
 }
 
-void Parser::parseFunctions(std::vector<Token *> &tokens, AST::AST *ast) {
+void Parser::parseFunctions(std::vector<Token *> &tokens, AST::AST &ast) {
 	auto it = tokens.begin();
 	while (it < tokens.end()) {
 		parseFunction(it, ast);
 	}
 }
 
-void Parser::parseFunction(std::vector<Token *>::iterator &it, AST::AST *ast) {
+void Parser::parseFunction(std::vector<Token *>::iterator &it, AST::AST &ast) {
 	Type type;
 	if (auto primitive = dynamic_cast<Primitive *>(*it)) {
 		type = primitive->type;
@@ -56,7 +56,7 @@ void Parser::parseFunction(std::vector<Token *>::iterator &it, AST::AST *ast) {
 		name = "canyonMain";
 	}
 	it++;
-	Function *function = new Function(ast);
+	Function *function = new Function(&ast);
 
 	parseParameters(it, function);
 
@@ -66,7 +66,7 @@ void Parser::parseFunction(std::vector<Token *>::iterator &it, AST::AST *ast) {
 		s->print(std::cerr);
 	}
 	function->type = type;
-	ast->functions[name] = function;
+	ast.functions[name] = function;
 }
 
 void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *function) {

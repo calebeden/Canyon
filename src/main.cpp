@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 	std::vector<Token *> tokens = l.tokenize();
 
 	Parser p;
-	AST::AST *ast = p.parseModule(tokens);
+	AST::AST ast = p.parseModule(tokens);
 
 	std::ofstream outfile = std::ofstream(argv[2], std::ios::out | std::ios::trunc);
 	if (!outfile) {
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	ast->compile(outfile);
+	ast.compile(outfile);
 
 	// Unmap and close the files
 	outfile.close();
