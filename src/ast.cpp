@@ -18,16 +18,15 @@ rvalue::rvalue(const char *const source, size_t row, size_t col)
 }
 
 Literal::Literal(const Identifier *const value)
-    : rvalue(value->source, value->row, value->col) {
+    : rvalue(value->source, value->row, value->col), value(0) {
 	// https://stackoverflow.com/a/56634586
-	int val;
-	auto result
-	      = std::from_chars(value->s.data(), value->s.data() + value->s.size(), val);
-	if (result.ec == std::errc::invalid_argument) {
+	auto result = std::from_chars(value->s.data(), value->s.data() + value->s.size(),
+	      this->value);
+	if (result.ec == std::errc::invalid_argument
+	      || result.ec == std::errc::result_out_of_range) {
 		std::cerr << "Error creating Literal: Expected an integer\n";
 		exit(EXIT_FAILURE);
 	}
-	this->value = static_cast<int32_t>(val);
 }
 
 void Literal::print(std::ostream &os) const {
