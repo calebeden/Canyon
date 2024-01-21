@@ -139,7 +139,7 @@ struct CodeBlock {
 
 	std::vector<Statement *> statements;
 	// For each local, the info tuple says the type and whether it is a parameter
-	std::unordered_map<Identifier *, std::tuple<Type, bool>, Hasher, Comparator> *locals;
+	std::unordered_map<Identifier *, std::tuple<Type, bool>, Hasher, Comparator> locals;
 	std::vector<Variable *> deferred;
 	CodeBlock *parent = nullptr;
 	struct AST *global;

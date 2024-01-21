@@ -342,14 +342,11 @@ Type Return::typeCheck(const CodeBlock *context, Type returnType) const {
 	return type;
 }
 
-CodeBlock::CodeBlock(AST *global)
-    : locals(new std::unordered_map<Identifier *, std::tuple<Type, bool>, Hasher,
-            Comparator>),
-      global(global) {
+CodeBlock::CodeBlock(AST *global) : global(global) {
 }
 
 void CodeBlock::compile(std::ostream &outfile) const {
-	for (std::pair<Identifier *, std::tuple<Type, bool>> var : *locals) {
+	for (std::pair<Identifier *, std::tuple<Type, bool>> var : locals) {
 		Identifier *name = var.first;
 		std::tuple<Type, bool> info = var.second;
 		if (!std::get<1>(info)) {
@@ -372,7 +369,7 @@ void CodeBlock::defer(Variable *rval) {
 }
 
 CodeBlock::IdentifierStatus CodeBlock::find(Variable *id) const {
-	if (locals->find(id->variable) != locals->end()) {
+	if (locals.find(id->variable) != locals.end()) {
 		return VARIABLE;
 	}
 	if (parent == nullptr) {
@@ -394,8 +391,8 @@ void CodeBlock::resolve() {
 }
 
 Type CodeBlock::getType(Identifier *var) const {
-	auto local = locals->find(var);
-	if (local != locals->end()) {
+	auto local = locals.find(var);
+	if (local != locals.end()) {
 		return std::get<0>(local->second);
 	}
 	if (parent == nullptr) {

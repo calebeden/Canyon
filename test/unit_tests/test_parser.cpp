@@ -644,8 +644,8 @@ TEST(test_parser, test_parseStatement) {
 
 	EXPECT_EQ(it, tokens.end());
 	EXPECT_EQ(statement, nullptr);
-	EXPECT_NE(context->locals->find(new Identifier(Slice("x", "", 0, 0))),
-	      context->locals->end());
+	EXPECT_NE(context->locals.find(new Identifier(Slice("x", "", 0, 0))),
+	      context->locals.end());
 
 	// Test 7: Variable declaration assignment
 	MockParser p7;
@@ -673,8 +673,8 @@ TEST(test_parser, test_parseStatement) {
 	if (expression != nullptr) {
 		EXPECT_EQ(expression->rval, toReturn);
 	}
-	EXPECT_NE(context->locals->find(new Identifier(Slice("x", "", 0, 0))),
-	      context->locals->end());
+	EXPECT_NE(context->locals.find(new Identifier(Slice("x", "", 0, 0))),
+	      context->locals.end());
 }
 
 TEST(test_parser, test_parseStatement_error) {
@@ -686,7 +686,7 @@ TEST(test_parser, test_parseStatement_error) {
 	// Test 1: Redeclaration of variable of same type
 	tokens = {};
 	context = new AST::CodeBlock(new AST::AST);
-	context->locals->insert({
+	context->locals.insert({
 	      new Identifier(Slice("x", "", 0, 0)), {Type::INT, false}
     });
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
@@ -700,7 +700,7 @@ TEST(test_parser, test_parseStatement_error) {
 	// Test 2: Redeclaration of variable with different type
 	tokens = {};
 	context = new AST::CodeBlock(new AST::AST);
-	context->locals->insert({
+	context->locals.insert({
 	      new Identifier(Slice("x", "", 0, 0)), {Type::INT, false}
     });
 	tokens.push_back(new Primitive(Slice("float", "", 0, 0), Type::FLOAT));
@@ -801,7 +801,7 @@ TEST(test_parser, test_parseStatement_error) {
 
 	// Test 7: Missing ; after expression statement
 	tokens = {};
-	context->locals->insert({
+	context->locals.insert({
 	      new Identifier(Slice("x", "", 0, 0)), {Type::INT, false}
     });
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
@@ -1044,7 +1044,7 @@ TEST(test_parser, test_e1_error) {
 	// Test 1: Using variable as function call
 	tokens = {};
 	context = new AST::CodeBlock(new AST::AST);
-	context->locals->insert({
+	context->locals.insert({
 	      new Identifier(Slice("var", "", 0, 0)), {Type::INT, true}
     });
 	tokens.push_back(new Identifier(Slice("var", "", 0, 0)));
@@ -1682,7 +1682,7 @@ TEST(test_parser, test_e14) {
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	tokens.push_back(new Punctuation(Slice("=", "", 0, 0), Punctuation::Type::Equals));
 	toReturn = new EmptyRvalue;
-	context->locals->insert({
+	context->locals.insert({
 	      new Identifier(Slice("x", "", 0, 0)), {Type::INT, true}
     });
 	EXPECT_CALL(p1, e14)

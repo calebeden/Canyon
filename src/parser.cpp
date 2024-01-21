@@ -88,11 +88,11 @@ void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *funct
 			it++;
 			if (auto id = dynamic_cast<Identifier *>(*it)) {
 				it++;
-				if (context->locals->find(id) != context->locals->end()) {
+				if (context->locals.find(id) != context->locals.end()) {
 					id->error("Re-declaration of parameter %.*s", id->s.size(),
 					      id->s.data());
 				}
-				context->locals->insert({
+				context->locals.insert({
 				      id, {type->type, true}
                 });
 				function->parameters.emplace_back(id, type->type);
@@ -147,11 +147,11 @@ Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
 	if (auto type = dynamic_cast<Primitive *>(*it)) {
 		it++;
 		if (auto id = dynamic_cast<Identifier *>(*it)) {
-			if (context->locals->find(id) != context->locals->end()) {
+			if (context->locals.find(id) != context->locals.end()) {
 				(*it)->error("Re-declaration of variable %.*s", id->s.size(),
 				      id->s.data());
 			}
-			context->locals->insert({
+			context->locals.insert({
 			      id, {type->type, false}
             });
 			rval = parseRvalue(it, context);
@@ -440,7 +440,7 @@ rvalue *Parser::e14(std::vector<Token *>::iterator &it, CodeBlock *context) {
 	if (auto id = dynamic_cast<Identifier *>(*it)) {
 		if (auto punc = dynamic_cast<Punctuation *>(*(it + 1));
 		      punc && punc->type == Punctuation::Type::Equals) {
-			if (context->locals->find(id) == context->locals->end()) {
+			if (context->locals.find(id) == context->locals.end()) {
 				id->error("Undeclared variable %.*s", id->s.size(), id->s.data());
 			}
 			it += 2;
