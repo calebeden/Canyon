@@ -2,4 +2,7 @@ Checks: "bugprone-*,-bugprone-easily-swappable-parameters,cert-*,cppcoreguidelin
 WarningsAsErrors: "*"
 HeaderFilterRegex: ""
 AnalyzeTemporaryDtors: false
-FormatStyle: 'file'
+FormatStyle: "file"
+CheckOptions:
+  - key: readability-implicit-bool-conversion.AllowPointerConditions
+    value: true
