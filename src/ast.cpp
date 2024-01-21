@@ -340,7 +340,7 @@ Type Return::typeCheck(const CodeBlock &context, Type returnType,
 	return type;
 }
 
-CodeBlock::CodeBlock(AST *global) : global(global) {
+CodeBlock::CodeBlock(Module *global) : global(global) {
 }
 
 void CodeBlock::compile(std::ostream &outfile) const {
@@ -405,7 +405,7 @@ void CodeBlock::typeCheck(Type returnType, ErrorHandler &errors) const {
 	}
 }
 
-Function::Function(AST *ast) : body(new CodeBlock(ast)) {
+Function::Function(Module *module) : body(new CodeBlock(module)) {
 }
 
 void Function::compile(std::ostream &outfile, std::string_view name) const {
@@ -458,11 +458,11 @@ void Function::typeCheck(ErrorHandler &errors) const {
 	body->typeCheck(type, errors);
 }
 
-AST::AST() {
+Module::Module() {
 	functions["print"] = new Print(this);
 }
 
-void AST::compile(std::ostream &outfile) const {
+void Module::compile(std::ostream &outfile) const {
 	outfile << "#include <stdio.h>\n";
 	// Forward declarations
 	for (std::pair<std::string_view, Function *> f : functions) {
@@ -478,7 +478,7 @@ void AST::compile(std::ostream &outfile) const {
 	}
 }
 
-void AST::resolve(ErrorHandler &errors) {
+void Module::resolve(ErrorHandler &errors) {
 	for (std::pair<std::string_view, Function *> f : functions) {
 		f.second->resolve(errors);
 	}

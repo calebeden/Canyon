@@ -20,25 +20,25 @@ using namespace AST;
 Parser::Parser() {
 }
 
-AST::AST Parser::parseModule(std::vector<Token *> &tokens) {
-	AST::AST ast = AST::AST();
-	parseFunctions(tokens, ast);
-	if (ast.functions.find("canyonMain") == ast.functions.end()) {
+Module Parser::parseModule(std::vector<Token *> &tokens) {
+	Module module = Module();
+	parseFunctions(tokens, module);
+	if (module.functions.find("canyonMain") == module.functions.end()) {
 		std::cerr << "Parse error: no main function\n";
 		exit(EXIT_FAILURE);
 	}
-	ast.resolve(errors);
-	return ast;
+	module.resolve(errors);
+	return module;
 }
 
-void Parser::parseFunctions(std::vector<Token *> &tokens, AST::AST &ast) {
+void Parser::parseFunctions(std::vector<Token *> &tokens, Module &module) {
 	auto it = tokens.begin();
 	while (it < tokens.end()) {
-		parseFunction(it, ast);
+		parseFunction(it, module);
 	}
 }
 
-void Parser::parseFunction(std::vector<Token *>::iterator &it, AST::AST &ast) {
+void Parser::parseFunction(std::vector<Token *>::iterator &it, Module &module) {
 	Type type;
 	if (auto primitive = dynamic_cast<Primitive *>(*it)) {
 		type = primitive->type;
@@ -57,7 +57,7 @@ void Parser::parseFunction(std::vector<Token *>::iterator &it, AST::AST &ast) {
 		name = "canyonMain";
 	}
 	it++;
-	Function *function = new Function(&ast);
+	Function *function = new Function(&module);
 
 	parseParameters(it, function);
 
@@ -67,7 +67,7 @@ void Parser::parseFunction(std::vector<Token *>::iterator &it, AST::AST &ast) {
 		s->print(std::cerr);
 	}
 	function->type = type;
-	ast.functions[name] = function;
+	module.functions[name] = function;
 }
 
 void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *function) {
@@ -116,7 +116,7 @@ void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *funct
 	}
 }
 
-void Parser::parseBlock(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+void Parser::parseBlock(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	if (auto punc = dynamic_cast<Punctuation *>(*it);
 	      !punc || punc->type != Punctuation::Type::OpenBrace) {
 		errors.error(*it, "Expected '{'");
@@ -134,7 +134,7 @@ void Parser::parseBlock(std::vector<Token *>::iterator &it, AST::CodeBlock &cont
 }
 
 Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
-      AST::CodeBlock &context) {
+      CodeBlock &context) {
 	auto punc = dynamic_cast<Punctuation *>(*it);
 	while (punc && punc->type == Punctuation::Type::Semicolon) {
 		it++;
@@ -286,7 +286,7 @@ rvalue *Parser::e0(std::vector<Token *>::iterator &it) {
 	return nullptr;
 }
 
-rvalue *Parser::e1(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e1(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	rvalue *temp = e0(it);
 
 	if (auto punc = dynamic_cast<Punctuation *>(*it);
@@ -354,11 +354,11 @@ rvalue *Parser::e1(std::vector<Token *>::iterator &it, AST::CodeBlock &context) 
 	return temp;
 }
 
-rvalue *Parser::e2(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e2(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	return e1(it, context);
 }
 
-rvalue *Parser::e3(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e3(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	rvalue *operand1 = e2(it, context);
 	while (true) {
 		if (auto punc = dynamic_cast<Punctuation *>(*it)) {
@@ -380,7 +380,7 @@ rvalue *Parser::e3(std::vector<Token *>::iterator &it, AST::CodeBlock &context) 
 	}
 }
 
-rvalue *Parser::e4(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e4(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	rvalue *operand1 = e3(it, context);
 	while (true) {
 		if (auto punc = dynamic_cast<Punctuation *>(*it)) {
@@ -399,43 +399,43 @@ rvalue *Parser::e4(std::vector<Token *>::iterator &it, AST::CodeBlock &context) 
 	}
 }
 
-rvalue *Parser::e5(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e5(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	return e4(it, context);
 }
 
-rvalue *Parser::e6(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e6(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	return e5(it, context);
 }
 
-rvalue *Parser::e7(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e7(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	return e6(it, context);
 }
 
-rvalue *Parser::e8(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e8(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	return e7(it, context);
 }
 
-rvalue *Parser::e9(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e9(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	return e8(it, context);
 }
 
-rvalue *Parser::e10(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e10(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	return e9(it, context);
 }
 
-rvalue *Parser::e11(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e11(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	return e10(it, context);
 }
 
-rvalue *Parser::e12(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e12(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	return e11(it, context);
 }
 
-rvalue *Parser::e13(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e13(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	return e12(it, context);
 }
 
-rvalue *Parser::e14(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e14(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	if (auto id = dynamic_cast<Identifier *>(*it)) {
 		if (auto punc = dynamic_cast<Punctuation *>(*(it + 1));
 		      punc && punc->type == Punctuation::Type::Equals) {
@@ -451,10 +451,10 @@ rvalue *Parser::e14(std::vector<Token *>::iterator &it, AST::CodeBlock &context)
 	return e13(it, context);
 }
 
-rvalue *Parser::e15(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::e15(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	return e14(it, context);
 }
 
-rvalue *Parser::parseRvalue(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
+rvalue *Parser::parseRvalue(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	return e15(it, context);
 }

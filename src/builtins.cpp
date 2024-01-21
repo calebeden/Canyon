@@ -2,7 +2,9 @@
 
 #include <string_view>
 
-Print::Print(AST::AST *ast) : Function(ast) {
+using namespace AST;
+
+Print::Print(Module *module) : Function(module) {
 	type = Type::VOID;
 	parameters.emplace_back(nullptr, Type::INT);
 }

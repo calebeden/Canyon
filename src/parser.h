@@ -25,13 +25,13 @@ public:
 	Parser();
 
 	/**
-	 * @brief Converts tokenizzed source code into an abstract syntax tree representing
+	 * @brief Converts tokenized source code into an abstract syntax tree representing
 	 * the current module
 	 *
 	 * @param tokens the tokens to parse
-	 * @return the AST of the module
+	 * @return the parsed Module
 	 */
-	mockable AST::AST parseModule(std::vector<Token *> &tokens);
+	mockable AST::Module parseModule(std::vector<Token *> &tokens);
 
 	/**
 	 * @brief Parses entire rvalues, taking operator precedence into consideration
@@ -52,18 +52,18 @@ private:
 	 * current module
 	 *
 	 * @param tokens the stream of tokens representing the current module
-	 * @param ast the AST to place the parsed functions inside of
+	 * @param module the Module to place the parsed functions inside of
 	 */
-	mockable void parseFunctions(std::vector<Token *> &tokens, AST::AST &ast);
+	mockable void parseFunctions(std::vector<Token *> &tokens, AST::Module &module);
 	/**
 	 * @brief Converts tokens to the AST representation of a function
 	 *
 	 * @param it a reference to the iterator of Tokens to use. Expected to point to the
 	 * canyon function type when this function is called. By the end of the function it
 	 * will point to the token IMMEDIATELY AFTER the closing curly brace
-	 * @param ast the AST to place the parsed function inside of
+	 * @param module the Module to place the parsed function inside of
 	 */
-	mockable void parseFunction(std::vector<Token *>::iterator &it, AST::AST &ast);
+	mockable void parseFunction(std::vector<Token *>::iterator &it, AST::Module &module);
 	/**
 	 * @brief Converts tokens to the AST representation of a function parameter list
 	 *

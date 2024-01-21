@@ -47,32 +47,33 @@ struct EmptyStatement : public Statement {
 };
 
 struct EmptyFunction : public Function {
-	explicit EmptyFunction(AST::AST *ast) : Function(ast) {
+	explicit EmptyFunction(Module *module) : Function(module) {
 	}
 };
 
 TEST(test_parser, test_parseModule) {
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(void, parseFunctions, (std::vector<Token *> & tokens, AST::AST &ast));
+		MOCK_METHOD(void, parseFunctions,
+		      (std::vector<Token *> & tokens, Module &module));
 	};
 
 	std::vector<Token *> tokens;
 
 	MockParser p;
-	AST::Function *function;
+	Function *function;
 	EXPECT_CALL(p, parseFunctions)
 	      .WillOnce(::testing::Invoke([&function]([[maybe_unused]]
 	                                              std::vector<Token *> &tokens,
-	                                        AST::AST &ast) {
-		      function = new EmptyFunction(&ast);
-		      ast.functions["canyonMain"] = function;
+	                                        Module &module) {
+		      function = new EmptyFunction(&module);
+		      module.functions["canyonMain"] = function;
 	      }));
 
-	AST::AST ast = p.parseModule(tokens);
+	Module module = p.parseModule(tokens);
 	// main + print
-	EXPECT_EQ(ast.functions.size(), 2);
-	AST::Function *main = ast.functions["canyonMain"];
+	EXPECT_EQ(module.functions.size(), 2);
+	Function *main = module.functions["canyonMain"];
 	EXPECT_EQ(main, function);
 }
 
@@ -89,11 +90,11 @@ TEST(test_parser, test_parseFunctions) {
 	class MockParser : public Parser {
 	public:
 		MOCK_METHOD(void, parseFunction,
-		      (std::vector<Token *>::iterator & it, AST::AST &ast));
+		      (std::vector<Token *>::iterator & it, Module &module));
 	};
 
 	std::vector<Token *> tokens;
-	AST::AST ast;
+	Module module;
 
 	MockParser p;
 	tokens = {};
@@ -107,25 +108,25 @@ TEST(test_parser, test_parseFunctions) {
 	      .WillOnce(::testing::DoDefault())
 	      .WillOnce(
 	            ::testing::Invoke([](std::vector<Token *>::iterator &it, [[maybe_unused]]
-	                                                                     AST::AST &ast) {
+	                                                                     Module &module) {
 		            it++;
 	            }));
 
-	p.parseFunctions(tokens, ast);
+	p.parseFunctions(tokens, module);
 }
 
 TEST(test_parser, test_parseFunction) {
 	class MockParser : public Parser {
 	public:
 		MOCK_METHOD(void, parseParameters,
-		      (std::vector<Token *>::iterator & it, AST::Function *function));
+		      (std::vector<Token *>::iterator & it, Function *function));
 		MOCK_METHOD(void, parseBlock,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::AST ast;
+	Module module;
 	Identifier *param;
 	Statement *statement;
 	Function *function;
@@ -134,32 +135,32 @@ TEST(test_parser, test_parseFunction) {
 	// 1a: Primitive return type
 	MockParser p1a;
 	tokens = {};
-	ast = {};
+	module = {};
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("foo", "", 0, 0)));
 	param = new Identifier(Slice("x", "", 0, 0));
 	EXPECT_CALL(p1a, parseParameters)
 	      .WillOnce(::testing::Invoke([param]([[maybe_unused]]
 	                                          std::vector<Token *>::iterator &it,
-	                                        AST::Function *function) {
+	                                        Function *function) {
 		      function->parameters.emplace_back(param, Type::INT);
 	      }));
 	statement = new EmptyStatement;
 	EXPECT_CALL(p1a, parseBlock)
 	      .WillOnce(::testing::Invoke([statement]([[maybe_unused]]
 	                                              std::vector<Token *>::iterator &it,
-	                                        AST::CodeBlock &context) {
+	                                        CodeBlock &context) {
 		      context.statements.push_back(statement);
 	      }));
 	it = tokens.begin();
 
-	p1a.parseFunction(it, ast);
+	p1a.parseFunction(it, module);
 
 	EXPECT_EQ(it, tokens.end());
 	// foo + print
-	EXPECT_EQ(ast.functions.size(), 2);
-	if (ast.functions.size() >= 2) {
-		function = ast.functions["foo"];
+	EXPECT_EQ(module.functions.size(), 2);
+	if (module.functions.size() >= 2) {
+		function = module.functions["foo"];
 		EXPECT_EQ(function->type, Type::INT);
 		EXPECT_EQ(function->parameters.size(), 1);
 		if (function->parameters.size() >= 1) {
@@ -175,32 +176,32 @@ TEST(test_parser, test_parseFunction) {
 	// 1b: void return type
 	MockParser p1b;
 	tokens = {};
-	ast = {};
+	module = {};
 	tokens.push_back(new Keyword(Slice("void", "", 0, 0), Keyword::Type::VOID));
 	tokens.push_back(new Identifier(Slice("foo", "", 0, 0)));
 	param = new Identifier(Slice("x", "", 0, 0));
 	EXPECT_CALL(p1b, parseParameters)
 	      .WillOnce(::testing::Invoke([param]([[maybe_unused]]
 	                                          std::vector<Token *>::iterator &it,
-	                                        AST::Function *function) {
+	                                        Function *function) {
 		      function->parameters.emplace_back(param, Type::INT);
 	      }));
 	statement = new EmptyStatement;
 	EXPECT_CALL(p1b, parseBlock)
 	      .WillOnce(::testing::Invoke([statement]([[maybe_unused]]
 	                                              std::vector<Token *>::iterator &it,
-	                                        AST::CodeBlock &context) {
+	                                        CodeBlock &context) {
 		      context.statements.push_back(statement);
 	      }));
 	it = tokens.begin();
 
-	p1b.parseFunction(it, ast);
+	p1b.parseFunction(it, module);
 
 	EXPECT_EQ(it, tokens.end());
 	// foo + print
-	EXPECT_EQ(ast.functions.size(), 2);
-	if (ast.functions.size() >= 2) {
-		function = ast.functions["foo"];
+	EXPECT_EQ(module.functions.size(), 2);
+	if (module.functions.size() >= 2) {
+		function = module.functions["foo"];
 		EXPECT_EQ(function->type, Type::VOID);
 		EXPECT_EQ(function->parameters.size(), 1);
 		if (function->parameters.size() >= 1) {
@@ -216,20 +217,20 @@ TEST(test_parser, test_parseFunction) {
 	// Test 2: main gets mangled to canyonMain
 	MockParser p2;
 	tokens = {};
-	ast = {};
+	module = {};
 	tokens.push_back(new Keyword(Slice("void", "", 0, 0), Keyword::Type::VOID));
 	tokens.push_back(new Identifier(Slice("main", "", 0, 0)));
 	EXPECT_CALL(p2, parseParameters).Times(1);
 	EXPECT_CALL(p2, parseBlock).Times(1);
 	it = tokens.begin();
 
-	p2.parseFunction(it, ast);
+	p2.parseFunction(it, module);
 
 	EXPECT_EQ(it, tokens.end());
 	// main + print
-	EXPECT_EQ(ast.functions.size(), 2);
-	if (ast.functions.size() >= 2) {
-		function = ast.functions["canyonMain"];
+	EXPECT_EQ(module.functions.size(), 2);
+	if (module.functions.size() >= 2) {
+		function = module.functions["canyonMain"];
 		EXPECT_EQ(function->type, Type::VOID);
 		EXPECT_EQ(function->parameters.size(), 0);
 		EXPECT_EQ(function->body->statements.size(), 0);
@@ -239,7 +240,7 @@ TEST(test_parser, test_parseFunction) {
 TEST(test_parser, test_parseFunction_error) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::AST ast;
+	Module module;
 	Parser p;
 
 	// Test 1: Missing function type
@@ -247,7 +248,7 @@ TEST(test_parser, test_parseFunction_error) {
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	it = tokens.begin();
 
-	EXPECT_EXIT(p.parseFunction(it, ast), ::testing::ExitedWithCode(EXIT_FAILURE),
+	EXPECT_EXIT(p.parseFunction(it, module), ::testing::ExitedWithCode(EXIT_FAILURE),
 	      "Expected function type");
 
 	// Test 2: Missing function name
@@ -257,7 +258,7 @@ TEST(test_parser, test_parseFunction_error) {
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	it = tokens.begin();
 
-	EXPECT_EXIT(p.parseFunction(it, ast), ::testing::ExitedWithCode(EXIT_FAILURE),
+	EXPECT_EXIT(p.parseFunction(it, module), ::testing::ExitedWithCode(EXIT_FAILURE),
 	      "Expected identifier");
 
 	// 2a: void type
@@ -266,15 +267,15 @@ TEST(test_parser, test_parseFunction_error) {
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	it = tokens.begin();
 
-	EXPECT_EXIT(p.parseFunction(it, ast), ::testing::ExitedWithCode(EXIT_FAILURE),
+	EXPECT_EXIT(p.parseFunction(it, module), ::testing::ExitedWithCode(EXIT_FAILURE),
 	      "Expected identifier");
 }
 
 TEST(test_parser, test_parseParameters) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::AST ast;
-	AST::Function *function = new AST::Function(&ast);
+	Module module;
+	Function *function = new Function(&module);
 	Parser p;
 
 	tokens = {};
@@ -322,8 +323,8 @@ TEST(test_parser, test_parseParameters) {
 TEST(test_parser, test_parseParameters_error) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::AST ast;
-	AST::Function *function = new AST::Function(&ast);
+	Module module;
+	Function *function = new Function(&module);
 	Parser p;
 
 	// Test 1: Missing open parenthesis
@@ -336,8 +337,8 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// Test 2: Redeclaration of parameter of same type
 	tokens = {};
-	ast = {};
-	function = new AST::Function(&ast);
+	module = {};
+	function = new Function(&module);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
@@ -351,8 +352,8 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// Test 3: Redeclaration of parameter of different type
 	tokens = {};
-	ast = {};
-	function = new AST::Function(&ast);
+	module = {};
+	function = new Function(&module);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
@@ -375,8 +376,8 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// Test 5: Missing parameter name
 	tokens = {};
-	ast = {};
-	function = new AST::Function(&ast);
+	module = {};
+	function = new Function(&module);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Punctuation(Slice(",", "", 0, 0), Punctuation::Type::Comma));
@@ -388,8 +389,8 @@ TEST(test_parser, test_parseParameters_error) {
 	// Test 6: Unexpected token following parameter declaration
 	// 6a: other punctuation
 	tokens = {};
-	ast = {};
-	function = new AST::Function(&ast);
+	module = {};
+	function = new Function(&module);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
@@ -401,8 +402,8 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// 6b: Identifier
 	tokens = {};
-	ast = {};
-	function = new AST::Function(&ast);
+	module = {};
+	function = new Function(&module);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
@@ -414,8 +415,8 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// 6c: Primitive
 	tokens = {};
-	ast = {};
-	function = new AST::Function(&ast);
+	module = {};
+	function = new Function(&module);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
@@ -427,8 +428,8 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// 6d: Keyword
 	tokens = {};
-	ast = {};
-	function = new AST::Function(&ast);
+	module = {};
+	function = new Function(&module);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
@@ -442,22 +443,22 @@ TEST(test_parser, test_parseParameters_error) {
 TEST(test_parser, test_parseBlock) {
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::Statement *, parseStatement,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(Statement *, parseStatement,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
-	AST::Statement *statement1 = new EmptyStatement;
-	AST::Statement *statement2 = new EmptyStatement;
-	AST::Statement *statement3 = new EmptyStatement;
-	AST::Statement *statement4 = new EmptyStatement;
-	AST::Statement *statement5 = new EmptyStatement;
-	AST::Statement *statement6 = new EmptyStatement;
-	AST::Statement *statement7 = new EmptyStatement;
-	AST::Statement *statement8 = new EmptyStatement;
+	Module module;
+	CodeBlock context = CodeBlock(&module);
+	Statement *statement1 = new EmptyStatement;
+	Statement *statement2 = new EmptyStatement;
+	Statement *statement3 = new EmptyStatement;
+	Statement *statement4 = new EmptyStatement;
+	Statement *statement5 = new EmptyStatement;
+	Statement *statement6 = new EmptyStatement;
+	Statement *statement7 = new EmptyStatement;
+	Statement *statement8 = new EmptyStatement;
 
 	tokens = {};
 	MockParser p;
@@ -478,7 +479,7 @@ TEST(test_parser, test_parseBlock) {
 	      .WillOnce(::testing::Return(statement7))
 	      .WillOnce(::testing::Invoke([statement8](std::vector<Token *>::iterator &it,
 	                                        [[maybe_unused]]
-	                                        AST::CodeBlock &context) -> AST::Statement * {
+	                                        CodeBlock &context) -> Statement * {
 		      it++;
 		      return statement8;
 	      }));
@@ -502,8 +503,8 @@ TEST(test_parser, test_parseBlock) {
 TEST(test_parser, test_parseBlock_error) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 	Parser p;
 
 	// Test 1: Missing open brace
@@ -518,15 +519,15 @@ TEST(test_parser, test_parseBlock_error) {
 TEST(test_parser, test_parseStatement) {
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, parseRvalue,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, parseRvalue,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	Statement *statement;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 	rvalue *toReturn;
 	Expression *expression;
 	Return *returnStatement;
@@ -540,7 +541,7 @@ TEST(test_parser, test_parseStatement) {
 	EXPECT_CALL(p1, parseRvalue)
 	      .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
 	                                        [[maybe_unused]]
-	                                        AST::CodeBlock &context) -> rvalue * {
+	                                        CodeBlock &context) -> rvalue * {
 		      it++;
 		      return toReturn;
 	      }));
@@ -582,7 +583,7 @@ TEST(test_parser, test_parseStatement) {
 	EXPECT_CALL(p3, parseRvalue)
 	      .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
 	                                        [[maybe_unused]]
-	                                        AST::CodeBlock &context) -> rvalue * {
+	                                        CodeBlock &context) -> rvalue * {
 		      it++;
 		      return toReturn;
 	      }));
@@ -609,7 +610,7 @@ TEST(test_parser, test_parseStatement) {
 	EXPECT_CALL(p4, parseRvalue)
 	      .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
 	                                        [[maybe_unused]]
-	                                        AST::CodeBlock &context) -> rvalue * {
+	                                        CodeBlock &context) -> rvalue * {
 		      it++;
 		      return toReturn;
 	      }));
@@ -640,18 +641,18 @@ TEST(test_parser, test_parseStatement) {
 	// Test 6: Variable declaration
 	MockParser p6;
 	tokens = {};
-	ast = {};
-	context = AST::CodeBlock(&ast);
+	module = {};
+	context = CodeBlock(&module);
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	EXPECT_CALL(p6, parseRvalue)
-	      .WillOnce(::testing::Invoke([](std::vector<Token *>::iterator &it,
-	                                        [[maybe_unused]]
-	                                        AST::CodeBlock &context) -> rvalue * {
-		      it++;
-		      return new Variable(new Identifier(Slice("x", "", 0, 0)));
-	      }));
+	      .WillOnce(::testing::Invoke(
+	            [](std::vector<Token *>::iterator &it, [[maybe_unused]]
+	                                                   CodeBlock &context) -> rvalue * {
+		            it++;
+		            return new Variable(new Identifier(Slice("x", "", 0, 0)));
+	            }));
 	it = tokens.begin();
 
 	statement = p6.parseStatement(it, context);
@@ -664,8 +665,8 @@ TEST(test_parser, test_parseStatement) {
 	// Test 7: Variable declaration assignment
 	MockParser p7;
 	tokens = {};
-	ast = {};
-	context = AST::CodeBlock(&ast);
+	module = {};
+	context = CodeBlock(&module);
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
@@ -674,7 +675,7 @@ TEST(test_parser, test_parseStatement) {
 	EXPECT_CALL(p7, parseRvalue)
 	      .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
 	                                        [[maybe_unused]]
-	                                        AST::CodeBlock &context) -> rvalue * {
+	                                        CodeBlock &context) -> rvalue * {
 		      it++;
 		      return toReturn;
 	      }));
@@ -695,14 +696,14 @@ TEST(test_parser, test_parseStatement) {
 TEST(test_parser, test_parseStatement_error) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 	Parser p;
 
 	// Test 1: Redeclaration of variable of same type
 	tokens = {};
-	ast = {};
-	context = AST::CodeBlock(&ast);
+	module = {};
+	context = CodeBlock(&module);
 	context.locals.insert({
 	      new Identifier(Slice("x", "", 0, 0)), {Type::INT, false}
     });
@@ -716,8 +717,8 @@ TEST(test_parser, test_parseStatement_error) {
 
 	// Test 2: Redeclaration of variable with different type
 	tokens = {};
-	ast = {};
-	context = AST::CodeBlock(&ast);
+	module = {};
+	context = CodeBlock(&module);
 	context.locals.insert({
 	      new Identifier(Slice("x", "", 0, 0)), {Type::INT, false}
     });
@@ -730,8 +731,8 @@ TEST(test_parser, test_parseStatement_error) {
 	      "Re-declaration of variable x");
 
 	// Test 3: Statement is not declaration or declaration assignment
-	ast = {};
-	context = AST::CodeBlock(&ast);
+	module = {};
+	context = CodeBlock(&module);
 	// 3a: Literal
 	tokens = {};
 	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
@@ -911,16 +912,16 @@ TEST(test_parser, test_e0) {
 TEST(test_parser, test_e1) {
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e0, (std::vector<Token *>::iterator & it));
-		MOCK_METHOD(AST::rvalue *, parseRvalue,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e0, (std::vector<Token *>::iterator & it));
+		MOCK_METHOD(rvalue *, parseRvalue,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 	Variable *functionName;
 	FunctionCall *call;
 	rvalue *argument;
@@ -1062,8 +1063,8 @@ TEST(test_parser, test_e1_error) {
 
 	// Test 1: Using variable as function call
 	tokens = {};
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 	context.locals.insert({
 	      new Identifier(Slice("var", "", 0, 0)), {Type::INT, true}
     });
@@ -1077,10 +1078,10 @@ TEST(test_parser, test_e1_error) {
 	      "var is not callable");
 
 	// Test 2: Using function name as variable
-	ast = {};
-	context = AST::CodeBlock(&ast);
-	Function *foo = new Function(&ast);
-	ast.functions.insert({"foo", foo});
+	module = {};
+	context = CodeBlock(&module);
+	Function *foo = new Function(&module);
+	module.functions.insert({"foo", foo});
 	tokens = {};
 	tokens.push_back(new Identifier(Slice("foo", "", 0, 0)));
 	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
@@ -1091,8 +1092,8 @@ TEST(test_parser, test_e1_error) {
 
 	// Test 3: Empty parenthesis for non-function call
 	tokens = {};
-	ast = {};
-	context = AST::CodeBlock(&ast);
+	module = {};
+	context = CodeBlock(&module);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(
 	      new Punctuation(Slice(")", "", 0, 0), Punctuation::Type::CloseParen));
@@ -1103,8 +1104,8 @@ TEST(test_parser, test_e1_error) {
 
 	// Test 4: Unmatched parenthesis in grouping
 	tokens = {};
-	ast = {};
-	context = AST::CodeBlock(&ast);
+	module = {};
+	context = CodeBlock(&module);
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Identifier(Slice("var", "", 0, 0)));
 	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
@@ -1115,8 +1116,8 @@ TEST(test_parser, test_e1_error) {
 
 	// Test 5: Unmatched parenthesis in function call
 	tokens = {};
-	ast = {};
-	context = AST::CodeBlock(&ast);
+	module = {};
+	context = CodeBlock(&module);
 	tokens.push_back(new Identifier(Slice("foo", "", 0, 0)));
 	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
@@ -1130,13 +1131,13 @@ TEST(test_parser, test_e2) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e1,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e1,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	MockParser p;
@@ -1152,8 +1153,8 @@ TEST(test_parser, test_e3) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 	Multiplication *multiplication;
 	Division *division;
 	Modulo *modulo;
@@ -1169,8 +1170,8 @@ TEST(test_parser, test_e3) {
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e2,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e2,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	// Test 1: Multiplication
@@ -1338,8 +1339,8 @@ TEST(test_parser, test_e4) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 	Addition *addition;
 	Subtraction *subtraction;
 	rvalue *operand1;
@@ -1354,8 +1355,8 @@ TEST(test_parser, test_e4) {
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e3,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e3,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	// Test 1: Addition
@@ -1501,13 +1502,13 @@ TEST(test_parser, test_e5) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e4,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e4,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	MockParser p;
@@ -1523,13 +1524,13 @@ TEST(test_parser, test_e6) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e5,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e5,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	MockParser p;
@@ -1545,13 +1546,13 @@ TEST(test_parser, test_e7) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e6,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e6,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	MockParser p;
@@ -1567,13 +1568,13 @@ TEST(test_parser, test_e8) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e7,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e7,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	MockParser p;
@@ -1589,13 +1590,13 @@ TEST(test_parser, test_e9) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e8,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e8,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	MockParser p;
@@ -1611,13 +1612,13 @@ TEST(test_parser, test_e10) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e9,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e9,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	MockParser p;
@@ -1633,13 +1634,13 @@ TEST(test_parser, test_e11) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e10,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e10,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	MockParser p;
@@ -1655,13 +1656,13 @@ TEST(test_parser, test_e12) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e11,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e11,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	MockParser p;
@@ -1677,13 +1678,13 @@ TEST(test_parser, test_e13) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e12,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e12,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	MockParser p;
@@ -1698,17 +1699,17 @@ TEST(test_parser, test_e13) {
 TEST(test_parser, test_e14) {
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e13,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
-		MOCK_METHOD(AST::rvalue *, e14,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e13,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
+		MOCK_METHOD(rvalue *, e14,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 	Assignment *assignment;
 	rvalue *toReturn;
 
@@ -1724,7 +1725,7 @@ TEST(test_parser, test_e14) {
 	EXPECT_CALL(p1, e14)
 	      // Test multiple assignment for free thanks to recursion here
 	      .WillOnce(::testing::Invoke([&p1](std::vector<Token *>::iterator &it,
-	                                        AST::CodeBlock &context) -> rvalue * {
+	                                        CodeBlock &context) -> rvalue * {
 		      return p1.Parser::e14(it, context);
 	      }))
 	      .WillOnce(::testing::Return(toReturn));
@@ -1747,7 +1748,7 @@ TEST(test_parser, test_e14) {
 	tokens.push_back(new Punctuation(Slice("+", "", 0, 0), Punctuation::Type::Plus));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p2, e14).WillOnce(::testing::Invoke(
-	      [&p2](std::vector<Token *>::iterator &it, AST::CodeBlock &context) -> rvalue * {
+	      [&p2](std::vector<Token *>::iterator &it, CodeBlock &context) -> rvalue * {
 		      return p2.Parser::e14(it, context);
 	      }));
 	EXPECT_CALL(p2, e13).WillOnce(::testing::Return(toReturn));
@@ -1764,7 +1765,7 @@ TEST(test_parser, test_e14) {
 	tokens.push_back(new Punctuation(Slice("+", "", 0, 0), Punctuation::Type::Plus));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p3, e14).WillOnce(::testing::Invoke(
-	      [&p3](std::vector<Token *>::iterator &it, AST::CodeBlock &context) -> rvalue * {
+	      [&p3](std::vector<Token *>::iterator &it, CodeBlock &context) -> rvalue * {
 		      return p3.Parser::e14(it, context);
 	      }));
 	EXPECT_CALL(p3, e13).WillOnce(::testing::Return(toReturn));
@@ -1778,8 +1779,8 @@ TEST(test_parser, test_e14) {
 	// Test 4: Assignment to undeclared variable
 	Parser p4;
 	tokens = {};
-	ast = {};
-	context = AST::CodeBlock(&ast);
+	module = {};
+	context = CodeBlock(&module);
 	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	tokens.push_back(new Punctuation(Slice("=", "", 0, 0), Punctuation::Type::Equals));
 	it = tokens.begin();
@@ -1792,13 +1793,13 @@ TEST(test_parser, test_e15) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e14,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e14,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	MockParser p;
@@ -1814,13 +1815,13 @@ TEST(test_parser, test_parseRvalue) {
 	std::vector<Token *> tokens;
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
-	AST::AST ast;
-	AST::CodeBlock context = AST::CodeBlock(&ast);
+	Module module;
+	CodeBlock context = CodeBlock(&module);
 
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(AST::rvalue *, e15,
-		      (std::vector<Token *>::iterator & it, AST::CodeBlock &context));
+		MOCK_METHOD(rvalue *, e15,
+		      (std::vector<Token *>::iterator & it, CodeBlock &context));
 	};
 
 	MockParser p;

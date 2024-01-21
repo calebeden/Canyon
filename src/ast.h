@@ -146,8 +146,8 @@ struct CodeBlock {
 	std::unordered_map<Identifier *, std::tuple<Type, bool>, Hasher, Comparator> locals;
 	std::vector<Variable *> deferred;
 	CodeBlock *parent = nullptr;
-	struct AST *global;
-	explicit CodeBlock(AST *global);
+	struct Module *global;
+	explicit CodeBlock(Module *global);
 	void compile(std::ostream &outfile) const;
 	/**
 	 * @brief Defers an identifier to be resolved within the global scope at the end of
@@ -172,24 +172,24 @@ struct Function {
 	CodeBlock *body;
 	Type type = Type::UNKNOWN;
 	std::vector<std::pair<Identifier *, Type>> parameters;
-	explicit Function(AST *ast);
+	explicit Function(Module *module);
 	virtual void compile(std::ostream &outfile, std::string_view name) const;
 	virtual void forward(std::ostream &outfile, std::string_view name) const;
 	virtual void resolve(ErrorHandler &errors);
 	void typeCheck(ErrorHandler &errors) const;
 };
 
-struct AST {
-	AST();
+struct Module {
+	Module();
 	std::unordered_map<std::string_view, Function *> functions;
 	std::vector<FunctionCall *> functionCalls;
 	void compile(std::ostream &outfile) const;
 	// TODO global vars
 	/**
-	 * @brief Resolves all deferred identifiers from all CodeBlocks in the AST by looking
-	 * at functions found in the module's global scope. Includes resolving functionCalls
-	 * to check whether they call a function that exists with the correct arguments. Also
-	 * performs type checking on rvalues
+	 * @brief Resolves all deferred identifiers from all CodeBlocks in the Module by
+	 * looking at functions found in the module's global scope. Includes resolving
+	 * functionCalls to check whether they call a function that exists with the correct
+	 * arguments. Also performs type checking on rvalues
 	 *
 	 */
 	void resolve(ErrorHandler &errors);
