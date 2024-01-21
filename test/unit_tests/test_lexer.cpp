@@ -256,7 +256,7 @@ TEST(test_lexer, test_slice) {
 	for (uint32_t tabSize = 1; tabSize <= 10; tabSize++) {
 		std::string program2 = "\tx";
 		for (uint32_t i = 0; i < tabSize; i++) {
-			l = Lexer(program2.c_str(), strlen(program2.c_str()), "", tabSize);
+			l = Lexer(program2.c_str(), program2.size(), "", tabSize);
 			l.slice();
 			EXPECT_EQ(l.slices.size(), 1);
 			if (l.slices.size() >= 1) {
