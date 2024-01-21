@@ -17,8 +17,7 @@
 
 using namespace AST;
 
-Parser::Parser() {
-}
+Parser::Parser() = default;
 
 Module Parser::parseModule(std::vector<Token *> &tokens) {
 	Module module = Module();
