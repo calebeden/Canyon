@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include <cstdint>
+#include <queue>
 #include <vector>
 
 #ifdef DEBUG_TEST_MODE
@@ -21,7 +22,7 @@ public:
 	off_t size;
 	const char *source;
 	const char *current;
-	std::vector<Slice> slices;
+	std::queue<Slice> slices;
 	uint32_t tabSize;
 public:
 	/**

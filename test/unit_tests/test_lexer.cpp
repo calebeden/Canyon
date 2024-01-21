@@ -66,7 +66,7 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
-		EXPECT_EQ(l.slices[0].contents, "x");
+		EXPECT_EQ(l.slices.front().contents, "x");
 	}
 
 	program = "x ";
@@ -74,7 +74,7 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
-		EXPECT_EQ(l.slices[0].contents, "x");
+		EXPECT_EQ(l.slices.front().contents, "x");
 	}
 
 	for (char whitespace : {' ', '\n', '\t', '\v', '\f', '\r'}) {
@@ -83,14 +83,14 @@ TEST(test_lexer, test_slice) {
 		l.slice();
 		EXPECT_EQ(l.slices.size(), 1);
 		if (l.slices.size() >= 1) {
-			EXPECT_EQ(l.slices[0].contents, "x");
+			EXPECT_EQ(l.slices.front().contents, "x");
 		}
 		char program2[] = {whitespace, whitespace, 'x', whitespace, whitespace};
 		l = Lexer(program2, 5, "");
 		l.slice();
 		EXPECT_EQ(l.slices.size(), 1);
 		if (l.slices.size() >= 1) {
-			EXPECT_EQ(l.slices[0].contents, "x");
+			EXPECT_EQ(l.slices.front().contents, "x");
 		}
 	}
 
@@ -117,11 +117,15 @@ TEST(test_lexer, test_slice) {
 	mocked.slice();
 	EXPECT_EQ(mocked.slices.size(), 5);
 	if (mocked.slices.size() >= 5) {
-		EXPECT_EQ(mocked.slices[0].contents, "123");
-		EXPECT_EQ(mocked.slices[1].contents, "45");
-		EXPECT_EQ(mocked.slices[2].contents, "6");
-		EXPECT_EQ(mocked.slices[3].contents, "7");
-		EXPECT_EQ(mocked.slices[4].contents, "89");
+		EXPECT_EQ(mocked.slices.front().contents, "123");
+		mocked.slices.pop();
+		EXPECT_EQ(mocked.slices.front().contents, "45");
+		mocked.slices.pop();
+		EXPECT_EQ(mocked.slices.front().contents, "6");
+		mocked.slices.pop();
+		EXPECT_EQ(mocked.slices.front().contents, "7");
+		mocked.slices.pop();
+		EXPECT_EQ(mocked.slices.front().contents, "89");
 	}
 
 	// Test 3: Make sure line numbers are correct
@@ -130,7 +134,7 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
-		EXPECT_EQ(l.slices[0].row, 1);
+		EXPECT_EQ(l.slices.front().row, 1);
 	}
 
 	program = "\nx";
@@ -138,7 +142,7 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
-		EXPECT_EQ(l.slices[0].row, 2);
+		EXPECT_EQ(l.slices.front().row, 2);
 	}
 
 	program = "x\n";
@@ -146,7 +150,7 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
-		EXPECT_EQ(l.slices[0].row, 1);
+		EXPECT_EQ(l.slices.front().row, 1);
 	}
 
 	program = "\n\nx";
@@ -154,7 +158,7 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
-		EXPECT_EQ(l.slices[0].row, 3);
+		EXPECT_EQ(l.slices.front().row, 3);
 	}
 
 	program = "x\n\nx";
@@ -162,8 +166,9 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 2);
 	if (l.slices.size() >= 2) {
-		EXPECT_EQ(l.slices[0].row, 1);
-		EXPECT_EQ(l.slices[1].row, 3);
+		EXPECT_EQ(l.slices.front().row, 1);
+		l.slices.pop();
+		EXPECT_EQ(l.slices.front().row, 3);
 	}
 
 	program = "\rx";
@@ -171,7 +176,7 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
-		EXPECT_EQ(l.slices[0].row, 2);
+		EXPECT_EQ(l.slices.front().row, 2);
 	}
 
 	program = "x\r";
@@ -179,7 +184,7 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
-		EXPECT_EQ(l.slices[0].row, 1);
+		EXPECT_EQ(l.slices.front().row, 1);
 	}
 
 	program = "\r\rx";
@@ -187,7 +192,7 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
-		EXPECT_EQ(l.slices[0].row, 3);
+		EXPECT_EQ(l.slices.front().row, 3);
 	}
 
 	program = "x\r\rx";
@@ -195,8 +200,9 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 2);
 	if (l.slices.size() >= 2) {
-		EXPECT_EQ(l.slices[0].row, 1);
-		EXPECT_EQ(l.slices[1].row, 3);
+		EXPECT_EQ(l.slices.front().row, 1);
+		l.slices.pop();
+		EXPECT_EQ(l.slices.front().row, 3);
 	}
 
 	// Special case \r\n only counts as one newline
@@ -205,7 +211,7 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
-		EXPECT_EQ(l.slices[0].row, 2);
+		EXPECT_EQ(l.slices.front().row, 2);
 	}
 
 	// Test 4: Make sure column numbers are correct
@@ -214,7 +220,7 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
-		EXPECT_EQ(l.slices[0].col, 1);
+		EXPECT_EQ(l.slices.front().col, 1);
 	}
 
 	program = "xyz";
@@ -222,7 +228,7 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
-		EXPECT_EQ(l.slices[0].col, 1);
+		EXPECT_EQ(l.slices.front().col, 1);
 	}
 
 	program = " xyz";
@@ -230,7 +236,7 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
-		EXPECT_EQ(l.slices[0].col, 2);
+		EXPECT_EQ(l.slices.front().col, 2);
 	}
 
 	program = "a;3";
@@ -238,9 +244,11 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 3);
 	if (l.slices.size() >= 3) {
-		EXPECT_EQ(l.slices[0].col, 1);
-		EXPECT_EQ(l.slices[1].col, 2);
-		EXPECT_EQ(l.slices[2].col, 3);
+		EXPECT_EQ(l.slices.front().col, 1);
+		l.slices.pop();
+		EXPECT_EQ(l.slices.front().col, 2);
+		l.slices.pop();
+		EXPECT_EQ(l.slices.front().col, 3);
 	}
 
 	program = "abc 123";
@@ -248,8 +256,9 @@ TEST(test_lexer, test_slice) {
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 2);
 	if (l.slices.size() >= 2) {
-		EXPECT_EQ(l.slices[0].col, 1);
-		EXPECT_EQ(l.slices[1].col, 5);
+		EXPECT_EQ(l.slices.front().col, 1);
+		l.slices.pop();
+		EXPECT_EQ(l.slices.front().col, 5);
 	}
 
 	// Testing that tab size is configurable
@@ -260,7 +269,7 @@ TEST(test_lexer, test_slice) {
 			l.slice();
 			EXPECT_EQ(l.slices.size(), 1);
 			if (l.slices.size() >= 1) {
-				EXPECT_EQ(l.slices[0].col, tabSize + 1);
+				EXPECT_EQ(l.slices.front().col, tabSize + 1);
 			}
 			program2 = " " + program2;
 		}
@@ -268,7 +277,7 @@ TEST(test_lexer, test_slice) {
 		l.slice();
 		EXPECT_EQ(l.slices.size(), 1);
 		if (l.slices.size() >= 1) {
-			EXPECT_EQ(l.slices[0].col, 2 * tabSize + 1);
+			EXPECT_EQ(l.slices.front().col, 2 * tabSize + 1);
 		}
 	}
 }
@@ -409,7 +418,7 @@ TEST(test_lexer, test_tokenize) {
 	MockLexer l1;
 	EXPECT_CALL(l1, slice).WillOnce(::testing::Invoke([&l1] {
 		for (const char *const keyword : keywords) {
-			l1.slices.emplace_back(keyword, "", 0, 0);
+			l1.slices.emplace(keyword, "", 0, 0);
 		}
 	}));
 	std::vector<Token *> *tokens = l1.tokenize();
@@ -422,7 +431,7 @@ TEST(test_lexer, test_tokenize) {
 	MockLexer l2;
 	EXPECT_CALL(l2, slice).WillOnce(::testing::Invoke([&l2] {
 		for (const char *const primitive : primitives) {
-			l2.slices.emplace_back(primitive, "", 0, 0);
+			l2.slices.emplace(primitive, "", 0, 0);
 		}
 	}));
 	tokens = l2.tokenize();
@@ -435,7 +444,7 @@ TEST(test_lexer, test_tokenize) {
 	MockLexer l3;
 	EXPECT_CALL(l3, slice).WillOnce(::testing::Invoke([&l3] {
 		for (const char *const punctuation : punctuations) {
-			l3.slices.emplace_back(punctuation, "", 0, 0);
+			l3.slices.emplace(punctuation, "", 0, 0);
 		}
 	}));
 	tokens = l3.tokenize();

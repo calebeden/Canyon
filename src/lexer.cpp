@@ -3,6 +3,7 @@
 #include "ast.h"
 #include <string_view>
 
+#include <queue>
 #include <stdexcept>
 #include <vector>
 
@@ -18,7 +19,9 @@ std::vector<Token *> *Lexer::tokenize() {
 	slice();
 
 	std::vector<Token *> *tokens = new std::vector<Token *>();
-	for (Slice s : slices) {
+	// for (Slice s : slices) {
+	for (; !slices.empty(); slices.pop()) {
+		Slice &s = slices.front();
 		std::cerr << s.contents << '\n';
 		Keyword *keyword = createKeyword(s);
 		if (keyword) {
@@ -78,8 +81,8 @@ void Lexer::slice() {
 			current++;
 			col++;
 		} while (current - program < size && !isSep(current));
-		slices.emplace_back(std::string_view(tokenStart, current - tokenStart), source,
-		      line, startCol);
+		slices.emplace(std::string_view(tokenStart, current - tokenStart), source, line,
+		      startCol);
 	}
 }
 
