@@ -20,23 +20,23 @@ struct rvalue {
 	virtual void print(std::ostream &os) const = 0;
 	virtual void compile(std::ostream &outfile) const = 0;
 	void error(const char *format, ...) const;
-	virtual Type typeCheck(const CodeBlock *context) const = 0;
+	virtual Type typeCheck(const CodeBlock &context) const = 0;
 protected:
 	rvalue(const char *source, size_t row, size_t col);
 };
 
 struct Literal : public rvalue {
 	int32_t value;
-	explicit Literal(Identifier *value);
+	explicit Literal(const Identifier *value);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
-	virtual Type typeCheck(const CodeBlock *context) const;
+	virtual Type typeCheck(const CodeBlock &context) const;
 };
 
 struct Statement {
 	virtual void print(std::ostream &os) const = 0;
 	virtual void compile(std::ostream &outfile) const = 0;
-	virtual Type typeCheck(const CodeBlock *context, Type returnType) const = 0;
+	virtual Type typeCheck(const CodeBlock &context, Type returnType) const = 0;
 };
 
 struct Variable : public rvalue {
@@ -45,7 +45,7 @@ struct Variable : public rvalue {
 	Type type = Type::UNKNOWN;
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
-	virtual Type typeCheck(const CodeBlock *context) const;
+	virtual Type typeCheck(const CodeBlock &context) const;
 };
 
 struct Assignment : public rvalue {
@@ -54,7 +54,7 @@ struct Assignment : public rvalue {
 	Assignment(Identifier *variable, rvalue *expression);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
-	virtual Type typeCheck(const CodeBlock *context) const;
+	virtual Type typeCheck(const CodeBlock &context) const;
 };
 
 struct Addition : public rvalue {
@@ -63,7 +63,7 @@ struct Addition : public rvalue {
 	Addition(rvalue *operand1, rvalue *operand2);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
-	virtual Type typeCheck(const CodeBlock *context) const;
+	virtual Type typeCheck(const CodeBlock &context) const;
 };
 
 struct Subtraction : public rvalue {
@@ -72,7 +72,7 @@ struct Subtraction : public rvalue {
 	Subtraction(rvalue *operand1, rvalue *operand2);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
-	virtual Type typeCheck(const CodeBlock *context) const;
+	virtual Type typeCheck(const CodeBlock &context) const;
 };
 
 struct Multiplication : public rvalue {
@@ -81,7 +81,7 @@ struct Multiplication : public rvalue {
 	Multiplication(rvalue *operand1, rvalue *operand2);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
-	virtual Type typeCheck(const CodeBlock *context) const;
+	virtual Type typeCheck(const CodeBlock &context) const;
 };
 
 struct Division : public rvalue {
@@ -90,7 +90,7 @@ struct Division : public rvalue {
 	Division(rvalue *operand1, rvalue *operand2);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
-	virtual Type typeCheck(const CodeBlock *context) const;
+	virtual Type typeCheck(const CodeBlock &context) const;
 };
 
 struct Modulo : public rvalue {
@@ -99,7 +99,7 @@ struct Modulo : public rvalue {
 	Modulo(rvalue *operand1, rvalue *operand2);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
-	virtual Type typeCheck(const CodeBlock *context) const;
+	virtual Type typeCheck(const CodeBlock &context) const;
 };
 
 struct Expression : public Statement {
@@ -107,7 +107,7 @@ struct Expression : public Statement {
 	explicit Expression(rvalue *rval);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
-	virtual Type typeCheck(const CodeBlock *context, Type returnType) const;
+	virtual Type typeCheck(const CodeBlock &context, Type returnType) const;
 };
 
 struct FunctionCall : public rvalue {
@@ -116,7 +116,7 @@ struct FunctionCall : public rvalue {
 	explicit FunctionCall(Variable *name);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
-	virtual Type typeCheck(const CodeBlock *context) const;
+	virtual Type typeCheck(const CodeBlock &context) const;
 };
 
 struct Return : public Statement {
@@ -125,7 +125,7 @@ struct Return : public Statement {
 	Return(rvalue *rval, Token *token);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
-	virtual Type typeCheck(const CodeBlock *context, Type returnType) const;
+	virtual Type typeCheck(const CodeBlock &context, Type returnType) const;
 };
 
 // TODO: eventually have arbitrary code blocks for precise scoping but for now just
@@ -152,7 +152,7 @@ struct CodeBlock {
 	 * @param rval the identifier to defer
 	 */
 	void defer(Variable *rval);
-	IdentifierStatus find(Variable *id) const;
+	IdentifierStatus find(const Variable *id) const;
 	// TODO global vars
 	/**
 	 * @brief Resolves deferred identifiers by looking at functions found in the module's
@@ -169,8 +169,8 @@ struct Function {
 	Type type = Type::UNKNOWN;
 	std::vector<std::pair<Identifier *, Type>> parameters;
 	explicit Function(AST *ast);
-	virtual void compile(std::ostream &outfile, const std::string_view &name) const;
-	virtual void forward(std::ostream &outfile, const std::string_view &name) const;
+	virtual void compile(std::ostream &outfile, std::string_view name) const;
+	virtual void forward(std::ostream &outfile, std::string_view name) const;
 	virtual void resolve();
 	void typeCheck() const;
 };

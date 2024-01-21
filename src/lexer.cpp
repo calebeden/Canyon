@@ -102,7 +102,7 @@ bool Lexer::isSep(const char *const c) {
 	return false;
 }
 
-Keyword *Lexer::createKeyword(Slice s) {
+Keyword *Lexer::createKeyword(const Slice &s) {
 	if (s.contents == "void") {
 		return new Keyword(s, Keyword::Type::VOID);
 	}
@@ -112,7 +112,7 @@ Keyword *Lexer::createKeyword(Slice s) {
 	return nullptr;
 }
 
-Primitive *Lexer::createPrimitive(Slice s) {
+Primitive *Lexer::createPrimitive(const Slice &s) {
 	if (s.contents == "int") {
 		return new Primitive(s, Type::INT);
 	}
@@ -140,7 +140,7 @@ Primitive *Lexer::createPrimitive(Slice s) {
 	return nullptr;
 }
 
-Punctuation *Lexer::createPunctuation(Slice s) {
+Punctuation *Lexer::createPunctuation(const Slice &s) {
 	if (s.contents == "(") {
 		return new Punctuation(s, Punctuation::Type::OpenParen);
 	}
@@ -180,6 +180,6 @@ Punctuation *Lexer::createPunctuation(Slice s) {
 	return nullptr;
 }
 
-Identifier *Lexer::createIdentifier(Slice s) {
+Identifier *Lexer::createIdentifier(const Slice &s) {
 	return new Identifier(s);
 }

@@ -32,7 +32,7 @@ enum class Type {
 	UNKNOWN,
 };
 
-std::ostream &operator<<(std::ostream &os, const Type &type);
+std::ostream &operator<<(std::ostream &os, Type type);
 
 struct Slice {
 	std::string_view contents;
@@ -61,13 +61,13 @@ struct Keyword : public Token {
 		RETURN
 	};
 	Type type;
-	Keyword(Slice s, Type type);
+	Keyword(const Slice &s, Type type);
 	virtual void print(std::ostream &os) const;
 };
 
 struct Primitive : public Token {
 	Type type;
-	Primitive(Slice s, Type type);
+	Primitive(const Slice &s, Type type);
 	virtual void print(std::ostream &os) const;
 	void compile(std::ostream &outfie);
 	static void compile(std::ostream &outfile, Type t);
@@ -89,13 +89,13 @@ struct Punctuation : public Token {
 		Mod
 	};
 	Type type;
-	Punctuation(Slice s, Type type);
+	Punctuation(const Slice &s, Type type);
 	virtual void print(std::ostream &os) const;
 };
 
 struct Identifier : public Token {
 	std::string_view s;
-	explicit Identifier(Slice s);
+	explicit Identifier(const Slice &s);
 	virtual void print(std::ostream &os) const;
 	void compile(std::ostream &outfile);
 };

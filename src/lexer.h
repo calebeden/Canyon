@@ -59,10 +59,10 @@ private:
 	 */
 	mockable bool isSep(const char *c);
 
-	mockable Keyword *createKeyword(Slice s);
-	mockable Primitive *createPrimitive(Slice s);
-	mockable Punctuation *createPunctuation(Slice s);
-	mockable Identifier *createIdentifier(Slice s);
+	mockable Keyword *createKeyword(const Slice &s);
+	mockable Primitive *createPrimitive(const Slice &s);
+	mockable Punctuation *createPunctuation(const Slice &s);
+	mockable Identifier *createIdentifier(const Slice &s);
 };
 
 #endif

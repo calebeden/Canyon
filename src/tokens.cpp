@@ -6,7 +6,7 @@
 #include <iostream>
 #include <stdexcept>
 
-std::ostream &operator<<(std::ostream &os, const Type &type) {
+std::ostream &operator<<(std::ostream &os, const Type type) {
 	switch (type) {
 		case Type::INT: {
 			os << "int";
@@ -69,7 +69,7 @@ void Token::error(const char *const format, ...) const {
 	exit(EXIT_FAILURE);
 }
 
-Keyword::Keyword(Slice s, Type type) : Token(s.source, s.row, s.col), type(type) {
+Keyword::Keyword(const Slice &s, Type type) : Token(s.source, s.row, s.col), type(type) {
 }
 
 void Keyword::print(std::ostream &os) const {
@@ -90,7 +90,8 @@ void Keyword::print(std::ostream &os) const {
 	}
 }
 
-Primitive::Primitive(Slice s, Type type) : Token(s.source, s.row, s.col), type(type) {
+Primitive::Primitive(const Slice &s, Type type)
+    : Token(s.source, s.row, s.col), type(type) {
 }
 
 void Primitive::print(std::ostream &os) const {
@@ -187,7 +188,8 @@ void Primitive::compile(std::ostream &outfile, Type t) {
 	}
 }
 
-Punctuation::Punctuation(Slice s, Type type) : Token(s.source, s.row, s.col), type(type) {
+Punctuation::Punctuation(const Slice &s, Type type)
+    : Token(s.source, s.row, s.col), type(type) {
 }
 
 void Punctuation::print(std::ostream &os) const {
@@ -247,7 +249,7 @@ void Punctuation::print(std::ostream &os) const {
 	}
 }
 
-Identifier::Identifier(Slice s) : Token(s.source, s.row, s.col), s(s.contents) {
+Identifier::Identifier(const Slice &s) : Token(s.source, s.row, s.col), s(s.contents) {
 }
 
 void Identifier::print(std::ostream &os) const {
