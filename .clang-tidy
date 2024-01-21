@@ -1,4 +1,4 @@
-Checks: "bugprone-*,-bugprone-easily-swappable-parameters,cert-*,cppcoreguidelines-*,clang-diagnostic-*,clang-analyzer-*,fuchsia-*,-fuchsia-default-arguments-calls,-fuchsia-default-arguments-declarations,-fuchsia-overloaded-operator,google-*,hicpp-*,misc-*,-misc-no-recursion,-misc-non-private-member-variables-in-classes,modernize-*,-modernize-use-trailing-return-type,performance-*,readability-*"
+Checks: "bugprone-*,-bugprone-easily-swappable-parameters,cert-*,cppcoreguidelines-*,clang-diagnostic-*,clang-analyzer-*,fuchsia-*,-fuchsia-default-arguments-calls,-fuchsia-default-arguments-declarations,-fuchsia-overloaded-operator,google-*,-google-build-using-namespace,hicpp-*,misc-*,-misc-no-recursion,-misc-non-private-member-variables-in-classes,modernize-*,-modernize-use-trailing-return-type,performance-*,readability-*"
 WarningsAsErrors: "*"
 HeaderFilterRegex: ""
 AnalyzeTemporaryDtors: false
