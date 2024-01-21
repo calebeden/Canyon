@@ -50,7 +50,7 @@ void Parser::parseFunction(std::vector<Token *>::iterator &it, AST::AST *ast) {
 	if (dynamic_cast<Identifier *>(*it) == nullptr) {
 		(*it)->error("Expected identifier");
 	}
-	std::string name = dynamic_cast<Identifier *>(*it)->s;
+	std::string_view name = dynamic_cast<Identifier *>(*it)->s;
 	if (name == "main") {
 		name = "canyonMain";
 	}
@@ -88,7 +88,8 @@ void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *funct
 			if (auto id = dynamic_cast<Identifier *>(*it)) {
 				it++;
 				if (context->locals->find(id) != context->locals->end()) {
-					id->error("Re-declaration of parameter %.*s", id->s.len, id->s.start);
+					id->error("Re-declaration of parameter %.*s", id->s.size(),
+					      id->s.data());
 				}
 				context->locals->insert({
 				      id, {type->type, true}
@@ -146,7 +147,8 @@ Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
 		it++;
 		if (auto id = dynamic_cast<Identifier *>(*it)) {
 			if (context->locals->find(id) != context->locals->end()) {
-				(*it)->error("Re-declaration of variable %.*s", id->s.len, id->s.start);
+				(*it)->error("Re-declaration of variable %.*s", id->s.size(),
+				      id->s.data());
 			}
 			context->locals->insert({
 			      id, {type->type, false}
@@ -270,8 +272,8 @@ rvalue *Parser::e0(std::vector<Token *>::iterator &it) {
 	if (auto id = dynamic_cast<Identifier *>(*it)) {
 		it++;
 		bool isInt = true;
-		for (size_t i = 0; i < id->s.len; i++) {
-			if (!isdigit(id->s.start[i])) {
+		for (size_t i = 0; i < id->s.size(); i++) {
+			if (!isdigit(id->s[i])) {
 				isInt = false;
 				break;
 			}
@@ -293,8 +295,8 @@ rvalue *Parser::e1(std::vector<Token *>::iterator &it, CodeBlock *context) {
 			CodeBlock::IdentifierStatus status = context->find(id);
 			switch (status) {
 				case CodeBlock::IdentifierStatus::VARIABLE: {
-					id->error("%.*s is not callable", id->variable->s.len,
-					      id->variable->s.start);
+					id->error("%.*s is not callable", id->variable->s.size(),
+					      id->variable->s.data());
 					break;
 				}
 				case CodeBlock::IdentifierStatus::UNKNOWN: {
@@ -337,8 +339,8 @@ rvalue *Parser::e1(std::vector<Token *>::iterator &it, CodeBlock *context) {
 		CodeBlock::IdentifierStatus status = context->find(id);
 		switch (status) {
 			case CodeBlock::IdentifierStatus::FUNCTION: {
-				id->error("%.*s is not a variable", id->variable->s.len,
-				      id->variable->s.start);
+				id->error("%.*s is not a variable", id->variable->s.size(),
+				      id->variable->s.data());
 				break;
 			}
 			case CodeBlock::IdentifierStatus::UNKNOWN: {
@@ -438,7 +440,7 @@ rvalue *Parser::e14(std::vector<Token *>::iterator &it, CodeBlock *context) {
 		if (auto punc = dynamic_cast<Punctuation *>(*(it + 1));
 		      punc && punc->type == Punctuation::Type::Equals) {
 			if (context->locals->find(id) == context->locals->end()) {
-				id->error("Undeclared variable %.*s", id->s.len, id->s.start);
+				id->error("Undeclared variable %.*s", id->s.size(), id->s.data());
 			}
 			it += 2;
 			return new Assignment(id, e14(it, context));

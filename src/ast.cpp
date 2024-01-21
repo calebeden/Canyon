@@ -3,6 +3,7 @@
 #include "builtins.h"
 #include "tokens.h"
 
+#include <charconv>
 #include <cstdarg>
 #include <cstring>
 #include <iostream>
@@ -24,9 +25,11 @@ void rvalue::error(const char *const format, ...) const {
 }
 
 Literal::Literal(Identifier *value) : rvalue(value->source, value->row, value->col) {
-	char *end = nullptr;
-	long val = strtol(value->s.start, &end, 10);
-	if (end != value->s.start + value->s.len) {
+	// https://stackoverflow.com/a/56634586
+	int val;
+	auto result
+	      = std::from_chars(value->s.data(), value->s.data() + value->s.size(), val);
+	if (result.ec == std::errc::invalid_argument) {
 		std::cerr << "Error creating Literal: Expected an integer\n";
 		exit(EXIT_FAILURE);
 	}
@@ -383,8 +386,8 @@ CodeBlock::IdentifierStatus CodeBlock::find(Variable *id) const {
 void CodeBlock::resolve() {
 	for (Variable *id : deferred) {
 		if (global->functions.find(id->variable->s) == global->functions.end()) {
-			id->error("Undeclared identifier %.*s", id->variable->s.len,
-			      id->variable->s.start);
+			id->error("Undeclared identifier %.*s", id->variable->s.size(),
+			      id->variable->s.data());
 		}
 	}
 }
@@ -409,7 +412,7 @@ void CodeBlock::typeCheck(Type returnType) const {
 Function::Function(AST *ast) : body(new CodeBlock(ast)) {
 }
 
-void Function::compile(std::ostream &outfile, const std::string &name) const {
+void Function::compile(std::ostream &outfile, const std::string_view &name) const {
 	Primitive::compile(outfile, type);
 	outfile << ' ' << name << '(';
 	size_t size = parameters.size();
@@ -431,7 +434,7 @@ void Function::compile(std::ostream &outfile, const std::string &name) const {
 	outfile << "}\n";
 }
 
-void Function::forward(std::ostream &outfile, const std::string &name) const {
+void Function::forward(std::ostream &outfile, const std::string_view &name) const {
 	Primitive::compile(outfile, type);
 	outfile << ' ' << name << '(';
 	size_t size = parameters.size();
@@ -466,7 +469,7 @@ AST::AST() {
 void AST::compile(std::ostream &outfile) const {
 	outfile << "#include <stdio.h>\n";
 	// Forward declarations
-	for (std::pair<std::string, Function *> f : functions) {
+	for (std::pair<std::string_view, Function *> f : functions) {
 		f.second->forward(outfile, f.first);
 	}
 	outfile << "int main(int argc, char **argv) {\n"
@@ -474,13 +477,13 @@ void AST::compile(std::ostream &outfile) const {
 	           "    return 0;\n"
 	           "}\n";
 	// Actual code
-	for (std::pair<std::string, Function *> f : functions) {
+	for (std::pair<std::string_view, Function *> f : functions) {
 		f.second->compile(outfile, f.first);
 	}
 }
 
 void AST::resolve() {
-	for (std::pair<std::string, Function *> f : functions) {
+	for (std::pair<std::string_view, Function *> f : functions) {
 		f.second->resolve();
 	}
 	for (FunctionCall *call : functionCalls) {
@@ -494,8 +497,8 @@ void AST::resolve() {
 		} else {
 			auto f = functions.find(call->name->variable->s);
 			if (f == functions.end()) {
-				call->error("Function %.*s does not exist", call->name->variable->s.len,
-				      call->name->variable->s.start);
+				call->error("Function %.*s does not exist",
+				      call->name->variable->s.size(), call->name->variable->s.data());
 			}
 			size_t param_size = f->second->parameters.size();
 			size_t arg_size = call->arguments.size();
@@ -506,7 +509,7 @@ void AST::resolve() {
 			}
 		}
 	}
-	for (std::pair<std::string, Function *> f : functions) {
+	for (std::pair<std::string_view, Function *> f : functions) {
 		f.second->typeCheck();
 	}
 }

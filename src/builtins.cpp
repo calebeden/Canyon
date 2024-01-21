@@ -6,13 +6,13 @@ Print::Print(AST::AST *ast) : Function(ast) {
 }
 
 void Print::compile(std::ostream &outfile,
-      [[maybe_unused]] const std::string &name) const {
+      [[maybe_unused]] const std::string_view &name) const {
 	outfile << "void print(int x) {\n"
 	           "    printf(\"%d\\n\", x);\n"
 	           "}\n";
 }
 
 void Print::forward(std::ostream &outfile,
-      [[maybe_unused]] const std::string &name) const {
+      [[maybe_unused]] const std::string_view &name) const {
 	outfile << "void print(int x);\n";
 }

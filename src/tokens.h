@@ -34,25 +34,11 @@ enum class Type {
 std::ostream &operator<<(std::ostream &os, const Type &type);
 
 struct Slice {
-	const char *start;
-	size_t len;
+	std::string_view contents;
+	const char *source;
 	size_t row;
 	size_t col;
-	const char *source;
-	/**
-	 * @brief Construct a new Slice object based on pointers to its start and end
-	 *
-	 * @param start a pointer to the first character in the Slice
-	 * @param end a pointer to the final character of the Slice (inclusive)
-	 */
-	Slice(const char *const start, const char *const end, const char *const source,
-	      size_t row, size_t col);
-	Slice(const char *const start, size_t len, const char *const source, size_t row,
-	      size_t col);
-	bool operator==(const std::string &rhs) const;
-	bool operator==(const Slice &other) const;
-	bool operator==(const char *const other) const;
-	operator std::string() const;
+	Slice(std::string_view contents, const char *source, size_t row, size_t col);
 };
 
 std::ostream &operator<<(std::ostream &os, const Slice &slice);
@@ -107,7 +93,7 @@ struct Punctuation : public Token {
 };
 
 struct Identifier : public Token {
-	Slice s;
+	std::string_view s;
 	explicit Identifier(Slice s);
 	virtual void print(std::ostream &os) const;
 	void compile(std::ostream &outfile);

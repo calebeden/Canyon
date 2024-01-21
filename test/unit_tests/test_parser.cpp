@@ -100,7 +100,7 @@ TEST(test_parser, test_parseFunctions) {
 
 	MockParser p;
 	tokens = {};
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	EXPECT_CALL(p, parseFunction)
 	      .WillOnce(::testing::DoDefault())
 	      .WillOnce(::testing::DoDefault())
@@ -138,9 +138,9 @@ TEST(test_parser, test_parseFunction) {
 	MockParser p1a;
 	tokens = {};
 	ast = new AST::AST;
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("foo", 3, "", 0, 0)));
-	param = new Identifier(Slice("x", 1, "", 0, 0));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("foo", "", 0, 0)));
+	param = new Identifier(Slice("x", "", 0, 0));
 	EXPECT_CALL(p1a, parseParameters)
 	      .WillOnce(::testing::Invoke([param]([[maybe_unused]]
 	                                          std::vector<Token *>::iterator &it,
@@ -179,9 +179,9 @@ TEST(test_parser, test_parseFunction) {
 	MockParser p1b;
 	tokens = {};
 	ast = new AST::AST;
-	tokens.push_back(new Keyword(Slice("void", 4, "", 0, 0), Keyword::Type::VOID));
-	tokens.push_back(new Identifier(Slice("foo", 3, "", 0, 0)));
-	param = new Identifier(Slice("x", 1, "", 0, 0));
+	tokens.push_back(new Keyword(Slice("void", "", 0, 0), Keyword::Type::VOID));
+	tokens.push_back(new Identifier(Slice("foo", "", 0, 0)));
+	param = new Identifier(Slice("x", "", 0, 0));
 	EXPECT_CALL(p1b, parseParameters)
 	      .WillOnce(::testing::Invoke([param]([[maybe_unused]]
 	                                          std::vector<Token *>::iterator &it,
@@ -220,8 +220,8 @@ TEST(test_parser, test_parseFunction) {
 	MockParser p2;
 	tokens = {};
 	ast = new AST::AST;
-	tokens.push_back(new Keyword(Slice("void", 4, "", 0, 0), Keyword::Type::VOID));
-	tokens.push_back(new Identifier(Slice("main", 4, "", 0, 0)));
+	tokens.push_back(new Keyword(Slice("void", "", 0, 0), Keyword::Type::VOID));
+	tokens.push_back(new Identifier(Slice("main", "", 0, 0)));
 	EXPECT_CALL(p2, parseParameters).Times(1);
 	EXPECT_CALL(p2, parseBlock).Times(1);
 	it = tokens.begin();
@@ -247,7 +247,7 @@ TEST(test_parser, test_parseFunction_error) {
 
 	// Test 1: Missing function type
 	tokens = {};
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseFunction(it, ast), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -256,9 +256,8 @@ TEST(test_parser, test_parseFunction_error) {
 	// Test 2: Missing function name
 	// 2a: primitive type
 	tokens = {};
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseFunction(it, ast), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -266,9 +265,8 @@ TEST(test_parser, test_parseFunction_error) {
 
 	// 2a: void type
 	tokens = {};
-	tokens.push_back(new Keyword(Slice("void", 4, "", 0, 0), Keyword::Type::VOID));
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Keyword(Slice("void", "", 0, 0), Keyword::Type::VOID));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseFunction(it, ast), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -282,27 +280,26 @@ TEST(test_parser, test_parseParameters) {
 	Parser p;
 
 	tokens = {};
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(",", "", 0, 0), Punctuation::Type::Comma));
+	tokens.push_back(new Primitive(Slice("float", "", 0, 0), Type::FLOAT));
+	tokens.push_back(new Identifier(Slice("y", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(",", "", 0, 0), Punctuation::Type::Comma));
+	tokens.push_back(new Primitive(Slice("char", "", 0, 0), Type::CHAR));
+	tokens.push_back(new Identifier(Slice("z", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(",", "", 0, 0), Punctuation::Type::Comma));
+	tokens.push_back(new Primitive(Slice("double", "", 0, 0), Type::DOUBLE));
+	tokens.push_back(new Identifier(Slice("a", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(",", "", 0, 0), Punctuation::Type::Comma));
+	tokens.push_back(new Primitive(Slice("long", "", 0, 0), Type::LONG));
+	tokens.push_back(new Identifier(Slice("b", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(",", "", 0, 0), Punctuation::Type::Comma));
+	tokens.push_back(new Primitive(Slice("bool", "", 0, 0), Type::BOOL));
+	tokens.push_back(new Identifier(Slice("c", "", 0, 0)));
 	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice(",", 1, "", 0, 0), Punctuation::Type::Comma));
-	tokens.push_back(new Primitive(Slice("float", 5, "", 0, 0), Type::FLOAT));
-	tokens.push_back(new Identifier(Slice("y", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice(",", 1, "", 0, 0), Punctuation::Type::Comma));
-	tokens.push_back(new Primitive(Slice("char", 4, "", 0, 0), Type::CHAR));
-	tokens.push_back(new Identifier(Slice("z", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice(",", 1, "", 0, 0), Punctuation::Type::Comma));
-	tokens.push_back(new Primitive(Slice("double", 6, "", 0, 0), Type::DOUBLE));
-	tokens.push_back(new Identifier(Slice("a", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice(",", 1, "", 0, 0), Punctuation::Type::Comma));
-	tokens.push_back(new Primitive(Slice("long", 4, "", 0, 0), Type::LONG));
-	tokens.push_back(new Identifier(Slice("b", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice(",", 1, "", 0, 0), Punctuation::Type::Comma));
-	tokens.push_back(new Primitive(Slice("bool", 4, "", 0, 0), Type::BOOL));
-	tokens.push_back(new Identifier(Slice("c", 1, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice(")", 1, "", 0, 0), Punctuation::Type::CloseParen));
+	      new Punctuation(Slice(")", "", 0, 0), Punctuation::Type::CloseParen));
 	it = tokens.begin();
 
 	p.parseParameters(it, function);
@@ -332,7 +329,7 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// Test 1: Missing open parenthesis
 	tokens = {};
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseParameters(it, function), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -341,13 +338,12 @@ TEST(test_parser, test_parseParameters_error) {
 	// Test 2: Redeclaration of parameter of same type
 	tokens = {};
 	function = new AST::Function(new AST::AST);
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice(",", 1, "", 0, 0), Punctuation::Type::Comma));
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(",", "", 0, 0), Punctuation::Type::Comma));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseParameters(it, function), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -356,13 +352,12 @@ TEST(test_parser, test_parseParameters_error) {
 	// Test 3: Redeclaration of parameter of different type
 	tokens = {};
 	function = new AST::Function(new AST::AST);
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice(",", 1, "", 0, 0), Punctuation::Type::Comma));
-	tokens.push_back(new Primitive(Slice("float", 5, "", 0, 0), Type::FLOAT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(",", "", 0, 0), Punctuation::Type::Comma));
+	tokens.push_back(new Primitive(Slice("float", "", 0, 0), Type::FLOAT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseParameters(it, function), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -370,9 +365,8 @@ TEST(test_parser, test_parseParameters_error) {
 
 	// Test 4: Missing parameter type
 	tokens = {};
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseParameters(it, function), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -381,10 +375,9 @@ TEST(test_parser, test_parseParameters_error) {
 	// Test 5: Missing parameter name
 	tokens = {};
 	function = new AST::Function(new AST::AST);
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Punctuation(Slice(",", 1, "", 0, 0), Punctuation::Type::Comma));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Punctuation(Slice(",", "", 0, 0), Punctuation::Type::Comma));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseParameters(it, function), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -394,11 +387,10 @@ TEST(test_parser, test_parseParameters_error) {
 	// 6a: other punctuation
 	tokens = {};
 	function = new AST::Function(new AST::AST);
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice("+", 1, "", 0, 0), Punctuation::Type::Plus));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("+", "", 0, 0), Punctuation::Type::Plus));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseParameters(it, function), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -407,11 +399,10 @@ TEST(test_parser, test_parseParameters_error) {
 	// 6b: Identifier
 	tokens = {};
 	function = new AST::Function(new AST::AST);
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(new Identifier(Slice("y", 1, "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Identifier(Slice("y", "", 0, 0)));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseParameters(it, function), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -420,11 +411,10 @@ TEST(test_parser, test_parseParameters_error) {
 	// 6c: Primitive
 	tokens = {};
 	function = new AST::Function(new AST::AST);
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseParameters(it, function), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -433,11 +423,10 @@ TEST(test_parser, test_parseParameters_error) {
 	// 6d: Keyword
 	tokens = {};
 	function = new AST::Function(new AST::AST);
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(new Keyword(Slice("return", 6, "", 0, 0), Keyword::Type::RETURN));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Keyword(Slice("return", "", 0, 0), Keyword::Type::RETURN));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseParameters(it, function), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -465,11 +454,10 @@ TEST(test_parser, test_parseBlock) {
 
 	tokens = {};
 	MockParser p;
+	tokens.push_back(new Punctuation(Slice("{", "", 0, 0), Punctuation::Type::OpenBrace));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	tokens.push_back(
-	      new Punctuation(Slice("{", 1, "", 0, 0), Punctuation::Type::OpenBrace));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice("}", 1, "", 0, 0), Punctuation::Type::CloseBrace));
+	      new Punctuation(Slice("}", "", 0, 0), Punctuation::Type::CloseBrace));
 	EXPECT_CALL(p, parseStatement)
 	      .WillOnce(::testing::Return(statement1))
 	      .WillOnce(::testing::Return(nullptr))
@@ -512,7 +500,7 @@ TEST(test_parser, test_parseBlock_error) {
 
 	// Test 1: Missing open brace
 	tokens = {};
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseBlock(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -537,9 +525,8 @@ TEST(test_parser, test_parseStatement) {
 	// Test 1: Regular expression statement
 	MockParser p1;
 	tokens = {};
-	tokens.push_back(new Identifier(Slice("1", 1, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Identifier(Slice("1", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p1, parseRvalue)
 	      .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
@@ -562,9 +549,8 @@ TEST(test_parser, test_parseStatement) {
 	// Test 2: Return (void) statement
 	MockParser p2;
 	tokens = {};
-	tokens.push_back(new Keyword(Slice("return", 6, "", 0, 0), Keyword::Type::RETURN));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Keyword(Slice("return", "", 0, 0), Keyword::Type::RETURN));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	EXPECT_CALL(p2, parseRvalue).WillOnce(::testing::Return(nullptr));
 	it = tokens.begin();
 
@@ -580,10 +566,9 @@ TEST(test_parser, test_parseStatement) {
 	// Test 3: Return expression statement
 	MockParser p3;
 	tokens = {};
-	tokens.push_back(new Keyword(Slice("return", 6, "", 0, 0), Keyword::Type::RETURN));
-	tokens.push_back(new Identifier(Slice("1", 1, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Keyword(Slice("return", "", 0, 0), Keyword::Type::RETURN));
+	tokens.push_back(new Identifier(Slice("1", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p3, parseRvalue)
 	      .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
@@ -606,15 +591,11 @@ TEST(test_parser, test_parseStatement) {
 	// Test 4: Skips extra semicolons
 	MockParser p4;
 	tokens = {};
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
-	tokens.push_back(new Identifier(Slice("1", 1, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Identifier(Slice("1", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p4, parseRvalue)
 	      .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
@@ -638,7 +619,7 @@ TEST(test_parser, test_parseStatement) {
 	MockParser p5;
 	tokens = {};
 	tokens.push_back(
-	      new Punctuation(Slice("}", 1, "", 0, 0), Punctuation::Type::CloseBrace));
+	      new Punctuation(Slice("}", "", 0, 0), Punctuation::Type::CloseBrace));
 	EXPECT_CALL(p5, parseRvalue).Times(0);
 	it = tokens.begin();
 
@@ -651,16 +632,15 @@ TEST(test_parser, test_parseStatement) {
 	MockParser p6;
 	tokens = {};
 	context = new AST::CodeBlock(new AST::AST);
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	EXPECT_CALL(p6, parseRvalue)
 	      .WillOnce(::testing::Invoke([](std::vector<Token *>::iterator &it,
 	                                        [[maybe_unused]]
 	                                        AST::CodeBlock *context) -> rvalue * {
 		      it++;
-		      return new Variable(new Identifier(Slice("x", 1, "", 0, 0)));
+		      return new Variable(new Identifier(Slice("x", "", 0, 0)));
 	      }));
 	it = tokens.begin();
 
@@ -668,19 +648,18 @@ TEST(test_parser, test_parseStatement) {
 
 	EXPECT_EQ(it, tokens.end());
 	EXPECT_EQ(statement, nullptr);
-	EXPECT_NE(context->locals->find(new Identifier(Slice("x", 1, "", 0, 0))),
+	EXPECT_NE(context->locals->find(new Identifier(Slice("x", "", 0, 0))),
 	      context->locals->end());
 
 	// Test 7: Variable declaration assignment
 	MockParser p7;
 	tokens = {};
 	context = new AST::CodeBlock(new AST::AST);
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
-	toReturn = new Assignment(new Identifier(Slice("x", 1, "", 0, 0)),
-	      new Literal(new Identifier(Slice("1", 1, "", 0, 0))));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
+	toReturn = new Assignment(new Identifier(Slice("x", "", 0, 0)),
+	      new Literal(new Identifier(Slice("1", "", 0, 0))));
 	EXPECT_CALL(p7, parseRvalue)
 	      .WillOnce(::testing::Invoke([toReturn](std::vector<Token *>::iterator &it,
 	                                        [[maybe_unused]]
@@ -698,7 +677,7 @@ TEST(test_parser, test_parseStatement) {
 	if (expression != nullptr) {
 		EXPECT_EQ(expression->rval, toReturn);
 	}
-	EXPECT_NE(context->locals->find(new Identifier(Slice("x", 1, "", 0, 0))),
+	EXPECT_NE(context->locals->find(new Identifier(Slice("x", "", 0, 0))),
 	      context->locals->end());
 }
 
@@ -712,12 +691,11 @@ TEST(test_parser, test_parseStatement_error) {
 	tokens = {};
 	context = new AST::CodeBlock(new AST::AST);
 	context->locals->insert({
-	      new Identifier(Slice("x", 1, "", 0, 0)), {Type::INT, false}
+	      new Identifier(Slice("x", "", 0, 0)), {Type::INT, false}
     });
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseStatement(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -727,12 +705,11 @@ TEST(test_parser, test_parseStatement_error) {
 	tokens = {};
 	context = new AST::CodeBlock(new AST::AST);
 	context->locals->insert({
-	      new Identifier(Slice("x", 1, "", 0, 0)), {Type::INT, false}
+	      new Identifier(Slice("x", "", 0, 0)), {Type::INT, false}
     });
-	tokens.push_back(new Primitive(Slice("float", 5, "", 0, 0), Type::FLOAT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Primitive(Slice("float", "", 0, 0), Type::FLOAT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseStatement(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -742,10 +719,9 @@ TEST(test_parser, test_parseStatement_error) {
 	context = new AST::CodeBlock(new AST::AST);
 	// 3a: Literal
 	tokens = {};
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("1", 1, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("1", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseStatement(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -753,10 +729,9 @@ TEST(test_parser, test_parseStatement_error) {
 
 	// 3b: Operator
 	tokens = {};
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Punctuation(Slice("+", 1, "", 0, 0), Punctuation::Type::Plus));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Punctuation(Slice("+", "", 0, 0), Punctuation::Type::Plus));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseStatement(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -764,9 +739,8 @@ TEST(test_parser, test_parseStatement_error) {
 
 	// 3c: Other punctuation
 	tokens = {};
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseStatement(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -774,12 +748,11 @@ TEST(test_parser, test_parseStatement_error) {
 
 	// 3d: Non-assignment expression
 	tokens = {};
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice("+", 1, "", 0, 0), Punctuation::Type::Plus));
-	tokens.push_back(new Identifier(Slice("1", 1, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("+", "", 0, 0), Punctuation::Type::Plus));
+	tokens.push_back(new Identifier(Slice("1", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseStatement(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -787,19 +760,18 @@ TEST(test_parser, test_parseStatement_error) {
 
 	// Test 4: Assignment LHS not variable
 	tokens = {};
-	tokens.push_back(new Keyword(Slice("return", 6, "", 0, 0), Keyword::Type::RETURN));
-	tokens.push_back(new Punctuation(Slice("=", 1, "", 0, 0), Punctuation::Type::Equals));
+	tokens.push_back(new Keyword(Slice("return", "", 0, 0), Keyword::Type::RETURN));
+	tokens.push_back(new Punctuation(Slice("=", "", 0, 0), Punctuation::Type::Equals));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseStatement(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
 	      "LHS of assignment is not a variable");
 
 	tokens = {};
-	tokens.push_back(new Identifier(Slice("1", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice("=", 1, "", 0, 0), Punctuation::Type::Equals));
-	tokens.push_back(new Identifier(Slice("1", 1, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Identifier(Slice("1", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("=", "", 0, 0), Punctuation::Type::Equals));
+	tokens.push_back(new Identifier(Slice("1", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	it = tokens.begin();
 
 	// TODO change this to check if the LHS is not a literal - this is currently an e14
@@ -809,10 +781,10 @@ TEST(test_parser, test_parseStatement_error) {
 
 	// Test 5: Missing ; after declaration
 	tokens = {};
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	tokens.push_back(
-	      new Punctuation(Slice("}", 1, "", 0, 0), Punctuation::Type::CloseBrace));
+	      new Punctuation(Slice("}", "", 0, 0), Punctuation::Type::CloseBrace));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseStatement(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -820,12 +792,12 @@ TEST(test_parser, test_parseStatement_error) {
 
 	// Test 6: Missing ; after declaration assignment
 	tokens = {};
-	tokens.push_back(new Primitive(Slice("int", 3, "", 0, 0), Type::INT));
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice("=", 1, "", 0, 0), Punctuation::Type::Equals));
-	tokens.push_back(new Identifier(Slice("1", 1, "", 0, 0)));
+	tokens.push_back(new Primitive(Slice("int", "", 0, 0), Type::INT));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("=", "", 0, 0), Punctuation::Type::Equals));
+	tokens.push_back(new Identifier(Slice("1", "", 0, 0)));
 	tokens.push_back(
-	      new Punctuation(Slice("}", 1, "", 0, 0), Punctuation::Type::CloseBrace));
+	      new Punctuation(Slice("}", "", 0, 0), Punctuation::Type::CloseBrace));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseStatement(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -834,13 +806,13 @@ TEST(test_parser, test_parseStatement_error) {
 	// Test 7: Missing ; after expression statement
 	tokens = {};
 	context->locals->insert({
-	      new Identifier(Slice("x", 1, "", 0, 0)), {Type::INT, false}
+	      new Identifier(Slice("x", "", 0, 0)), {Type::INT, false}
     });
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice("=", 1, "", 0, 0), Punctuation::Type::Equals));
-	tokens.push_back(new Identifier(Slice("1", 1, "", 0, 0)));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("=", "", 0, 0), Punctuation::Type::Equals));
+	tokens.push_back(new Identifier(Slice("1", "", 0, 0)));
 	tokens.push_back(
-	      new Punctuation(Slice("}", 1, "", 0, 0), Punctuation::Type::CloseBrace));
+	      new Punctuation(Slice("}", "", 0, 0), Punctuation::Type::CloseBrace));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseStatement(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -848,9 +820,9 @@ TEST(test_parser, test_parseStatement_error) {
 
 	// Test 8: Missing ; after return statement
 	tokens = {};
-	tokens.push_back(new Keyword(Slice("return", 6, "", 0, 0), Keyword::Type::RETURN));
+	tokens.push_back(new Keyword(Slice("return", "", 0, 0), Keyword::Type::RETURN));
 	tokens.push_back(
-	      new Punctuation(Slice("}", 1, "", 0, 0), Punctuation::Type::CloseBrace));
+	      new Punctuation(Slice("}", "", 0, 0), Punctuation::Type::CloseBrace));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.parseStatement(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -861,7 +833,7 @@ TEST(test_parser, test_e0) {
 	Parser p;
 	std::vector<Token *> tokens;
 	const char *identifier;
-	Slice s = {"", static_cast<size_t>(0), "", 0, 0};
+	Slice s = {"", "", 0, 0};
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
 	Variable *var;
@@ -871,7 +843,7 @@ TEST(test_parser, test_e0) {
 	// Test 1: All alphabetical identifier
 	tokens = {};
 	identifier = "xyz";
-	s = Slice(identifier, strlen(identifier), "", 0, 0);
+	s = Slice(identifier, "", 0, 0);
 	tokens.push_back(new Identifier(s));
 	it = tokens.begin();
 	rval = p.e0(it);
@@ -888,7 +860,7 @@ TEST(test_parser, test_e0) {
 	// Test 2: All numerical identifier
 	tokens = {};
 	identifier = "123";
-	s = Slice(identifier, strlen(identifier), "", 0, 0);
+	s = Slice(identifier, "", 0, 0);
 	tokens.push_back(new Identifier(s));
 	it = tokens.begin();
 	rval = p.e0(it);
@@ -902,7 +874,7 @@ TEST(test_parser, test_e0) {
 	// Test 3: Alphanumeric identifier
 	tokens = {};
 	identifier = "abc123";
-	s = Slice(identifier, strlen(identifier), "", 0, 0);
+	s = Slice(identifier, "", 0, 0);
 	tokens.push_back(new Identifier(s));
 	it = tokens.begin();
 	rval = p.e0(it);
@@ -919,7 +891,7 @@ TEST(test_parser, test_e0) {
 	// Test 4: Not an identifier
 	tokens = {};
 	identifier = "int";
-	s = Slice(identifier, strlen(identifier), "", 0, 0);
+	s = Slice(identifier, "", 0, 0);
 	tokens.push_back(new Primitive(s, Type::INT));
 	it = tokens.begin();
 	rval = p.e0(it);
@@ -952,12 +924,11 @@ TEST(test_parser, test_e1) {
 	MockParser p1;
 	tokens = {};
 	EXPECT_CALL(p1, e0).WillOnce(::testing::Return(nullptr));
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	rvalue *toReturn = new EmptyRvalue;
 	EXPECT_CALL(p1, parseRvalue).WillOnce(::testing::Return(toReturn));
 	tokens.push_back(
-	      new Punctuation(Slice(")", 1, "", 0, 0), Punctuation::Type::CloseParen));
+	      new Punctuation(Slice(")", "", 0, 0), Punctuation::Type::CloseParen));
 
 	it = tokens.begin();
 
@@ -969,13 +940,12 @@ TEST(test_parser, test_e1) {
 	// Test 2: Function calls do not need arguments
 	MockParser p2;
 	tokens = {};
-	functionName = new Variable(new Identifier(Slice("function", 8, "", 0, 0)));
+	functionName = new Variable(new Identifier(Slice("function", "", 0, 0)));
 	EXPECT_CALL(p2, e0).WillOnce(::testing::Return(functionName));
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	EXPECT_CALL(p2, parseRvalue).WillOnce(::testing::Return(nullptr));
 	tokens.push_back(
-	      new Punctuation(Slice(")", 1, "", 0, 0), Punctuation::Type::CloseParen));
+	      new Punctuation(Slice(")", "", 0, 0), Punctuation::Type::CloseParen));
 	it = tokens.begin();
 
 	rval = p2.e1(it, context);
@@ -991,14 +961,13 @@ TEST(test_parser, test_e1) {
 	// Test 3: Function calls may take an argument
 	MockParser p3;
 	tokens = {};
-	functionName = new Variable(new Identifier(Slice("function", 8, "", 0, 0)));
+	functionName = new Variable(new Identifier(Slice("function", "", 0, 0)));
 	EXPECT_CALL(p3, e0).WillOnce(::testing::Return(functionName));
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	argument = new EmptyRvalue;
 	EXPECT_CALL(p3, parseRvalue).WillOnce(::testing::Return(argument));
 	tokens.push_back(
-	      new Punctuation(Slice(")", 1, "", 0, 0), Punctuation::Type::CloseParen));
+	      new Punctuation(Slice(")", "", 0, 0), Punctuation::Type::CloseParen));
 	it = tokens.begin();
 
 	rval = p3.e1(it, context);
@@ -1017,18 +986,17 @@ TEST(test_parser, test_e1) {
 	// Test 4: Function calls may take multiple arguments
 	MockParser p4_1;
 	tokens = {};
-	functionName = new Variable(new Identifier(Slice("function", 8, "", 0, 0)));
+	functionName = new Variable(new Identifier(Slice("function", "", 0, 0)));
 	EXPECT_CALL(p4_1, e0).WillOnce(::testing::Return(functionName));
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	argument1 = new EmptyRvalue;
 	argument2 = new EmptyRvalue;
 	EXPECT_CALL(p4_1, parseRvalue)
 	      .WillOnce(::testing::Return(argument1))
 	      .WillOnce(::testing::Return(argument2));
-	tokens.push_back(new Punctuation(Slice(",", 1, "", 0, 0), Punctuation::Type::Comma));
+	tokens.push_back(new Punctuation(Slice(",", "", 0, 0), Punctuation::Type::Comma));
 	tokens.push_back(
-	      new Punctuation(Slice(")", 1, "", 0, 0), Punctuation::Type::CloseParen));
+	      new Punctuation(Slice(")", "", 0, 0), Punctuation::Type::CloseParen));
 	it = tokens.begin();
 
 	rval = p4_1.e1(it, context);
@@ -1047,10 +1015,9 @@ TEST(test_parser, test_e1) {
 
 	MockParser p4_2;
 	tokens = {};
-	functionName = new Variable(new Identifier(Slice("function", 8, "", 0, 0)));
+	functionName = new Variable(new Identifier(Slice("function", "", 0, 0)));
 	EXPECT_CALL(p4_2, e0).WillOnce(::testing::Return(functionName));
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	argument1 = new EmptyRvalue;
 	argument2 = new EmptyRvalue;
 	argument3 = new EmptyRvalue;
@@ -1058,10 +1025,10 @@ TEST(test_parser, test_e1) {
 	      .WillOnce(::testing::Return(argument1))
 	      .WillOnce(::testing::Return(argument2))
 	      .WillOnce(::testing::Return(argument3));
-	tokens.push_back(new Punctuation(Slice(",", 1, "", 0, 0), Punctuation::Type::Comma));
-	tokens.push_back(new Punctuation(Slice(",", 1, "", 0, 0), Punctuation::Type::Comma));
+	tokens.push_back(new Punctuation(Slice(",", "", 0, 0), Punctuation::Type::Comma));
+	tokens.push_back(new Punctuation(Slice(",", "", 0, 0), Punctuation::Type::Comma));
 	tokens.push_back(
-	      new Punctuation(Slice(")", 1, "", 0, 0), Punctuation::Type::CloseParen));
+	      new Punctuation(Slice(")", "", 0, 0), Punctuation::Type::CloseParen));
 	it = tokens.begin();
 
 	rval = p4_2.e1(it, context);
@@ -1089,13 +1056,12 @@ TEST(test_parser, test_e1_error) {
 	tokens = {};
 	context = new AST::CodeBlock(new AST::AST);
 	context->locals->insert({
-	      new Identifier(Slice("var", 3, "", 0, 0)), {Type::INT, true}
+	      new Identifier(Slice("var", "", 0, 0)), {Type::INT, true}
     });
-	tokens.push_back(new Identifier(Slice("var", 3, "", 0, 0)));
+	tokens.push_back(new Identifier(Slice("var", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
-	tokens.push_back(
-	      new Punctuation(Slice(")", 1, "", 0, 0), Punctuation::Type::CloseParen));
+	      new Punctuation(Slice(")", "", 0, 0), Punctuation::Type::CloseParen));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.e1(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -1107,9 +1073,8 @@ TEST(test_parser, test_e1_error) {
 	Function *foo = new Function(ast);
 	ast->functions.insert({"foo", foo});
 	tokens = {};
-	tokens.push_back(new Identifier(Slice("foo", 3, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Identifier(Slice("foo", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.e1(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -1118,10 +1083,9 @@ TEST(test_parser, test_e1_error) {
 	// Test 3: Empty parenthesis for non-function call
 	tokens = {};
 	context = new AST::CodeBlock(new AST::AST);
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
 	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
-	tokens.push_back(
-	      new Punctuation(Slice(")", 1, "", 0, 0), Punctuation::Type::CloseParen));
+	      new Punctuation(Slice(")", "", 0, 0), Punctuation::Type::CloseParen));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.e1(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -1130,11 +1094,9 @@ TEST(test_parser, test_e1_error) {
 	// Test 4: Unmatched parenthesis in grouping
 	tokens = {};
 	context = new AST::CodeBlock(new AST::AST);
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
-	tokens.push_back(new Identifier(Slice("var", 3, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Identifier(Slice("var", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.e1(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -1143,11 +1105,9 @@ TEST(test_parser, test_e1_error) {
 	// Test 5: Unmatched parenthesis in function call
 	tokens = {};
 	context = new AST::CodeBlock(new AST::AST);
-	tokens.push_back(new Identifier(Slice("foo", 3, "", 0, 0)));
-	tokens.push_back(
-	      new Punctuation(Slice("(", 1, "", 0, 0), Punctuation::Type::OpenParen));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Identifier(Slice("foo", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("(", "", 0, 0), Punctuation::Type::OpenParen));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p.e1(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),
@@ -1202,7 +1162,7 @@ TEST(test_parser, test_e3) {
 	// Test 1: Multiplication
 	MockParser p1;
 	tokens = {};
-	tokens.push_back(new Punctuation(Slice("*", 1, "", 0, 0), Punctuation::Type::Times));
+	tokens.push_back(new Punctuation(Slice("*", "", 0, 0), Punctuation::Type::Times));
 	operand1 = new EmptyRvalue;
 	operand2 = new EmptyRvalue;
 	EXPECT_CALL(p1, e2)
@@ -1223,7 +1183,7 @@ TEST(test_parser, test_e3) {
 	// Test 2: Subtraction
 	MockParser p2;
 	tokens = {};
-	tokens.push_back(new Punctuation(Slice("/", 1, "", 0, 0), Punctuation::Type::Divide));
+	tokens.push_back(new Punctuation(Slice("/", "", 0, 0), Punctuation::Type::Divide));
 	operand1 = new EmptyRvalue;
 	operand2 = new EmptyRvalue;
 	EXPECT_CALL(p2, e2)
@@ -1244,7 +1204,7 @@ TEST(test_parser, test_e3) {
 	// Test 3: Modulo
 	MockParser p3;
 	tokens = {};
-	tokens.push_back(new Punctuation(Slice("%", 1, "", 0, 0), Punctuation::Type::Mod));
+	tokens.push_back(new Punctuation(Slice("%", "", 0, 0), Punctuation::Type::Mod));
 	operand1 = new EmptyRvalue;
 	operand2 = new EmptyRvalue;
 	EXPECT_CALL(p3, e2)
@@ -1265,15 +1225,14 @@ TEST(test_parser, test_e3) {
 	// Test 4: Multiple Operators
 	MockParser p4;
 	tokens = {};
-	tokens.push_back(new Punctuation(Slice("*", 1, "", 0, 0), Punctuation::Type::Times));
-	tokens.push_back(new Punctuation(Slice("/", 1, "", 0, 0), Punctuation::Type::Divide));
-	tokens.push_back(new Punctuation(Slice("/", 1, "", 0, 0), Punctuation::Type::Divide));
-	tokens.push_back(new Punctuation(Slice("%", 1, "", 0, 0), Punctuation::Type::Mod));
-	tokens.push_back(new Punctuation(Slice("*", 1, "", 0, 0), Punctuation::Type::Times));
-	tokens.push_back(new Punctuation(Slice("%", 1, "", 0, 0), Punctuation::Type::Mod));
-	tokens.push_back(new Punctuation(Slice("/", 1, "", 0, 0), Punctuation::Type::Divide));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Punctuation(Slice("*", "", 0, 0), Punctuation::Type::Times));
+	tokens.push_back(new Punctuation(Slice("/", "", 0, 0), Punctuation::Type::Divide));
+	tokens.push_back(new Punctuation(Slice("/", "", 0, 0), Punctuation::Type::Divide));
+	tokens.push_back(new Punctuation(Slice("%", "", 0, 0), Punctuation::Type::Mod));
+	tokens.push_back(new Punctuation(Slice("*", "", 0, 0), Punctuation::Type::Times));
+	tokens.push_back(new Punctuation(Slice("%", "", 0, 0), Punctuation::Type::Mod));
+	tokens.push_back(new Punctuation(Slice("/", "", 0, 0), Punctuation::Type::Divide));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	operand1 = new EmptyRvalue;
 	operand2 = new EmptyRvalue;
 	operand3 = new EmptyRvalue;
@@ -1337,8 +1296,7 @@ TEST(test_parser, test_e3) {
 	// Test 5: Other punctuation
 	MockParser p5;
 	tokens = {};
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p5, e2).WillOnce(::testing::Return(toReturn));
 	it = tokens.begin();
@@ -1351,7 +1309,7 @@ TEST(test_parser, test_e3) {
 	// Test 6: Non-punctuation
 	MockParser p6;
 	tokens = {};
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p6, e2).WillOnce(::testing::Return(toReturn));
 	it = tokens.begin();
@@ -1388,7 +1346,7 @@ TEST(test_parser, test_e4) {
 	// Test 1: Addition
 	MockParser p1;
 	tokens = {};
-	tokens.push_back(new Punctuation(Slice("+", 1, "", 0, 0), Punctuation::Type::Plus));
+	tokens.push_back(new Punctuation(Slice("+", "", 0, 0), Punctuation::Type::Plus));
 	operand1 = new EmptyRvalue;
 	operand2 = new EmptyRvalue;
 	EXPECT_CALL(p1, e3)
@@ -1409,7 +1367,7 @@ TEST(test_parser, test_e4) {
 	// Test 2: Subtraction
 	MockParser p2;
 	tokens = {};
-	tokens.push_back(new Punctuation(Slice("-", 1, "", 0, 0), Punctuation::Type::Minus));
+	tokens.push_back(new Punctuation(Slice("-", "", 0, 0), Punctuation::Type::Minus));
 	operand1 = new EmptyRvalue;
 	operand2 = new EmptyRvalue;
 	EXPECT_CALL(p2, e3)
@@ -1430,15 +1388,14 @@ TEST(test_parser, test_e4) {
 	// Test 3: Multiple Operators
 	MockParser p3;
 	tokens = {};
-	tokens.push_back(new Punctuation(Slice("+", 1, "", 0, 0), Punctuation::Type::Plus));
-	tokens.push_back(new Punctuation(Slice("-", 1, "", 0, 0), Punctuation::Type::Minus));
-	tokens.push_back(new Punctuation(Slice("-", 1, "", 0, 0), Punctuation::Type::Minus));
-	tokens.push_back(new Punctuation(Slice("+", 1, "", 0, 0), Punctuation::Type::Plus));
-	tokens.push_back(new Punctuation(Slice("+", 1, "", 0, 0), Punctuation::Type::Plus));
-	tokens.push_back(new Punctuation(Slice("-", 1, "", 0, 0), Punctuation::Type::Minus));
-	tokens.push_back(new Punctuation(Slice("+", 1, "", 0, 0), Punctuation::Type::Plus));
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Punctuation(Slice("+", "", 0, 0), Punctuation::Type::Plus));
+	tokens.push_back(new Punctuation(Slice("-", "", 0, 0), Punctuation::Type::Minus));
+	tokens.push_back(new Punctuation(Slice("-", "", 0, 0), Punctuation::Type::Minus));
+	tokens.push_back(new Punctuation(Slice("+", "", 0, 0), Punctuation::Type::Plus));
+	tokens.push_back(new Punctuation(Slice("+", "", 0, 0), Punctuation::Type::Plus));
+	tokens.push_back(new Punctuation(Slice("-", "", 0, 0), Punctuation::Type::Minus));
+	tokens.push_back(new Punctuation(Slice("+", "", 0, 0), Punctuation::Type::Plus));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	operand1 = new EmptyRvalue;
 	operand2 = new EmptyRvalue;
 	operand3 = new EmptyRvalue;
@@ -1501,8 +1458,7 @@ TEST(test_parser, test_e4) {
 	// Test 4: Other punctuation
 	MockParser p4;
 	tokens = {};
-	tokens.push_back(
-	      new Punctuation(Slice(";", 1, "", 0, 0), Punctuation::Type::Semicolon));
+	tokens.push_back(new Punctuation(Slice(";", "", 0, 0), Punctuation::Type::Semicolon));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p4, e3).WillOnce(::testing::Return(toReturn));
 	it = tokens.begin();
@@ -1515,7 +1471,7 @@ TEST(test_parser, test_e4) {
 	// Test 5: Non-punctuation
 	MockParser p5;
 	tokens = {};
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p5, e3).WillOnce(::testing::Return(toReturn));
 	it = tokens.begin();
@@ -1734,11 +1690,11 @@ TEST(test_parser, test_e14) {
 	// Test 1: Assignment
 	MockParser p1;
 	tokens = {};
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice("=", 1, "", 0, 0), Punctuation::Type::Equals));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("=", "", 0, 0), Punctuation::Type::Equals));
 	toReturn = new EmptyRvalue;
 	context->locals->insert({
-	      new Identifier(Slice("x", 1, "", 0, 0)), {Type::INT, true}
+	      new Identifier(Slice("x", "", 0, 0)), {Type::INT, true}
     });
 	EXPECT_CALL(p1, e14)
 	      // Test multiple assignment for free thanks to recursion here
@@ -1762,8 +1718,8 @@ TEST(test_parser, test_e14) {
 	// Test 2: No Assignment with leading identifier
 	MockParser p2;
 	tokens = {};
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice("+", 1, "", 0, 0), Punctuation::Type::Plus));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("+", "", 0, 0), Punctuation::Type::Plus));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p2, e14).WillOnce(::testing::Invoke(
 	      [&p2](std::vector<Token *>::iterator &it, AST::CodeBlock *context) -> rvalue * {
@@ -1780,7 +1736,7 @@ TEST(test_parser, test_e14) {
 	// Test 3: No Assignment without leading identifier
 	MockParser p3;
 	tokens = {};
-	tokens.push_back(new Punctuation(Slice("+", 1, "", 0, 0), Punctuation::Type::Plus));
+	tokens.push_back(new Punctuation(Slice("+", "", 0, 0), Punctuation::Type::Plus));
 	toReturn = new EmptyRvalue;
 	EXPECT_CALL(p3, e14).WillOnce(::testing::Invoke(
 	      [&p3](std::vector<Token *>::iterator &it, AST::CodeBlock *context) -> rvalue * {
@@ -1798,8 +1754,8 @@ TEST(test_parser, test_e14) {
 	Parser p4;
 	tokens = {};
 	context = new AST::CodeBlock(new AST::AST);
-	tokens.push_back(new Identifier(Slice("x", 1, "", 0, 0)));
-	tokens.push_back(new Punctuation(Slice("=", 1, "", 0, 0), Punctuation::Type::Equals));
+	tokens.push_back(new Identifier(Slice("x", "", 0, 0)));
+	tokens.push_back(new Punctuation(Slice("=", "", 0, 0), Punctuation::Type::Equals));
 	it = tokens.begin();
 
 	EXPECT_EXIT(p4.e14(it, context), ::testing::ExitedWithCode(EXIT_FAILURE),

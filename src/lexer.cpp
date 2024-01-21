@@ -1,6 +1,7 @@
 #include "lexer.h"
 
 #include "ast.h"
+#include <string_view>
 
 #include <stdexcept>
 #include <vector>
@@ -18,7 +19,7 @@ std::vector<Token *> *Lexer::tokenize() {
 
 	std::vector<Token *> *tokens = new std::vector<Token *>();
 	for (Slice s : slices) {
-		std::cerr << s << '\n';
+		std::cerr << s.contents << '\n';
 		Keyword *keyword = createKeyword(s);
 		if (keyword) {
 			tokens->push_back(keyword);
@@ -77,7 +78,8 @@ void Lexer::slice() {
 			current++;
 			col++;
 		} while (current - program < size && !isSep(current));
-		slices.emplace_back(tokenStart, current - 1, source, line, startCol);
+		slices.emplace_back(std::string_view(tokenStart, current - tokenStart), source,
+		      line, startCol);
 	}
 }
 
@@ -98,78 +100,78 @@ bool Lexer::isSep(const char *const c) {
 }
 
 Keyword *Lexer::createKeyword(Slice s) {
-	if (s == "void") {
+	if (s.contents == "void") {
 		return new Keyword(s, Keyword::Type::VOID);
 	}
-	if (s == "return") {
+	if (s.contents == "return") {
 		return new Keyword(s, Keyword::Type::RETURN);
 	}
 	return nullptr;
 }
 
 Primitive *Lexer::createPrimitive(Slice s) {
-	if (s == "int") {
+	if (s.contents == "int") {
 		return new Primitive(s, Type::INT);
 	}
-	if (s == "byte") {
+	if (s.contents == "byte") {
 		return new Primitive(s, Type::BYTE);
 	}
-	if (s == "short") {
+	if (s.contents == "short") {
 		return new Primitive(s, Type::SHORT);
 	}
-	if (s == "long") {
+	if (s.contents == "long") {
 		return new Primitive(s, Type::LONG);
 	}
-	if (s == "float") {
+	if (s.contents == "float") {
 		return new Primitive(s, Type::FLOAT);
 	}
-	if (s == "double") {
+	if (s.contents == "double") {
 		return new Primitive(s, Type::DOUBLE);
 	}
-	if (s == "bool") {
+	if (s.contents == "bool") {
 		return new Primitive(s, Type::BOOL);
 	}
-	if (s == "char") {
+	if (s.contents == "char") {
 		return new Primitive(s, Type::CHAR);
 	}
 	return nullptr;
 }
 
 Punctuation *Lexer::createPunctuation(Slice s) {
-	if (s == "(") {
+	if (s.contents == "(") {
 		return new Punctuation(s, Punctuation::Type::OpenParen);
 	}
-	if (s == ")") {
+	if (s.contents == ")") {
 		return new Punctuation(s, Punctuation::Type::CloseParen);
 	}
-	if (s == ";") {
+	if (s.contents == ";") {
 		return new Punctuation(s, Punctuation::Type::Semicolon);
 	}
-	if (s == "{") {
+	if (s.contents == "{") {
 		return new Punctuation(s, Punctuation::Type::OpenBrace);
 	}
-	if (s == "}") {
+	if (s.contents == "}") {
 		return new Punctuation(s, Punctuation::Type::CloseBrace);
 	}
-	if (s == ",") {
+	if (s.contents == ",") {
 		return new Punctuation(s, Punctuation::Type::Comma);
 	}
-	if (s == "=") {
+	if (s.contents == "=") {
 		return new Punctuation(s, Punctuation::Type::Equals);
 	}
-	if (s == "+") {
+	if (s.contents == "+") {
 		return new Punctuation(s, Punctuation::Type::Plus);
 	}
-	if (s == "-") {
+	if (s.contents == "-") {
 		return new Punctuation(s, Punctuation::Type::Minus);
 	}
-	if (s == "*") {
+	if (s.contents == "*") {
 		return new Punctuation(s, Punctuation::Type::Times);
 	}
-	if (s == "/") {
+	if (s.contents == "/") {
 		return new Punctuation(s, Punctuation::Type::Divide);
 	}
-	if (s == "%") {
+	if (s.contents == "%") {
 		return new Punctuation(s, Punctuation::Type::Mod);
 	}
 	return nullptr;

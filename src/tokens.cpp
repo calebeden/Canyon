@@ -1,5 +1,7 @@
 #include "tokens.h"
 
+#include <string_view>
+
 #include <cstdarg>
 #include <iostream>
 #include <stdexcept>
@@ -50,49 +52,8 @@ std::ostream &operator<<(std::ostream &os, const Type &type) {
 	}
 }
 
-Slice::Slice(const char *const start, const char *const end, const char *const source,
-      size_t row, size_t col)
-    : start(start), len(end - start + 1), row(row), col(col), source(source) {
-}
-
-Slice::Slice(const char *const start, size_t len, const char *const source, size_t row,
-      size_t col)
-    : start(start), len(len), row(row), col(col), source(source) {
-}
-
-bool Slice::operator==(const std::string &rhs) const {
-	for (size_t i = 0; i < this->len; i++) {
-		if (rhs[i] != this->start[i]) {
-			return false;
-		}
-	}
-	return rhs[this->len] == '\0';
-}
-
-bool Slice::operator==(const Slice &other) const {
-	size_t length = std::min(this->len, other.len);
-	if (this->len != other.len) {
-		return false;
-	}
-	for (size_t i = 0; i < length; i++) {
-		if (other.start[i] != this->start[i]) {
-			return false;
-		}
-	}
-	return true;
-}
-
-bool Slice::operator==(const char *const other) const {
-	return strncmp(this->start, other, this->len) == 0 && other[this->len] == '\0';
-}
-
-Slice::operator std::string() const {
-	return std::string(start, len);
-}
-
-std::ostream &operator<<(std::ostream &os, const Slice &slice) {
-	os.write(slice.start, slice.len);
-	return os;
+Slice::Slice(std::string_view contents, const char *const source, size_t row, size_t col)
+    : contents(contents), source(source), row(row), col(col) {
 }
 
 Token::Token(const char *const source, size_t row, size_t col)
@@ -287,7 +248,7 @@ void Punctuation::print(std::ostream &os) const {
 	}
 }
 
-Identifier::Identifier(Slice s) : Token(s.source, s.row, s.col), s(s) {
+Identifier::Identifier(Slice s) : Token(s.source, s.row, s.col), s(s.contents) {
 }
 
 void Identifier::print(std::ostream &os) const {
@@ -301,8 +262,8 @@ void Identifier::compile(std::ostream &outfile) {
 std::size_t Hasher::operator()(Identifier *const id) const {
 	// djb2
 	size_t hash = 5381;
-	for (size_t i = 0; i < id->s.len; i++) {
-		hash = hash * 33 + id->s.start[i];
+	for (size_t i = 0; i < id->s.size(); i++) {
+		hash = hash * 33 + id->s[i];
 	}
 	return hash;
 }

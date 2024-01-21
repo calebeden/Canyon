@@ -2,6 +2,7 @@
 #define LEXER_H
 
 #include "tokens.h"
+#include <string_view>
 
 #include <cstdint>
 #include <vector>

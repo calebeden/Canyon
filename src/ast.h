@@ -168,15 +168,15 @@ struct Function {
 	Type type = Type::UNKNOWN;
 	std::vector<std::pair<Identifier *, Type>> parameters;
 	explicit Function(AST *ast);
-	virtual void compile(std::ostream &outfile, const std::string &name) const;
-	virtual void forward(std::ostream &outfile, const std::string &name) const;
+	virtual void compile(std::ostream &outfile, const std::string_view &name) const;
+	virtual void forward(std::ostream &outfile, const std::string_view &name) const;
 	virtual void resolve();
 	void typeCheck() const;
 };
 
 struct AST {
 	AST();
-	std::unordered_map<std::string, Function *> functions;
+	std::unordered_map<std::string_view, Function *> functions;
 	std::vector<FunctionCall *> functionCalls;
 	void compile(std::ostream &outfile) const;
 	// TODO global vars
