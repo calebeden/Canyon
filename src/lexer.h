@@ -19,9 +19,9 @@ class Lexer {
 public:
 #endif
 	const char *program;
+	const char *current;
 	off_t size;
 	const char *source;
-	const char *current;
 	std::queue<Slice> slices;
 	uint32_t tabSize;
 public:

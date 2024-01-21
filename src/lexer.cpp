@@ -9,7 +9,7 @@
 
 Lexer::Lexer(const char *const program, off_t size, const char *const source,
       uint32_t tabSize)
-    : program(program), size(size), source(source), tabSize(tabSize) {
+    : program(program), current(program), size(size), source(source), tabSize(tabSize) {
 	if (tabSize == 0) {
 		throw std::invalid_argument("Tab size must be greater than 0");
 	}
@@ -50,7 +50,6 @@ std::vector<Token *> Lexer::tokenize() {
 }
 
 void Lexer::slice() {
-	current = program;
 	size_t line = 1;
 	size_t col = 1;
 
