@@ -289,8 +289,7 @@ void FunctionCall::compile(std::ostream &outfile) const {
 }
 
 Type FunctionCall::typeCheck(const CodeBlock *context) const {
-	std::unordered_map<std::string, Function *>::iterator function
-	      = context->global->functions.find(name->variable->s);
+	auto function = context->global->functions.find(name->variable->s);
 	if (function == context->global->functions.end()) {
 		throw std::invalid_argument("Could not find function");
 	}
@@ -391,9 +390,7 @@ void CodeBlock::resolve() {
 }
 
 Type CodeBlock::getType(Identifier *var) const {
-	std::unordered_map<Identifier *, std::tuple<Type, bool>, Hasher, Comparator>::iterator
-	      local
-	      = locals->find(var);
+	auto local = locals->find(var);
 	if (local != locals->end()) {
 		return std::get<0>(local->second);
 	}
@@ -495,8 +492,7 @@ void AST::resolve() {
 				      arg_size);
 			}
 		} else {
-			std::unordered_map<std::string, Function *>::iterator f
-			      = functions.find(call->name->variable->s);
+			auto f = functions.find(call->name->variable->s);
 			if (f == functions.end()) {
 				call->error("Function %.*s does not exist", call->name->variable->s.len,
 				      call->name->variable->s.start);
