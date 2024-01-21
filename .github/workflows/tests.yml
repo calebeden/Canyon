@@ -67,15 +67,15 @@ jobs:
           # sudo du -sh "${SOURCE}" || true
           # echo "# --------------------------------------------------------"
 
+      - name: Configure
+        working-directory: ${{github.workspace}}
+        run: mkdir -p build; cmake -DINSTALL_GTEST=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S . -B build
+
       - name: Lint
         working-directory: ${{github.workspace}}
         run: |
           clang-format-18 --dry-run -Werror src/*.cpp test/unit_tests/*.cpp
-          clang-tidy src/*.cpp test/unit_tests/*.cpp -p ./build/compile-commands.json
-
-      - name: Configure
-        working-directory: ${{github.workspace}}
-        run: mkdir -p build; cmake -DINSTALL_GTEST=OFF -DCMAKE_BUILD_TYPE=Debug -S . -B build
+          clang-tidy src/*.cpp test/unit_tests/*.cpp -p ./build/compile_commands.json
 
       - name: Build
         working-directory: ${{github.workspace}}/build
