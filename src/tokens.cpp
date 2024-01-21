@@ -5,7 +5,6 @@
 #include <cstdarg>
 #include <iostream>
 #include <stdexcept>
-#include <string>
 
 std::ostream &operator<<(std::ostream &os, const Type &type) {
 	switch (type) {
