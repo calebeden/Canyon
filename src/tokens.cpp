@@ -59,16 +59,6 @@ Token::Token(const char *const source, size_t row, size_t col)
     : source(source), row(row), col(col) {
 }
 
-void Token::error(const char *const format, ...) const {
-	fprintf(stderr, "Error at %s:%ld:%ld: ", source, row, col);
-	va_list args;
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-	fprintf(stderr, "\n");
-	exit(EXIT_FAILURE);
-}
-
 Keyword::Keyword(const Slice &s, Type type) : Token(s.source, s.row, s.col), type(type) {
 }
 

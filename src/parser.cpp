@@ -11,6 +11,7 @@
 #include <cstring>
 #include <fcntl.h>
 #include <stdexcept>
+#include <string>
 #include <typeinfo>
 #include <vector>
 
@@ -26,7 +27,7 @@ AST::AST Parser::parseModule(std::vector<Token *> &tokens) {
 		std::cerr << "Parse error: no main function\n";
 		exit(EXIT_FAILURE);
 	}
-	ast.resolve();
+	ast.resolve(errors);
 	return ast;
 }
 
@@ -45,11 +46,11 @@ void Parser::parseFunction(std::vector<Token *>::iterator &it, AST::AST &ast) {
 	           keyword && keyword->type == Keyword::Type::VOID) {
 		type = Type::VOID;
 	} else {
-		(*it)->error("Expected function type");
+		errors.error(*it, "Expected function type");
 	}
 	it++;
 	if (dynamic_cast<Identifier *>(*it) == nullptr) {
-		(*it)->error("Expected identifier");
+		errors.error(*it, "Expected identifier");
 	}
 	std::string_view name = dynamic_cast<Identifier *>(*it)->s;
 	if (name == "main") {
@@ -72,7 +73,7 @@ void Parser::parseFunction(std::vector<Token *>::iterator &it, AST::AST &ast) {
 void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *function) {
 	if (auto punc = dynamic_cast<Punctuation *>(*it);
 	      !punc || punc->type != Punctuation::Type::OpenParen) {
-		(*it)->error("Expected '('");
+		errors.error(*it, "Expected '('");
 	}
 	it++;
 	if (auto punc = dynamic_cast<Punctuation *>(*it)) {
@@ -89,18 +90,18 @@ void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *funct
 			if (auto id = dynamic_cast<Identifier *>(*it)) {
 				it++;
 				if (context->locals.find(id) != context->locals.end()) {
-					id->error("Re-declaration of parameter %.*s", id->s.size(),
-					      id->s.data());
+					errors.error(id,
+					      std::string("Re-declaration of parameter ").append(id->s));
 				}
 				context->locals.insert({
 				      id, {type->type, true}
                 });
 				function->parameters.emplace_back(id, type->type);
 			} else {
-				(*it)->error("Unexpected token following primitive");
+				errors.error(*it, "Unexpected token following primitive");
 			}
 		} else {
-			(*it)->error("Expected primitive");
+			errors.error(*it, "Expected primitive");
 		}
 		if (auto punc = dynamic_cast<Punctuation *>(*it)) {
 			if (punc->type == Punctuation::Type::CloseParen) {
@@ -111,14 +112,14 @@ void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *funct
 				continue;
 			}
 		}
-		(*it)->error("Unexpected token; expected ')' or ','");
+		errors.error(*it, "Unexpected token; expected ')' or ','");
 	}
 }
 
 void Parser::parseBlock(std::vector<Token *>::iterator &it, AST::CodeBlock &context) {
 	if (auto punc = dynamic_cast<Punctuation *>(*it);
 	      !punc || punc->type != Punctuation::Type::OpenBrace) {
-		(*it)->error("Expected '{'");
+		errors.error(*it, "Expected '{'");
 	}
 	it++;
 	auto punc = dynamic_cast<Punctuation *>(*it);
@@ -148,30 +149,30 @@ Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
 		it++;
 		if (auto id = dynamic_cast<Identifier *>(*it)) {
 			if (context.locals.find(id) != context.locals.end()) {
-				(*it)->error("Re-declaration of variable %.*s", id->s.size(),
-				      id->s.data());
+				errors.error(*it,
+				      std::string("Re-declaration of variable ").append(id->s));
 			}
 			context.locals.insert({
 			      id, {type->type, false}
             });
 			rval = parseRvalue(it, context);
 			if (!rval) {
-				(*it)->error("parseRvalue should have at least returned the Variable we "
-				             "declared...");
+				errors.error(*it, "parseRvalue should have at least returned the "
+				                  "Variable we declared...");
 			}
 			if (dynamic_cast<Variable *>(rval)) {
 				if (auto punc = dynamic_cast<Punctuation *>(*it);
 				      !punc || punc->type != Punctuation::Type::Semicolon) {
-					(*it)->error("Expected ';' after statement");
+					errors.error(*it, "Expected ';' after statement");
 				}
 				it++;
 				return nullptr;
 			}
 			if (!dynamic_cast<Assignment *>(rval)) {
-				(*it)->error("Unexpected expression following declaration");
+				errors.error(*it, "Unexpected expression following declaration");
 			}
 		} else {
-			(*it)->error("Unexpected token following primitive");
+			errors.error(*it, "Unexpected token following primitive");
 		}
 	} else if (auto keyword = dynamic_cast<Keyword *>(*it);
 	           keyword && keyword->type == Keyword::Type::RETURN) {
@@ -181,9 +182,9 @@ Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
 		if (auto punc = dynamic_cast<Punctuation *>(*it);
 		      !punc || punc->type != Punctuation::Type::Semicolon) {
 			if (punc && punc->type == Punctuation::Type::Equals) {
-				(*it)->error("LHS of assignment is not a variable");
+				errors.error(*it, "LHS of assignment is not a variable");
 			}
-			(*it)->error("Expected ';' after statement");
+			errors.error(*it, "Expected ';' after statement");
 		}
 		it++;
 		Return *ret = new Return(rval, return_token);
@@ -195,9 +196,9 @@ Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
 	if (auto punc = dynamic_cast<Punctuation *>(*it);
 	      !punc || punc->type != Punctuation::Type::Semicolon) {
 		if (punc && punc->type == Punctuation::Type::Equals) {
-			(*it)->error("LHS of assignment is not a variable");
+			errors.error(*it, "LHS of assignment is not a variable");
 		}
-		(*it)->error("Expected ';' after statement");
+		errors.error(*it, "Expected ';' after statement");
 	}
 	it++;
 	if (rval != nullptr) {
@@ -296,8 +297,7 @@ rvalue *Parser::e1(std::vector<Token *>::iterator &it, AST::CodeBlock &context) 
 			CodeBlock::IdentifierStatus status = context.find(id);
 			switch (status) {
 				case CodeBlock::IdentifierStatus::VARIABLE: {
-					id->error("%.*s is not callable", id->variable->s.size(),
-					      id->variable->s.data());
+					errors.error(*it, std::string(id->variable->s) + " is not callable");
 					break;
 				}
 				case CodeBlock::IdentifierStatus::UNKNOWN: {
@@ -316,7 +316,7 @@ rvalue *Parser::e1(std::vector<Token *>::iterator &it, AST::CodeBlock &context) 
 					rval = parseRvalue(it, context);
 					if (rval == nullptr) {
 						// Not tested since I'm not sure how this would even happen
-						(*it)->error("How did parseRvalue return null?");
+						errors.error(*it, "How did parseRvalue return null?");
 					}
 				} else {
 					rval = nullptr;
@@ -326,11 +326,11 @@ rvalue *Parser::e1(std::vector<Token *>::iterator &it, AST::CodeBlock &context) 
 			rval = call;
 		}
 		if (rval == nullptr) {
-			(*it)->error("Expected expression");
+			errors.error(*it, "Expected expression");
 		}
 		if (auto punc = dynamic_cast<Punctuation *>(*it);
 		      !punc || punc->type != Punctuation::Type::CloseParen) {
-			(*it)->error("Expected ')'");
+			errors.error(*it, "Expected ')'");
 		}
 		it++;
 		return rval;
@@ -340,8 +340,7 @@ rvalue *Parser::e1(std::vector<Token *>::iterator &it, AST::CodeBlock &context) 
 		CodeBlock::IdentifierStatus status = context.find(id);
 		switch (status) {
 			case CodeBlock::IdentifierStatus::FUNCTION: {
-				id->error("%.*s is not a variable", id->variable->s.size(),
-				      id->variable->s.data());
+				errors.error(*it, std::string(id->variable->s) + " is not a variable");
 				break;
 			}
 			case CodeBlock::IdentifierStatus::UNKNOWN: {
@@ -441,7 +440,7 @@ rvalue *Parser::e14(std::vector<Token *>::iterator &it, AST::CodeBlock &context)
 		if (auto punc = dynamic_cast<Punctuation *>(*(it + 1));
 		      punc && punc->type == Punctuation::Type::Equals) {
 			if (context.locals.find(id) == context.locals.end()) {
-				id->error("Undeclared variable %.*s", id->s.size(), id->s.data());
+				errors.error(id, std::string("Undeclared variable ").append(id->s));
 			}
 			it += 2;
 			return new Assignment(id, e14(it, context));

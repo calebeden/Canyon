@@ -1,6 +1,7 @@
 #include "ast.h"
 
 #include "builtins.h"
+#include "errorhandler.h"
 #include "tokens.h"
 #include <string_view>
 
@@ -8,21 +9,12 @@
 #include <cstdarg>
 #include <cstring>
 #include <iostream>
+#include <string>
 
 namespace AST {
 
 rvalue::rvalue(const char *const source, size_t row, size_t col)
     : source(source), row(row), col(col) {
-}
-
-void rvalue::error(const char *const format, ...) const {
-	fprintf(stderr, "Error at %s:%ld:%ld: ", source, row, col);
-	va_list args;
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-	fprintf(stderr, "\n");
-	exit(EXIT_FAILURE);
 }
 
 Literal::Literal(const Identifier *const value)
@@ -46,7 +38,8 @@ void Literal::compile(std::ostream &outfile) const {
 	outfile << value;
 }
 
-Type Literal::typeCheck([[maybe_unused]] const CodeBlock &context) const {
+Type Literal::typeCheck([[maybe_unused]] const CodeBlock &context,
+      [[maybe_unused]] ErrorHandler &errors) const {
 	return Type::INT;
 }
 
@@ -62,7 +55,8 @@ void Variable::compile(std::ostream &outfile) const {
 	variable->compile(outfile);
 }
 
-Type Variable::typeCheck(const CodeBlock &context) const {
+Type Variable::typeCheck(const CodeBlock &context,
+      [[maybe_unused]] ErrorHandler &errors) const {
 	return context.getType(variable);
 }
 
@@ -82,11 +76,11 @@ void Assignment::compile(std::ostream &outfile) const {
 	expression->compile(outfile);
 }
 
-Type Assignment::typeCheck(const CodeBlock &context) const {
+Type Assignment::typeCheck(const CodeBlock &context, ErrorHandler &errors) const {
 	Type varType = context.getType(variable);
-	Type expType = expression->typeCheck(context);
+	Type expType = expression->typeCheck(context, errors);
 	if (varType != expType) {
-		error("Incompatible types");
+		errors.error(source, row, col, "Incompatible types");
 	}
 	return expType;
 }
@@ -112,11 +106,11 @@ void Addition::compile(std::ostream &outfile) const {
 	outfile << ')';
 }
 
-Type Addition::typeCheck(const CodeBlock &context) const {
-	Type type1 = operand1->typeCheck(context);
-	Type type2 = operand2->typeCheck(context);
+Type Addition::typeCheck(const CodeBlock &context, ErrorHandler &errors) const {
+	Type type1 = operand1->typeCheck(context, errors);
+	Type type2 = operand2->typeCheck(context, errors);
 	if (type1 != type2) {
-		error("Incompatible types");
+		errors.error(source, row, col, "Incompatible types");
 	}
 	return type2;
 }
@@ -142,11 +136,11 @@ void Subtraction::compile(std::ostream &outfile) const {
 	outfile << ')';
 }
 
-Type Subtraction::typeCheck(const CodeBlock &context) const {
-	Type type1 = operand1->typeCheck(context);
-	Type type2 = operand2->typeCheck(context);
+Type Subtraction::typeCheck(const CodeBlock &context, ErrorHandler &errors) const {
+	Type type1 = operand1->typeCheck(context, errors);
+	Type type2 = operand2->typeCheck(context, errors);
 	if (type1 != type2) {
-		error("Incompatible types");
+		errors.error(source, row, col, "Incompatible types");
 	}
 	return type2;
 }
@@ -172,11 +166,11 @@ void Multiplication::compile(std::ostream &outfile) const {
 	outfile << ')';
 }
 
-Type Multiplication::typeCheck(const CodeBlock &context) const {
-	Type type1 = operand1->typeCheck(context);
-	Type type2 = operand2->typeCheck(context);
+Type Multiplication::typeCheck(const CodeBlock &context, ErrorHandler &errors) const {
+	Type type1 = operand1->typeCheck(context, errors);
+	Type type2 = operand2->typeCheck(context, errors);
 	if (type1 != type2) {
-		error("Incompatible types");
+		errors.error(source, row, col, "Incompatible types");
 	}
 	return type2;
 }
@@ -202,11 +196,11 @@ void Division::compile(std::ostream &outfile) const {
 	outfile << ')';
 }
 
-Type Division::typeCheck(const CodeBlock &context) const {
-	Type type1 = operand1->typeCheck(context);
-	Type type2 = operand2->typeCheck(context);
+Type Division::typeCheck(const CodeBlock &context, ErrorHandler &errors) const {
+	Type type1 = operand1->typeCheck(context, errors);
+	Type type2 = operand2->typeCheck(context, errors);
 	if (type1 != type2) {
-		error("Incompatible types");
+		errors.error(source, row, col, "Incompatible types");
 	}
 	return type2;
 }
@@ -232,11 +226,11 @@ void Modulo::compile(std::ostream &outfile) const {
 	outfile << ')';
 }
 
-Type Modulo::typeCheck(const CodeBlock &context) const {
-	Type type1 = operand1->typeCheck(context);
-	Type type2 = operand2->typeCheck(context);
+Type Modulo::typeCheck(const CodeBlock &context, ErrorHandler &errors) const {
+	Type type1 = operand1->typeCheck(context, errors);
+	Type type2 = operand2->typeCheck(context, errors);
 	if (type1 != type2) {
-		error("Incompatible types");
+		errors.error(source, row, col, "Incompatible types");
 	}
 	return type2;
 }
@@ -255,9 +249,9 @@ void Expression::compile(std::ostream &outfile) const {
 	outfile << ";\n";
 }
 
-Type Expression::typeCheck(const CodeBlock &context,
-      [[maybe_unused]] Type returnType) const {
-	return rval->typeCheck(context);
+Type Expression::typeCheck(const CodeBlock &context, [[maybe_unused]] Type returnType,
+      ErrorHandler &errors) const {
+	return rval->typeCheck(context, errors);
 }
 
 FunctionCall::FunctionCall(Variable *name)
@@ -293,14 +287,16 @@ void FunctionCall::compile(std::ostream &outfile) const {
 	outfile << ')';
 }
 
-Type FunctionCall::typeCheck(const CodeBlock &context) const {
+Type FunctionCall::typeCheck(const CodeBlock &context, ErrorHandler &errors) const {
 	auto function = context.global->functions.find(name->variable->s);
 	if (function == context.global->functions.end()) {
 		throw std::invalid_argument("Could not find function");
 	}
 	for (size_t i = 0; i < arguments.size(); i++) {
-		if (arguments[i]->typeCheck(context) != function->second->parameters[i].second) {
-			arguments[i]->error("Incorrect argument type");
+		if (arguments[i]->typeCheck(context, errors)
+		      != function->second->parameters[i].second) {
+			errors.error(arguments[i]->source, arguments[i]->row, arguments[i]->col,
+			      "Incorrect argument type");
 		}
 	}
 	return function->second->type;
@@ -329,16 +325,17 @@ void Return::compile(std::ostream &outfile) const {
 	}
 }
 
-Type Return::typeCheck(const CodeBlock &context, Type returnType) const {
+Type Return::typeCheck(const CodeBlock &context, Type returnType,
+      ErrorHandler &errors) const {
 	if (rval == nullptr) {
 		if (returnType != Type::VOID) {
-			token->error("Invalid return from non-void function");
+			errors.error(token, "Invalid return from non-void function");
 		}
 		return Type::VOID;
 	}
-	Type type = rval->typeCheck(context);
+	Type type = rval->typeCheck(context, errors);
 	if (type != returnType) {
-		token->error("Invalid return type");
+		errors.error(token, "Invalid return type");
 	}
 	return type;
 }
@@ -382,11 +379,11 @@ CodeBlock::IdentifierStatus CodeBlock::find(const Variable *id) const {
 	return parent->find(id);
 }
 
-void CodeBlock::resolve() {
+void CodeBlock::resolve(ErrorHandler &errors) {
 	for (Variable *id : deferred) {
 		if (global->functions.find(id->variable->s) == global->functions.end()) {
-			id->error("Undeclared identifier %.*s", id->variable->s.size(),
-			      id->variable->s.data());
+			errors.error(id->variable,
+			      std::string("Undeclared identifier ").append(id->variable->s));
 		}
 	}
 }
@@ -402,9 +399,9 @@ Type CodeBlock::getType(Identifier *var) const {
 	return parent->getType(var);
 }
 
-void CodeBlock::typeCheck(Type returnType) const {
+void CodeBlock::typeCheck(Type returnType, ErrorHandler &errors) const {
 	for (Statement *s : statements) {
-		s->typeCheck(*this, returnType);
+		s->typeCheck(*this, returnType, errors);
 	}
 }
 
@@ -453,12 +450,12 @@ void Function::forward(std::ostream &outfile, std::string_view name) const {
 	outfile << ");\n";
 }
 
-void Function::resolve() {
-	body->resolve();
+void Function::resolve(ErrorHandler &errors) {
+	body->resolve(errors);
 }
 
-void Function::typeCheck() const {
-	body->typeCheck(type);
+void Function::typeCheck(ErrorHandler &errors) const {
+	body->typeCheck(type, errors);
 }
 
 AST::AST() {
@@ -481,35 +478,37 @@ void AST::compile(std::ostream &outfile) const {
 	}
 }
 
-void AST::resolve() {
+void AST::resolve(ErrorHandler &errors) {
 	for (std::pair<std::string_view, Function *> f : functions) {
-		f.second->resolve();
+		f.second->resolve(errors);
 	}
 	for (FunctionCall *call : functionCalls) {
 		if (call->name->variable->s == "print") {
 			size_t arg_size = call->arguments.size();
 			if (call->arguments.size() != 1) {
-				call->error(
-				      "Function called with incorrect argument count (%ld instead of 1)",
-				      arg_size);
+				errors.error(call->source, call->row, call->col,
+				      "Function called with incorrect argument count ("
+				            + std::to_string(arg_size) + " instead of 1)");
 			}
 		} else {
 			auto f = functions.find(call->name->variable->s);
 			if (f == functions.end()) {
-				call->error("Function %.*s does not exist",
-				      call->name->variable->s.size(), call->name->variable->s.data());
+				errors.error(call->source, call->row, call->col,
+				      std::string("Function ").append(call->name->variable->s)
+				            + " does not exist");
 			}
 			size_t param_size = f->second->parameters.size();
 			size_t arg_size = call->arguments.size();
 			if (param_size != arg_size) {
-				call->error("Function called with incorrect argument count (%ld instead "
-				            "of %ld)",
-				      arg_size, param_size);
+				errors.error(call->source, call->row, call->col,
+				      "Function called with incorrect argument count ("
+				            + std::to_string(arg_size) + " instead of "
+				            + std::to_string(param_size) + ")");
 			}
 		}
 	}
 	for (std::pair<std::string_view, Function *> f : functions) {
-		f.second->typeCheck();
+		f.second->typeCheck(errors);
 	}
 }
 

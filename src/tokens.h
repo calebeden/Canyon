@@ -50,7 +50,6 @@ struct Token {
 	size_t col;
 
 	virtual void print(std::ostream &os) const = 0;
-	mockable void error(const char *const error, ...) const __attribute__((noreturn));
 protected:
 	Token(const char *const source, size_t row, size_t col);
 };

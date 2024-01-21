@@ -2,6 +2,7 @@
 #define PARSE_H
 
 #include "ast.h"
+#include "errorhandler.h"
 #include "tokens.h"
 #include <unordered_map>
 
@@ -16,6 +17,10 @@
 #endif
 
 class Parser {
+#ifdef DEBUG_TEST_MODE
+public:
+#endif
+	ErrorHandler errors;
 public:
 	Parser();
 

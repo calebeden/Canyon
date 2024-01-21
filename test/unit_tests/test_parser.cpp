@@ -27,7 +27,8 @@ struct EmptyRvalue : public rvalue {
 	virtual void compile([[maybe_unused]] std::ostream &outfile) const {
 	}
 
-	virtual Type typeCheck([[maybe_unused]] const CodeBlock &context) const {
+	virtual Type typeCheck([[maybe_unused]] const CodeBlock &context,
+	      [[maybe_unused]] ErrorHandler &errors) const {
 		return Type::UNKNOWN;
 	}
 };
@@ -40,7 +41,7 @@ struct EmptyStatement : public Statement {
 	}
 
 	virtual Type typeCheck([[maybe_unused]] const CodeBlock &context,
-	      [[maybe_unused]] Type returnType) const {
+	      [[maybe_unused]] Type returnType, [[maybe_unused]] ErrorHandler &errors) const {
 		return Type::UNKNOWN;
 	}
 };
