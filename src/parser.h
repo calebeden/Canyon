@@ -26,7 +26,7 @@ public:
 	 * @param tokens the tokens to parse
 	 * @return the AST of the module
 	 */
-	mockable AST::AST *parseModule(std::vector<Token *> *tokens);
+	mockable AST::AST *parseModule(std::vector<Token *> &tokens);
 
 	/**
 	 * @brief Parses entire rvalues, taking operator precedence into consideration
@@ -49,7 +49,7 @@ private:
 	 * @param tokens the stream of tokens representing the current module
 	 * @param ast the AST to place the parsed functions inside of
 	 */
-	mockable void parseFunctions(std::vector<Token *> *tokens, AST::AST *ast);
+	mockable void parseFunctions(std::vector<Token *> &tokens, AST::AST *ast);
 	/**
 	 * @brief Converts tokens to the AST representation of a function
 	 *

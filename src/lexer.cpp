@@ -15,33 +15,33 @@ Lexer::Lexer(const char *const program, off_t size, const char *const source,
 	}
 }
 
-std::vector<Token *> *Lexer::tokenize() {
+std::vector<Token *> Lexer::tokenize() {
 	slice();
 
-	std::vector<Token *> *tokens = new std::vector<Token *>();
+	std::vector<Token *> tokens;
 	// for (Slice s : slices) {
 	for (; !slices.empty(); slices.pop()) {
 		Slice &s = slices.front();
 		std::cerr << s.contents << '\n';
 		Keyword *keyword = createKeyword(s);
 		if (keyword) {
-			tokens->push_back(keyword);
+			tokens.push_back(keyword);
 			continue;
 		}
 		Primitive *primitive = createPrimitive(s);
 		if (primitive) {
-			tokens->push_back(primitive);
+			tokens.push_back(primitive);
 			continue;
 		}
 		Punctuation *punctuation = createPunctuation(s);
 		if (punctuation) {
-			tokens->push_back(punctuation);
+			tokens.push_back(punctuation);
 			continue;
 		}
-		tokens->push_back(createIdentifier(s));
+		tokens.push_back(createIdentifier(s));
 	}
 
-	for (Token *t : *tokens) {
+	for (Token *t : tokens) {
 		t->print(std::cerr);
 		std::cerr << '\n';
 	}

@@ -421,10 +421,10 @@ TEST(test_lexer, test_tokenize) {
 			l1.slices.emplace(keyword, "", 0, 0);
 		}
 	}));
-	std::vector<Token *> *tokens = l1.tokenize();
-	ASSERT_EQ(tokens->size(), sizeof(keywords) / sizeof(*keywords));
+	std::vector<Token *> tokens = l1.tokenize();
+	ASSERT_EQ(tokens.size(), sizeof(keywords) / sizeof(*keywords));
 	for (size_t i = 0; i < sizeof(keywords) / sizeof(*keywords); i++) {
-		EXPECT_TRUE(dynamic_cast<Keyword *>((*tokens)[i]));
+		EXPECT_TRUE(dynamic_cast<Keyword *>(tokens[i]));
 	}
 
 	// Test 2: Primitives
@@ -435,9 +435,9 @@ TEST(test_lexer, test_tokenize) {
 		}
 	}));
 	tokens = l2.tokenize();
-	ASSERT_EQ(tokens->size(), sizeof(primitives) / sizeof(*primitives));
+	ASSERT_EQ(tokens.size(), sizeof(primitives) / sizeof(*primitives));
 	for (size_t i = 0; i < sizeof(primitives) / sizeof(*primitives); i++) {
-		EXPECT_TRUE(dynamic_cast<Primitive *>((*tokens)[i]));
+		EXPECT_TRUE(dynamic_cast<Primitive *>(tokens[i]));
 	}
 
 	// Test 3: Punctuation
@@ -448,8 +448,8 @@ TEST(test_lexer, test_tokenize) {
 		}
 	}));
 	tokens = l3.tokenize();
-	ASSERT_EQ(tokens->size(), sizeof(punctuations) / sizeof(*punctuations));
+	ASSERT_EQ(tokens.size(), sizeof(punctuations) / sizeof(*punctuations));
 	for (size_t i = 0; i < sizeof(punctuations) / sizeof(*punctuations); i++) {
-		EXPECT_TRUE(dynamic_cast<Punctuation *>((*tokens)[i]));
+		EXPECT_TRUE(dynamic_cast<Punctuation *>(tokens[i]));
 	}
 }

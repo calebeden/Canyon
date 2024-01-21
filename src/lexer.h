@@ -39,7 +39,7 @@ public:
 	 *
 	 * @return the source code as a series of Tokens, stored in a vector
 	 */
-	mockable std::vector<Token *> *tokenize();
+	mockable std::vector<Token *> tokenize();
 #ifndef DEBUG_TEST_MODE
 private:
 #endif

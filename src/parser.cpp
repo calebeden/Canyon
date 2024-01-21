@@ -19,7 +19,7 @@ using namespace AST;
 Parser::Parser() {
 }
 
-AST::AST *Parser::parseModule(std::vector<Token *> *tokens) {
+AST::AST *Parser::parseModule(std::vector<Token *> &tokens) {
 	AST::AST *ast = new AST::AST();
 	parseFunctions(tokens, ast);
 	if (ast->functions.find("canyonMain") == ast->functions.end()) {
@@ -30,9 +30,9 @@ AST::AST *Parser::parseModule(std::vector<Token *> *tokens) {
 	return ast;
 }
 
-void Parser::parseFunctions(std::vector<Token *> *tokens, AST::AST *ast) {
-	auto it = tokens->begin();
-	while (it < tokens->end()) {
+void Parser::parseFunctions(std::vector<Token *> &tokens, AST::AST *ast) {
+	auto it = tokens.begin();
+	while (it < tokens.end()) {
 		parseFunction(it, ast);
 	}
 }

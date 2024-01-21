@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
 	}
 
 	Lexer l = Lexer(fileData, fileInfo.st_size, argv[1]);
-	std::vector<Token *> *tokens = l.tokenize();
+	std::vector<Token *> tokens = l.tokenize();
 
 	Parser p;
 	AST::AST *ast = p.parseModule(tokens);

@@ -53,7 +53,7 @@ struct EmptyFunction : public Function {
 TEST(test_parser, test_parseModule) {
 	class MockParser : public Parser {
 	public:
-		MOCK_METHOD(void, parseFunctions, (std::vector<Token *> * tokens, AST::AST *ast));
+		MOCK_METHOD(void, parseFunctions, (std::vector<Token *> & tokens, AST::AST *ast));
 	};
 
 	std::vector<Token *> tokens;
@@ -61,15 +61,14 @@ TEST(test_parser, test_parseModule) {
 	MockParser p;
 	AST::Function *function;
 	EXPECT_CALL(p, parseFunctions)
-	      .WillOnce(::testing::Invoke(
-	            [&function]([[maybe_unused]] std::vector<Token *> *tokens,
-	                  [[maybe_unused]]
-	                  AST::AST *ast) {
-		            function = new EmptyFunction(ast);
-		            ast->functions["canyonMain"] = function;
-	            }));
+	      .WillOnce(::testing::Invoke([&function]([[maybe_unused]]
+	                                              std::vector<Token *> &tokens,
+	                                        AST::AST *ast) {
+		      function = new EmptyFunction(ast);
+		      ast->functions["canyonMain"] = function;
+	      }));
 
-	AST::AST *ast = p.parseModule(&tokens);
+	AST::AST *ast = p.parseModule(tokens);
 	// main + print
 	EXPECT_EQ(ast->functions.size(), 2);
 	AST::Function *main = ast->functions["canyonMain"];
@@ -81,7 +80,7 @@ TEST(test_parser, test_parseModule_error) {
 	Parser p;
 
 	// Test 1: no main function defined
-	EXPECT_EXIT(p.parseModule(&tokens), ::testing::ExitedWithCode(EXIT_FAILURE),
+	EXPECT_EXIT(p.parseModule(tokens), ::testing::ExitedWithCode(EXIT_FAILURE),
 	      "Parse error: no main function");
 }
 
@@ -111,7 +110,7 @@ TEST(test_parser, test_parseFunctions) {
 		            it++;
 	            }));
 
-	p.parseFunctions(&tokens, ast);
+	p.parseFunctions(tokens, ast);
 }
 
 TEST(test_parser, test_parseFunction) {
