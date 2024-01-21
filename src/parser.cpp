@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "tokens.h"
+#include <string_view>
 #include <unordered_map>
 
 #include <cstddef>

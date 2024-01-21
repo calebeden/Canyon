@@ -2,6 +2,7 @@
 
 #include "builtins.h"
 #include "tokens.h"
+#include <string_view>
 
 #include <charconv>
 #include <cstdarg>

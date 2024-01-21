@@ -1,5 +1,7 @@
 #include "builtins.h"
 
+#include <string_view>
+
 Print::Print(AST::AST *ast) : Function(ast) {
 	type = Type::VOID;
 	parameters.emplace_back(nullptr, Type::INT);

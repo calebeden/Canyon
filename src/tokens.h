@@ -1,6 +1,8 @@
 #ifndef TOKENS_H
 #define TOKENS_H
 
+#include <string_view>
+
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>

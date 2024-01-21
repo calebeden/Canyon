@@ -2,6 +2,7 @@
 #define BUILTINS_H
 
 #include "ast.h"
+#include <string_view>
 
 struct Print : public AST::Function {
 	explicit Print(AST::AST *ast);
