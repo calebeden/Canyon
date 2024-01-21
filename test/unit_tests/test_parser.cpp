@@ -837,7 +837,6 @@ TEST(test_parser, test_e0) {
 	std::vector<Token *>::iterator it;
 	rvalue *rval;
 	Variable *var;
-	char *copy;
 	Literal *val;
 
 	// Test 1: All alphabetical identifier
@@ -851,10 +850,7 @@ TEST(test_parser, test_e0) {
 	var = dynamic_cast<Variable *>(rval);
 	EXPECT_NE(var, nullptr);
 	if (var != nullptr) {
-		copy = new char[strlen(identifier) + 1];
-		strcpy(copy, identifier);
-		EXPECT_EQ(var->variable->s, copy);
-		delete[] copy;
+		EXPECT_EQ(var->variable->s, identifier);
 	}
 
 	// Test 2: All numerical identifier
@@ -882,10 +878,7 @@ TEST(test_parser, test_e0) {
 	var = dynamic_cast<Variable *>(rval);
 	EXPECT_NE(var, nullptr);
 	if (var != nullptr) {
-		copy = new char[strlen(identifier) + 1];
-		strcpy(copy, identifier);
-		EXPECT_EQ(var->variable->s, copy);
-		delete[] copy;
+		EXPECT_EQ(var->variable->s, identifier);
 	}
 
 	// Test 4: Not an identifier
