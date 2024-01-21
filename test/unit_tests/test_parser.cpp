@@ -33,9 +33,6 @@ struct EmptyRvalue : public rvalue {
 };
 
 struct EmptyStatement : public Statement {
-	EmptyStatement() {
-	}
-
 	virtual void print([[maybe_unused]] std::ostream &os) const {
 	}
 
