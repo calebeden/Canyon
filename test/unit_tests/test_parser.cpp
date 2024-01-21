@@ -49,7 +49,7 @@ struct EmptyStatement : public Statement {
 };
 
 struct EmptyFunction : public Function {
-	EmptyFunction(AST::AST *ast) : Function(ast) {
+	explicit EmptyFunction(AST::AST *ast) : Function(ast) {
 	}
 };
 
