@@ -106,7 +106,8 @@ void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *funct
 			if (punc->type == Punctuation::Type::CloseParen) {
 				it++;
 				return;
-			} else if (punc->type == Punctuation::Type::Comma) {
+			}
+			if (punc->type == Punctuation::Type::Comma) {
 				it++;
 				continue;
 			}
