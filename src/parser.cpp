@@ -274,8 +274,8 @@ rvalue *Parser::e0(std::vector<Token *>::iterator &it) {
 	if (auto *id = dynamic_cast<Identifier *>(*it)) {
 		it++;
 		bool isInt = true;
-		for (size_t i = 0; i < id->s.size(); i++) {
-			if (!isdigit(id->s[i])) {
+		for (char c : id->s) {
+			if (std::isdigit(c) == 0) {
 				isInt = false;
 				break;
 			}
