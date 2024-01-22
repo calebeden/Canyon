@@ -70,7 +70,7 @@ struct Primitive : public Token {
 	Type type;
 	Primitive(const Slice &s, Type type);
 	virtual void print(std::ostream &os) const;
-	void compile(std::ostream &outfile);
+	void compile(std::ostream &outfile) const;
 	static void compile(std::ostream &outfile, Type t);
 };
 
@@ -98,7 +98,7 @@ struct Identifier : public Token {
 	std::string_view s;
 	explicit Identifier(const Slice &s);
 	virtual void print(std::ostream &os) const;
-	void compile(std::ostream &outfile);
+	void compile(std::ostream &outfile) const;
 };
 
 struct Hasher {

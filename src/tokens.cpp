@@ -90,7 +90,7 @@ void Primitive::print(std::ostream &os) const {
 	os << "Primitive: " << type;
 }
 
-void Primitive::compile(std::ostream &outfile) {
+void Primitive::compile(std::ostream &outfile) const {
 	switch (type) {
 		case Type::INT: {
 			outfile << "int";
@@ -248,7 +248,7 @@ void Identifier::print(std::ostream &os) const {
 	os << "Identifier: " << s << '\n';
 }
 
-void Identifier::compile(std::ostream &outfile) {
+void Identifier::compile(std::ostream &outfile) const {
 	outfile << s;
 }
 
