@@ -24,8 +24,10 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
+	// NOLINTBEGIN(*-pointer-arithmetic)
 	std::filesystem::path infileName = std::filesystem::path(argv[1]);
 	std::filesystem::path outfileName = std::filesystem::path(argv[2]);
+	// NOLINTEND(*-pointer-arithmetic)
 
 	// Read the source file into a string
 	std::ifstream infile = std::ifstream(infileName);
