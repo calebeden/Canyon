@@ -70,7 +70,7 @@ struct Primitive : public Token {
 	Type type;
 	Primitive(const Slice &s, Type type);
 	virtual void print(std::ostream &os) const;
-	void compile(std::ostream &outfie);
+	void compile(std::ostream &outfile);
 	static void compile(std::ostream &outfile, Type t);
 };
 
