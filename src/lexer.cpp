@@ -7,9 +7,8 @@
 #include <stdexcept>
 #include <vector>
 
-Lexer::Lexer(const char *const program, off_t size, const char *const source,
-      uint32_t tabSize)
-    : program(program), current(program), size(size), source(source), tabSize(tabSize) {
+Lexer::Lexer(std::string_view program, const char *const source, uint32_t tabSize)
+    : program(program), current(0), source(source), tabSize(tabSize) {
 	if (tabSize == 0) {
 		throw std::invalid_argument("Tab size must be greater than 0");
 	}
@@ -53,48 +52,51 @@ void Lexer::slice() {
 	size_t line = 1;
 	size_t col = 1;
 
-	while (current - program < size) {
-		while (std::isspace(*current) != 0) {
-			if (*current == '\n') {
+	while (current < program.size()) {
+		while (std::isspace(program[current]) != 0) {
+			if (program[current] == '\n') {
 				line++;
 				col = 1;
-			} else if (*current == '\r') {
+			} else if (program[current] == '\r') {
 				line++;
 				col = 1;
-				if (current + 1 - program < size && current[1] == '\n') {
+				if (current + 1 < program.size() && program[current + 1] == '\n') {
 					current++;
 				}
-			} else if (*current == '\t') {
+			} else if (program[current] == '\t') {
 				col = ((col + tabSize - 1) / tabSize) * tabSize + 1;
 			} else {
 				col++;
 			}
-			current++;
+			if (++current >= program.size()) {
+				break;
+			}
 		}
-		if (current - program >= size) {
+		if (current >= program.size()) {
 			break;
 		}
-		const char *tokenStart = current;
+		size_t tokenStart = current;
 		size_t startCol = col;
 		do {
 			current++;
 			col++;
-		} while (current - program < size && !isSep(current));
-		slices.emplace(std::string_view(tokenStart, current - tokenStart), source, line,
-		      startCol);
+		} while (current < program.size() && !isSep(program, current));
+		slices.emplace(std::string_view(program).substr(tokenStart, current - tokenStart),
+		      source, line, startCol);
 	}
 }
 
-bool Lexer::isSep(const char *const c) {
+bool Lexer::isSep(std::string_view s, size_t offset) {
 	// If c is any of these characters, it is by default a separator
-	if (std::isspace(c[0]) != 0 || c[0] == '(' || c[0] == ')' || c[0] == ';'
-	      || c[0] == '{' || c[0] == '}' || c[0] == ',' || c[0] == '+' || c[0] == '-'
-	      || c[0] == '*' || c[0] == '/' || c[0] == '%' || c[0] == '=') {
+	if (std::isspace(s[offset]) != 0 || s[offset] == '(' || s[offset] == ')'
+	      || s[offset] == ';' || s[offset] == '{' || s[offset] == '}' || s[offset] == ','
+	      || s[offset] == '+' || s[offset] == '-' || s[offset] == '*' || s[offset] == '/'
+	      || s[offset] == '%' || s[offset] == '=') {
 		return true;
 	}
 
 	// If c is alnum, it is sep as long as prev is not alnum
-	if (isalnum(c[0]) && !isalnum(c[-1])) {
+	if (isalnum(s[offset]) && !isalnum(s[offset - 1])) {
 		return true;
 	}
 

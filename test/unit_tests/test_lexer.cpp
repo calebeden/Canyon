@@ -14,55 +14,55 @@
 
 TEST(test_lexer, test_constructor) {
 	// If tabSize is 0, the constructor should throw invalid_argument
-	EXPECT_THROW(Lexer("", 0, "", 0), std::invalid_argument);
+	EXPECT_THROW(Lexer("", "", 0), std::invalid_argument);
 }
 
 TEST(test_lexer, test_isSep) {
-	Lexer l = Lexer("", 0, "");
+	Lexer l = Lexer("", "");
 
 	// Test 1: Standalone separator characters
-	EXPECT_TRUE(l.isSep(" "));
-	EXPECT_TRUE(l.isSep("\n"));
-	EXPECT_TRUE(l.isSep("\t"));
-	EXPECT_TRUE(l.isSep("\v"));
-	EXPECT_TRUE(l.isSep("\f"));
-	EXPECT_TRUE(l.isSep("\r"));
-	EXPECT_TRUE(l.isSep("("));
-	EXPECT_TRUE(l.isSep(")"));
-	EXPECT_TRUE(l.isSep(";"));
-	EXPECT_TRUE(l.isSep("{"));
-	EXPECT_TRUE(l.isSep("}"));
-	EXPECT_TRUE(l.isSep(","));
-	EXPECT_TRUE(l.isSep("+"));
-	EXPECT_TRUE(l.isSep("-"));
-	EXPECT_TRUE(l.isSep("*"));
-	EXPECT_TRUE(l.isSep("/"));
-	EXPECT_TRUE(l.isSep("%"));
-	EXPECT_TRUE(l.isSep("="));
+	EXPECT_TRUE(l.isSep(" ", 0));
+	EXPECT_TRUE(l.isSep("\n", 0));
+	EXPECT_TRUE(l.isSep("\t", 0));
+	EXPECT_TRUE(l.isSep("\v", 0));
+	EXPECT_TRUE(l.isSep("\f", 0));
+	EXPECT_TRUE(l.isSep("\r", 0));
+	EXPECT_TRUE(l.isSep("(", 0));
+	EXPECT_TRUE(l.isSep(")", 0));
+	EXPECT_TRUE(l.isSep(";", 0));
+	EXPECT_TRUE(l.isSep("{", 0));
+	EXPECT_TRUE(l.isSep("}", 0));
+	EXPECT_TRUE(l.isSep(",", 0));
+	EXPECT_TRUE(l.isSep("+", 0));
+	EXPECT_TRUE(l.isSep("-", 0));
+	EXPECT_TRUE(l.isSep("*", 0));
+	EXPECT_TRUE(l.isSep("/", 0));
+	EXPECT_TRUE(l.isSep("%", 0));
+	EXPECT_TRUE(l.isSep("=", 0));
 
 	// Test 2: Consecutive alphanumeric not sep
-	EXPECT_FALSE(l.isSep(&"Aa"[1]));
-	EXPECT_FALSE(l.isSep(&"aa"[1]));
-	EXPECT_FALSE(l.isSep(&"AA"[1]));
-	EXPECT_FALSE(l.isSep(&"aA"[1]));
-	EXPECT_FALSE(l.isSep(&"0a"[1]));
-	EXPECT_FALSE(l.isSep(&"0A"[1]));
-	EXPECT_FALSE(l.isSep(&"A0"[1]));
-	EXPECT_FALSE(l.isSep(&"a0"[1]));
+	EXPECT_FALSE(l.isSep("Aa", 1));
+	EXPECT_FALSE(l.isSep("aa", 1));
+	EXPECT_FALSE(l.isSep("AA", 1));
+	EXPECT_FALSE(l.isSep("aA", 1));
+	EXPECT_FALSE(l.isSep("0a", 1));
+	EXPECT_FALSE(l.isSep("0A", 1));
+	EXPECT_FALSE(l.isSep("A0", 1));
+	EXPECT_FALSE(l.isSep("a0", 1));
 
 	// Test 3: Alphanumeric after non-alphanumeric is sep
-	EXPECT_TRUE(l.isSep(&";a"[1]));
-	EXPECT_TRUE(l.isSep(&";A"[1]));
-	EXPECT_TRUE(l.isSep(&";0"[1]));
+	EXPECT_TRUE(l.isSep(";a", 1));
+	EXPECT_TRUE(l.isSep(";A", 1));
+	EXPECT_TRUE(l.isSep(";0", 1));
 }
 
 TEST(test_lexer, test_slice) {
 	const char *program;
-	Lexer l = Lexer("", 0, "");
+	Lexer l = Lexer("", "");
 
 	// Test 1: Whitespace skipped
 	program = " x";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
@@ -70,7 +70,7 @@ TEST(test_lexer, test_slice) {
 	}
 
 	program = "x ";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
@@ -78,15 +78,16 @@ TEST(test_lexer, test_slice) {
 	}
 
 	for (char whitespace : {' ', '\n', '\t', '\v', '\f', '\r'}) {
-		char program[] = {whitespace, 'x', whitespace};
-		l = Lexer(program, 3, "");
+		std::string program
+		      = std::string(1, whitespace).append(1, 'x').append(1, whitespace);
+		l = Lexer(program, "");
 		l.slice();
 		EXPECT_EQ(l.slices.size(), 1);
 		if (l.slices.size() >= 1) {
 			EXPECT_EQ(l.slices.front().contents, "x");
 		}
 		char program2[] = {whitespace, whitespace, 'x', whitespace, whitespace};
-		l = Lexer(program2, 5, "");
+		l = Lexer(program2, "");
 		l.slice();
 		EXPECT_EQ(l.slices.size(), 1);
 		if (l.slices.size() >= 1) {
@@ -97,10 +98,10 @@ TEST(test_lexer, test_slice) {
 	// Test 2: Correctly slice based on isSep
 	class MockLexer : public Lexer {
 	public:
-		MockLexer(const char *const program) : Lexer(program, strlen(program), "") {
+		MockLexer(const char *const program) : Lexer(program, "") {
 		}
 
-		MOCK_METHOD(bool, isSep, (const char *const c));
+		MOCK_METHOD(bool, isSep, (std::string_view s, size_t offset));
 	} mocked("123456789");
 
 	// 123 45 6 7 89
@@ -130,7 +131,7 @@ TEST(test_lexer, test_slice) {
 
 	// Test 3: Make sure line numbers are correct
 	program = "x";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
@@ -138,7 +139,7 @@ TEST(test_lexer, test_slice) {
 	}
 
 	program = "\nx";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
@@ -146,7 +147,7 @@ TEST(test_lexer, test_slice) {
 	}
 
 	program = "x\n";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
@@ -154,7 +155,7 @@ TEST(test_lexer, test_slice) {
 	}
 
 	program = "\n\nx";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
@@ -162,7 +163,7 @@ TEST(test_lexer, test_slice) {
 	}
 
 	program = "x\n\nx";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 2);
 	if (l.slices.size() >= 2) {
@@ -172,7 +173,7 @@ TEST(test_lexer, test_slice) {
 	}
 
 	program = "\rx";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
@@ -180,7 +181,7 @@ TEST(test_lexer, test_slice) {
 	}
 
 	program = "x\r";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
@@ -188,7 +189,7 @@ TEST(test_lexer, test_slice) {
 	}
 
 	program = "\r\rx";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
@@ -196,7 +197,7 @@ TEST(test_lexer, test_slice) {
 	}
 
 	program = "x\r\rx";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 2);
 	if (l.slices.size() >= 2) {
@@ -207,7 +208,7 @@ TEST(test_lexer, test_slice) {
 
 	// Special case \r\n only counts as one newline
 	program = "\r\nx";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
@@ -216,7 +217,7 @@ TEST(test_lexer, test_slice) {
 
 	// Test 4: Make sure column numbers are correct
 	program = "x";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
@@ -224,7 +225,7 @@ TEST(test_lexer, test_slice) {
 	}
 
 	program = "xyz";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
@@ -232,7 +233,7 @@ TEST(test_lexer, test_slice) {
 	}
 
 	program = " xyz";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 1);
 	if (l.slices.size() >= 1) {
@@ -240,7 +241,7 @@ TEST(test_lexer, test_slice) {
 	}
 
 	program = "a;3";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 3);
 	if (l.slices.size() >= 3) {
@@ -252,7 +253,7 @@ TEST(test_lexer, test_slice) {
 	}
 
 	program = "abc 123";
-	l = Lexer(program, strlen(program), "");
+	l = Lexer(program, "");
 	l.slice();
 	EXPECT_EQ(l.slices.size(), 2);
 	if (l.slices.size() >= 2) {
@@ -265,7 +266,7 @@ TEST(test_lexer, test_slice) {
 	for (uint32_t tabSize = 1; tabSize <= 10; tabSize++) {
 		std::string program2 = "\tx";
 		for (uint32_t i = 0; i < tabSize; i++) {
-			l = Lexer(program2.c_str(), program2.size(), "", tabSize);
+			l = Lexer(program2, "", tabSize);
 			l.slice();
 			EXPECT_EQ(l.slices.size(), 1);
 			if (l.slices.size() >= 1) {
@@ -273,7 +274,7 @@ TEST(test_lexer, test_slice) {
 			}
 			program2 = " " + program2;
 		}
-		l = Lexer(program2.c_str(), strlen(program2.c_str()), "", tabSize);
+		l = Lexer(program2, "", tabSize);
 		l.slice();
 		EXPECT_EQ(l.slices.size(), 1);
 		if (l.slices.size() >= 1) {
@@ -285,7 +286,7 @@ TEST(test_lexer, test_slice) {
 const char *const keywords[] = {"void", "return"};
 
 TEST(test_lexer, test_createKeyword) {
-	Lexer l = Lexer("", 0, "");
+	Lexer l = Lexer("", "");
 	Keyword *keyword;
 	keyword = l.createKeyword(Slice("void", "", 0, 0));
 	ASSERT_NE(keyword, nullptr);
@@ -299,7 +300,7 @@ const char *const primitives[]
       = {"int", "byte", "short", "long", "float", "double", "bool", "char"};
 
 TEST(test_lexer, test_createPrimitive) {
-	Lexer l = Lexer("", 0, "");
+	Lexer l = Lexer("", "");
 	Primitive *primitive;
 	primitive = l.createPrimitive(Slice("int", "", 0, 0));
 	ASSERT_NE(primitive, nullptr);
@@ -337,7 +338,7 @@ const char *const punctuations[]
       = {"(", ")", ";", "{", "}", ",", "=", "+", "-", "*", "/", "%"};
 
 TEST(test_lexer, test_createPunctuation) {
-	Lexer l = Lexer("", 0, "");
+	Lexer l = Lexer("", "");
 	Punctuation *punctuation;
 	punctuation = l.createPunctuation(Slice("(", "", 0, 0));
 	ASSERT_NE(punctuation, nullptr);
@@ -378,7 +379,7 @@ TEST(test_lexer, test_createPunctuation) {
 }
 
 TEST(test_lexer, test_createIdentifier) {
-	Lexer l = Lexer("", 0, "");
+	Lexer l = Lexer("", "");
 	Identifier *id;
 	id = l.createIdentifier(Slice("x", "", 0, 0));
 	ASSERT_NE(id, nullptr);
@@ -408,7 +409,7 @@ TEST(test_lexer, test_createIdentifier) {
 TEST(test_lexer, test_tokenize) {
 	class MockLexer : public Lexer {
 	public:
-		MockLexer() : Lexer("", 0, "") {
+		MockLexer() : Lexer("", "") {
 		}
 
 		MOCK_METHOD(void, slice, ());

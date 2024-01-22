@@ -2,10 +2,10 @@
 #define LEXER_H
 
 #include "tokens.h"
-#include <string_view>
 
 #include <cstdint>
 #include <queue>
+#include <string>
 #include <vector>
 
 #ifdef DEBUG_TEST_MODE
@@ -18,9 +18,8 @@ class Lexer {
 #ifdef DEBUG_TEST_MODE
 public:
 #endif
-	const char *program;
-	const char *current;
-	off_t size;
+	std::string_view program;
+	size_t current;
 	const char *source;
 	std::queue<Slice> slices;
 	uint32_t tabSize;
@@ -29,11 +28,10 @@ public:
 	 * @brief Construct a new Lexer object to tokenize Canyon source code
 	 *
 	 * @param program the source code to tokenize
-	 * @param size the length of the source code
 	 * @param source the name of the source code file
 	 * @param tabSize the width of a tab stop (default = 4)
 	 */
-	Lexer(const char *program, off_t size, const char *source, uint32_t tabSize = 4);
+	Lexer(std::string_view program, const char *source, uint32_t tabSize = 4);
 	/**
 	 * @brief Tokenizes the Canyon source code
 	 *
@@ -50,14 +48,14 @@ private:
 	mockable void slice();
 
 	/**
-	 * @brief Determines whether the character pointed to by c represents the start of a
-	 * new token. If c points to the first character of a string and if isalnum(*c)
-	 * returns true, this is considered UB
+	 * @brief Determines whether a character in a string represents the start of a new
+	 * token. If offset == 0 && isalnum(s[offset]), this is considered UB
 	 *
-	 * @param c the character to test at
-	 * @returns whether `c` is at the start of a new token
+	 * @param s the string to test with
+	 * @param offset where in the string to test at
+	 * @returns whether s[offset] is at the start of a new token
 	 */
-	mockable bool isSep(const char *c);
+	mockable bool isSep(std::string_view s, size_t offset);
 
 	mockable Keyword *createKeyword(const Slice &s);
 	mockable Primitive *createPrimitive(const Slice &s);
