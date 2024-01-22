@@ -97,7 +97,7 @@ bool Lexer::isSep(std::string_view s, size_t offset) {
 	}
 
 	// If c is alnum, it is sep as long as prev is not alnum
-	if (std::isalnum(s[offset]) != 0 && !std::isalnum(s[offset - 1]) != 0) {
+	if (std::isalnum(s[offset]) != 0 && std::isalnum(s[offset - 1]) == 0) {
 		return true;
 	}
 
