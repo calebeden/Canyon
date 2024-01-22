@@ -444,9 +444,8 @@ rvalue *Parser::e14(std::vector<Token *>::iterator &it, CodeBlock &context) {
 			}
 			it += 2;
 			return new Assignment(id, e14(it, context));
-		} else {
-			return e13(it, context);
 		}
+		return e13(it, context);
 	}
 	return e13(it, context);
 }
