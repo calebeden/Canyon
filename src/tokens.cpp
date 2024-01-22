@@ -3,6 +3,7 @@
 #include <string_view>
 
 #include <cstdarg>
+#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 
@@ -51,11 +52,12 @@ std::ostream &operator<<(std::ostream &os, const Type type) {
 	}
 }
 
-Slice::Slice(std::string_view contents, const char *const source, size_t row, size_t col)
+Slice::Slice(std::string_view contents, std::filesystem::path source, size_t row,
+      size_t col)
     : contents(contents), source(source), row(row), col(col) {
 }
 
-Token::Token(const char *const source, size_t row, size_t col)
+Token::Token(std::filesystem::path source, size_t row, size_t col)
     : source(source), row(row), col(col) {
 }
 

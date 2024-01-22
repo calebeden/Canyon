@@ -15,14 +15,14 @@ namespace AST {
 class CodeBlock;
 
 struct rvalue {
-	const char *source;
+	std::filesystem::path source;
 	size_t row;
 	size_t col;
 	virtual void print(std::ostream &os) const = 0;
 	virtual void compile(std::ostream &outfile) const = 0;
 	virtual Type typeCheck(const CodeBlock &context, ErrorHandler &errors) const = 0;
 protected:
-	rvalue(const char *source, size_t row, size_t col);
+	rvalue(std::filesystem::path source, size_t row, size_t col);
 };
 
 struct Literal : public rvalue {

@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -23,27 +24,31 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
+	std::filesystem::path infileName = std::filesystem::path(argv[1]);
+	std::filesystem::path outfileName = std::filesystem::path(argv[2]);
+
 	// Read the source file into a string
-	std::ifstream infile = std::ifstream(argv[1]);
+	std::ifstream infile = std::ifstream(infileName);
 	if (!infile) {
 		int e = errno;
-		std::cerr << "Failed to open source file " << argv[1] << ": " << strerror(e)
+		std::cerr << "Failed to open source file " << infileName << ": " << strerror(e)
 		          << '\n';
 		return EXIT_FAILURE;
 	}
 	std::string fileData = std::string((std::istreambuf_iterator<char>(infile)),
 	      std::istreambuf_iterator<char>());
 
-	Lexer l = Lexer(fileData, argv[1]);
+	Lexer l = Lexer(fileData, infileName);
 	std::vector<Token *> tokens = l.tokenize();
 
 	Parser p;
 	AST::Module module = p.parseModule(tokens);
 
-	std::ofstream outfile = std::ofstream(argv[2], std::ios::out | std::ios::trunc);
+	std::ofstream outfile = std::ofstream(outfileName, std::ios::out | std::ios::trunc);
 	if (!outfile) {
 		int e = errno;
-		std::cerr << "Failed to open outfile " << argv[2] << ": " << strerror(e) << '\n';
+		std::cerr << "Failed to open outfile " << outfileName << ": " << strerror(e)
+		          << '\n';
 		return EXIT_FAILURE;
 	}
 
@@ -53,13 +58,14 @@ int main(int argc, char **argv) {
 	outfile.close();
 	if (!outfile) {
 		int e = errno;
-		std::cerr << "Error closing outfile " << argv[2] << ": " << strerror(e) << '\n';
+		std::cerr << "Error closing outfile " << outfileName << ": " << strerror(e)
+		          << '\n';
 		return EXIT_FAILURE;
 	}
 	infile.close();
 	if (!infile) {
 		int e = errno;
-		std::cerr << "Error closing infile " << argv[1] << ": " << strerror(e) << '\n';
+		std::cerr << "Error closing infile " << infileName << ": " << strerror(e) << '\n';
 		return EXIT_FAILURE;
 	}
 

@@ -4,6 +4,7 @@
 #include "tokens.h"
 
 #include <cstdint>
+#include <filesystem>
 #include <queue>
 #include <string>
 #include <vector>
@@ -20,7 +21,7 @@ public:
 #endif
 	std::string_view program;
 	size_t current;
-	const char *source;
+	std::filesystem::path source;
 	std::queue<Slice> slices;
 	uint32_t tabSize;
 public:
@@ -31,7 +32,7 @@ public:
 	 * @param source the name of the source code file
 	 * @param tabSize the width of a tab stop (default = 4)
 	 */
-	Lexer(std::string_view program, const char *source, uint32_t tabSize = 4);
+	Lexer(std::string_view program, std::filesystem::path source, uint32_t tabSize = 4);
 	/**
 	 * @brief Tokenizes the Canyon source code
 	 *

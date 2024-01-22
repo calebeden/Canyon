@@ -8,12 +8,13 @@
 #include <charconv>
 #include <cstdarg>
 #include <cstring>
+#include <filesystem>
 #include <iostream>
 #include <string>
 
 namespace AST {
 
-rvalue::rvalue(const char *const source, size_t row, size_t col)
+rvalue::rvalue(std::filesystem::path source, size_t row, size_t col)
     : source(source), row(row), col(col) {
 }
 

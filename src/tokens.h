@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
+#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <typeinfo>
@@ -36,22 +37,23 @@ std::ostream &operator<<(std::ostream &os, Type type);
 
 struct Slice {
 	std::string_view contents;
-	const char *source;
+	std::filesystem::path source;
 	size_t row;
 	size_t col;
-	Slice(std::string_view contents, const char *source, size_t row, size_t col);
+	Slice(std::string_view contents, std::filesystem::path source, size_t row,
+	      size_t col);
 };
 
 std::ostream &operator<<(std::ostream &os, const Slice &slice);
 
 struct Token {
-	const char *source;
+	std::filesystem::path source;
 	size_t row;
 	size_t col;
 
 	virtual void print(std::ostream &os) const = 0;
 protected:
-	Token(const char *const source, size_t row, size_t col);
+	Token(std::filesystem::path source, size_t row, size_t col);
 };
 
 struct Keyword : public Token {
