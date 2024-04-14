@@ -61,9 +61,9 @@ void Parser::parseFunction(std::vector<Token *>::iterator &it, Module &module) {
 
 	parseParameters(it, function);
 
-	parseBlock(it, *function->body);
+	parseBlock(it, function->body);
 
-	for (const std::unique_ptr<Statement> &s : function->body->statements) {
+	for (const std::unique_ptr<Statement> &s : function->body.statements) {
 		s->print(std::cerr);
 	}
 	function->type = type;
@@ -83,17 +83,17 @@ void Parser::parseParameters(std::vector<Token *>::iterator &it, Function *funct
 		}
 	}
 
-	CodeBlock *context = function->body;
+	CodeBlock &context = function->body;
 	while (true) {
 		if (auto *type = dynamic_cast<Primitive *>(*it)) {
 			it++;
 			if (auto *id = dynamic_cast<Identifier *>(*it)) {
 				it++;
-				if (context->locals.find(id) != context->locals.end()) {
+				if (context.locals.find(id) != context.locals.end()) {
 					errors.error(id,
 					      std::string("Re-declaration of parameter ").append(id->s));
 				}
-				context->locals.insert({
+				context.locals.insert({
 				      id, {type->type, true}
                 });
 				function->parameters.emplace_back(id, type->type);

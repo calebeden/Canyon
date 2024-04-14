@@ -410,7 +410,7 @@ void CodeBlock::typeCheck(Type returnType, ErrorHandler &errors) const {
 	}
 }
 
-Function::Function(Module *module) : body(new CodeBlock(module)) {
+Function::Function(Module *module) : body(module) {
 }
 
 void Function::compile(std::ostream &outfile, std::string_view name) const {
@@ -431,7 +431,7 @@ void Function::compile(std::ostream &outfile, std::string_view name) const {
 		param.first->compile(outfile);
 	}
 	outfile << "){\n";
-	body->compile(outfile);
+	body.compile(outfile);
 	outfile << "}\n";
 }
 
@@ -456,11 +456,11 @@ void Function::forward(std::ostream &outfile, std::string_view name) const {
 }
 
 void Function::resolve(ErrorHandler &errors) {
-	body->resolve(errors);
+	body.resolve(errors);
 }
 
 void Function::typeCheck(ErrorHandler &errors) const {
-	body->typeCheck(type, errors);
+	body.typeCheck(type, errors);
 }
 
 Module::Module() {

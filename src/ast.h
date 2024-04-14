@@ -186,7 +186,7 @@ struct CodeBlock {
 };
 
 struct Function {
-	CodeBlock *body;
+	CodeBlock body;
 	Type type = Type::UNKNOWN;
 	std::vector<std::pair<Identifier *, Type>> parameters;
 	explicit Function(Module *module);
