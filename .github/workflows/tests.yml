@@ -41,7 +41,7 @@ jobs:
           wget https://apt.llvm.org/llvm-snapshot.gpg.key
           sudo apt-key add llvm-snapshot.gpg.key
           sudo add-apt-repository 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main'
-          sudo bash -c "echo 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-13 main' >> /etc/apt/sources.list"
+          sudo bash -c "echo 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-18 main' >> /etc/apt/sources.list"
           sudo apt-get update
           wget http://de.archive.ubuntu.com/ubuntu/pool/main/libf/libffi/libffi6_3.2.1-8_amd64.deb
           sudo dpkg -i *.deb
