@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 namespace AST {
@@ -21,6 +22,7 @@ struct rvalue {
 	virtual void print(std::ostream &os) const = 0;
 	virtual void compile(std::ostream &outfile) const = 0;
 	virtual Type typeCheck(const CodeBlock &context, ErrorHandler &errors) const = 0;
+	virtual ~rvalue() = default;
 protected:
 	rvalue(std::filesystem::path source, size_t row, size_t col);
 };
@@ -31,6 +33,7 @@ struct Literal : public rvalue {
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, ErrorHandler &errors) const;
+	virtual ~Literal() = default;
 };
 
 struct Statement {
@@ -39,6 +42,7 @@ struct Statement {
 	virtual Type typeCheck(const CodeBlock &context, Type returnType,
 	      ErrorHandler &errors) const
 	      = 0;
+	virtual ~Statement() = default;
 };
 
 struct Variable : public rvalue {
@@ -48,88 +52,100 @@ struct Variable : public rvalue {
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, ErrorHandler &errors) const;
+	virtual ~Variable() = default; // TODO
 };
 
 struct Assignment : public rvalue {
 	Identifier *variable;
-	rvalue *expression;
-	Assignment(Identifier *variable, rvalue *expression);
+	std::unique_ptr<rvalue> expression;
+	Assignment(Identifier *variable, std::unique_ptr<rvalue> expression);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, ErrorHandler &errors) const;
+	virtual ~Assignment() = default; // TODO
 };
 
 struct Addition : public rvalue {
-	rvalue *operand1;
-	rvalue *operand2;
-	Addition(rvalue *operand1, rvalue *operand2);
+	std::unique_ptr<rvalue> operand1;
+	std::unique_ptr<rvalue> operand2;
+	Addition(std::unique_ptr<rvalue> operand1, std::unique_ptr<rvalue> operand2);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, ErrorHandler &errors) const;
+	virtual ~Addition() = default;
 };
 
 struct Subtraction : public rvalue {
-	rvalue *operand1;
-	rvalue *operand2;
-	Subtraction(rvalue *operand1, rvalue *operand2);
+	std::unique_ptr<rvalue> operand1;
+	std::unique_ptr<rvalue> operand2;
+	Subtraction(std::unique_ptr<rvalue> operand1, std::unique_ptr<rvalue> operand2);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, ErrorHandler &errors) const;
+	virtual ~Subtraction() = default;
 };
 
 struct Multiplication : public rvalue {
-	rvalue *operand1;
-	rvalue *operand2;
-	Multiplication(rvalue *operand1, rvalue *operand2);
+	std::unique_ptr<rvalue> operand1;
+	std::unique_ptr<rvalue> operand2;
+	Multiplication(std::unique_ptr<rvalue> operand1, std::unique_ptr<rvalue> operand2);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, ErrorHandler &errors) const;
+	virtual ~Multiplication() = default;
 };
 
 struct Division : public rvalue {
-	rvalue *operand1;
-	rvalue *operand2;
-	Division(rvalue *operand1, rvalue *operand2);
+	std::unique_ptr<rvalue> operand1;
+	std::unique_ptr<rvalue> operand2;
+	Division(std::unique_ptr<rvalue> operand1, std::unique_ptr<rvalue> operand2);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, ErrorHandler &errors) const;
+	virtual ~Division() = default;
 };
 
 struct Modulo : public rvalue {
-	rvalue *operand1;
-	rvalue *operand2;
-	Modulo(rvalue *operand1, rvalue *operand2);
+	std::unique_ptr<rvalue> operand1;
+	std::unique_ptr<rvalue> operand2;
+	Modulo(std::unique_ptr<rvalue> operand1, std::unique_ptr<rvalue> operand2);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, ErrorHandler &errors) const;
+	virtual ~Modulo() = default;
 };
 
 struct Expression : public Statement {
-	rvalue *rval;
-	explicit Expression(rvalue *rval);
+	std::unique_ptr<rvalue> rval;
+	explicit Expression(std::unique_ptr<rvalue> rval);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, Type returnType,
 	      ErrorHandler &errors) const;
+	virtual ~Expression() = default;
 };
 
 struct FunctionCall : public rvalue {
-	Variable *name;
-	std::vector<rvalue *> arguments;
-	explicit FunctionCall(Variable *name);
+	std::unique_ptr<Variable> name;
+	std::vector<std::unique_ptr<rvalue>> arguments;
+	explicit FunctionCall(std::unique_ptr<Variable> name);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, ErrorHandler &errors) const;
+	virtual ~FunctionCall() = default; // TODO
 };
 
 struct Return : public Statement {
-	rvalue *rval;
-	Token *token;
-	Return(rvalue *rval, Token *token);
+	std::unique_ptr<rvalue> rval;
+	std::filesystem::path source;
+	size_t row;
+	size_t col;
+	Return(std::unique_ptr<rvalue> rval, Token *token);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, Type returnType,
 	      ErrorHandler &errors) const;
+	virtual ~Return() = default;
 };
 
 // TODO: eventually have arbitrary code blocks for precise scoping but for now just
@@ -141,7 +157,7 @@ struct CodeBlock {
 		UNKNOWN,
 	};
 
-	std::vector<Statement *> statements;
+	std::vector<std::unique_ptr<Statement>> statements;
 	// For each local, the info tuple says the type and whether it is a parameter
 	std::unordered_map<Identifier *, std::tuple<Type, bool>, Hasher, Comparator> locals;
 	std::vector<Variable *> deferred;
@@ -166,6 +182,7 @@ struct CodeBlock {
 	virtual void resolve(ErrorHandler &errors);
 	Type getType(Identifier *var) const;
 	virtual void typeCheck(Type returnType, ErrorHandler &errors) const;
+	~CodeBlock() = default; // TODO
 };
 
 struct Function {
@@ -177,6 +194,7 @@ struct Function {
 	virtual void forward(std::ostream &outfile, std::string_view name) const;
 	virtual void resolve(ErrorHandler &errors);
 	void typeCheck(ErrorHandler &errors) const;
+	virtual ~Function() = default; // TODO
 };
 
 struct Module {
@@ -193,6 +211,7 @@ struct Module {
 	 *
 	 */
 	void resolve(ErrorHandler &errors);
+	~Module() = default;
 };
 
 } // namespace AST

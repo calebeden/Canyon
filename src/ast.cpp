@@ -10,12 +10,14 @@
 #include <cstring>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <string>
+#include <utility>
 
 namespace AST {
 
 rvalue::rvalue(std::filesystem::path source, size_t row, size_t col)
-    : source(source), row(row), col(col) {
+    : source(std::move(source)), row(row), col(col) {
 }
 
 Literal::Literal(const Identifier *const value)
@@ -60,9 +62,9 @@ Type Variable::typeCheck(const CodeBlock &context,
 	return context.getType(variable);
 }
 
-Assignment::Assignment(Identifier *variable, rvalue *expression)
+Assignment::Assignment(Identifier *variable, std::unique_ptr<rvalue> expression)
     : rvalue(variable->source, variable->row, variable->col), variable(variable),
-      expression(expression) {
+      expression(std::move(expression)) {
 }
 
 void Assignment::print(std::ostream &os) const {
@@ -85,9 +87,9 @@ Type Assignment::typeCheck(const CodeBlock &context, ErrorHandler &errors) const
 	return expType;
 }
 
-Addition::Addition(rvalue *operand1, rvalue *operand2)
-    : rvalue(operand1->source, operand1->row, operand1->col), operand1(operand1),
-      operand2(operand2) {
+Addition::Addition(std::unique_ptr<rvalue> operand1, std::unique_ptr<rvalue> operand2)
+    : rvalue(operand1->source, operand1->row, operand1->col),
+      operand1(std::move(operand1)), operand2(std::move(operand2)) {
 }
 
 void Addition::print(std::ostream &os) const {
@@ -115,9 +117,10 @@ Type Addition::typeCheck(const CodeBlock &context, ErrorHandler &errors) const {
 	return type2;
 }
 
-Subtraction::Subtraction(rvalue *operand1, rvalue *operand2)
-    : rvalue(operand1->source, operand1->row, operand1->col), operand1(operand1),
-      operand2(operand2) {
+Subtraction::Subtraction(std::unique_ptr<rvalue> operand1,
+      std::unique_ptr<rvalue> operand2)
+    : rvalue(operand1->source, operand1->row, operand1->col),
+      operand1(std::move(operand1)), operand2(std::move(operand2)) {
 }
 
 void Subtraction::print(std::ostream &os) const {
@@ -145,9 +148,10 @@ Type Subtraction::typeCheck(const CodeBlock &context, ErrorHandler &errors) cons
 	return type2;
 }
 
-Multiplication::Multiplication(rvalue *operand1, rvalue *operand2)
-    : rvalue(operand1->source, operand1->row, operand1->col), operand1(operand1),
-      operand2(operand2) {
+Multiplication::Multiplication(std::unique_ptr<rvalue> operand1,
+      std::unique_ptr<rvalue> operand2)
+    : rvalue(operand1->source, operand1->row, operand1->col),
+      operand1(std::move(operand1)), operand2(std::move(operand2)) {
 }
 
 void Multiplication::print(std::ostream &os) const {
@@ -175,9 +179,9 @@ Type Multiplication::typeCheck(const CodeBlock &context, ErrorHandler &errors) c
 	return type2;
 }
 
-Division::Division(rvalue *operand1, rvalue *operand2)
-    : rvalue(operand1->source, operand1->row, operand1->col), operand1(operand1),
-      operand2(operand2) {
+Division::Division(std::unique_ptr<rvalue> operand1, std::unique_ptr<rvalue> operand2)
+    : rvalue(operand1->source, operand1->row, operand1->col),
+      operand1(std::move(operand1)), operand2(std::move(operand2)) {
 }
 
 void Division::print(std::ostream &os) const {
@@ -205,9 +209,9 @@ Type Division::typeCheck(const CodeBlock &context, ErrorHandler &errors) const {
 	return type2;
 }
 
-Modulo::Modulo(rvalue *operand1, rvalue *operand2)
-    : rvalue(operand1->source, operand1->row, operand1->col), operand1(operand1),
-      operand2(operand2) {
+Modulo::Modulo(std::unique_ptr<rvalue> operand1, std::unique_ptr<rvalue> operand2)
+    : rvalue(operand1->source, operand1->row, operand1->col),
+      operand1(std::move(operand1)), operand2(std::move(operand2)) {
 }
 
 void Modulo::print(std::ostream &os) const {
@@ -235,7 +239,7 @@ Type Modulo::typeCheck(const CodeBlock &context, ErrorHandler &errors) const {
 	return type2;
 }
 
-Expression::Expression(rvalue *rval) : rval(rval) {
+Expression::Expression(std::unique_ptr<rvalue> rval) : rval(std::move(rval)) {
 }
 
 void Expression::print(std::ostream &os) const {
@@ -254,8 +258,8 @@ Type Expression::typeCheck(const CodeBlock &context, [[maybe_unused]] Type retur
 	return rval->typeCheck(context, errors);
 }
 
-FunctionCall::FunctionCall(Variable *name)
-    : rvalue(name->source, name->row, name->col), name(name) {
+FunctionCall::FunctionCall(std::unique_ptr<Variable> name)
+    : rvalue(name->source, name->row, name->col), name(std::move(name)) {
 }
 
 void FunctionCall::print(std::ostream &os) const {
@@ -302,7 +306,8 @@ Type FunctionCall::typeCheck(const CodeBlock &context, ErrorHandler &errors) con
 	return function->second->type;
 }
 
-Return::Return(rvalue *rval, Token *token) : rval(rval), token(token) {
+Return::Return(std::unique_ptr<rvalue> rval, Token *token)
+    : rval(std::move(rval)), source(token->source), row(token->row), col(token->col) {
 }
 
 void Return::print(std::ostream &os) const {
@@ -329,13 +334,13 @@ Type Return::typeCheck(const CodeBlock &context, Type returnType,
       ErrorHandler &errors) const {
 	if (rval == nullptr) {
 		if (returnType != Type::VOID) {
-			errors.error(token, "Invalid return from non-void function");
+			errors.error(source, row, col, "Invalid return from non-void function");
 		}
 		return Type::VOID;
 	}
 	Type type = rval->typeCheck(context, errors);
 	if (type != returnType) {
-		errors.error(token, "Invalid return type");
+		errors.error(source, row, col, "Invalid return type");
 	}
 	return type;
 }
@@ -356,7 +361,7 @@ void CodeBlock::compile(std::ostream &outfile) const {
 			outfile << ";\n";
 		}
 	}
-	for (Statement *s : statements) {
+	for (const std::unique_ptr<Statement> &s : statements) {
 		outfile << "    ";
 		s->compile(outfile);
 	}
@@ -400,7 +405,7 @@ Type CodeBlock::getType(Identifier *var) const {
 }
 
 void CodeBlock::typeCheck(Type returnType, ErrorHandler &errors) const {
-	for (Statement *s : statements) {
+	for (const std::unique_ptr<Statement> &s : statements) {
 		s->typeCheck(*this, returnType, errors);
 	}
 }

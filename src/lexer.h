@@ -62,6 +62,8 @@ private:
 	mockable Primitive *createPrimitive(const Slice &s);
 	mockable Punctuation *createPunctuation(const Slice &s);
 	mockable Identifier *createIdentifier(const Slice &s);
+public:
+	~Lexer() = default;
 };
 
 #endif

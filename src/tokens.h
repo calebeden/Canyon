@@ -42,6 +42,7 @@ struct Slice {
 	size_t col;
 	Slice(std::string_view contents, std::filesystem::path source, size_t row,
 	      size_t col);
+	~Slice() = default;
 };
 
 std::ostream &operator<<(std::ostream &os, const Slice &slice);
@@ -52,6 +53,7 @@ struct Token {
 	size_t col;
 
 	virtual void print(std::ostream &os) const = 0;
+	virtual ~Token() = default;
 protected:
 	Token(std::filesystem::path source, size_t row, size_t col);
 };
@@ -64,6 +66,7 @@ struct Keyword : public Token {
 	Type type;
 	Keyword(const Slice &s, Type type);
 	virtual void print(std::ostream &os) const;
+	virtual ~Keyword() = default;
 };
 
 struct Primitive : public Token {
@@ -72,6 +75,7 @@ struct Primitive : public Token {
 	virtual void print(std::ostream &os) const;
 	void compile(std::ostream &outfile) const;
 	static void compile(std::ostream &outfile, Type t);
+	virtual ~Primitive() = default;
 };
 
 struct Punctuation : public Token {
@@ -92,6 +96,7 @@ struct Punctuation : public Token {
 	Type type;
 	Punctuation(const Slice &s, Type type);
 	virtual void print(std::ostream &os) const;
+	virtual ~Punctuation() = default;
 };
 
 struct Identifier : public Token {
@@ -99,6 +104,7 @@ struct Identifier : public Token {
 	explicit Identifier(const Slice &s);
 	virtual void print(std::ostream &os) const;
 	void compile(std::ostream &outfile) const;
+	virtual ~Identifier() = default;
 };
 
 struct Hasher {

@@ -19,9 +19,10 @@ class ErrorHandler {
 
 	std::queue<Error> errors;
 public:
-	void error(Token *token, std::string message);
-	void error(std::filesystem::path source, size_t row, size_t col, std::string message);
+	[[noreturn]] void error(Token *token, std::string message);
+	[[noreturn]] void error(std::filesystem::path source, size_t row, size_t col, std::string message);
 	bool printErrors(std::ostream &os);
+	~ErrorHandler() = default;
 };
 
 #endif

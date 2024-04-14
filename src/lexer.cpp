@@ -9,7 +9,7 @@
 #include <vector>
 
 Lexer::Lexer(std::string_view program, std::filesystem::path source, uint32_t tabSize)
-    : program(program), current(0), source(source), tabSize(tabSize) {
+    : program(program), current(0), source(std::move(source)), tabSize(tabSize) {
 	if (tabSize == 0) {
 		throw std::invalid_argument("Tab size must be greater than 0");
 	}

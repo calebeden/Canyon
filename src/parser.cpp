@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <typeinfo>
@@ -62,7 +63,7 @@ void Parser::parseFunction(std::vector<Token *>::iterator &it, Module &module) {
 
 	parseBlock(it, *function->body);
 
-	for (Statement *s : function->body->statements) {
+	for (const std::unique_ptr<Statement> &s : function->body->statements) {
 		s->print(std::cerr);
 	}
 	function->type = type;
@@ -124,16 +125,16 @@ void Parser::parseBlock(std::vector<Token *>::iterator &it, CodeBlock &context) 
 	it++;
 	auto *punc = dynamic_cast<Punctuation *>(*it);
 	while (!punc || punc->type != Punctuation::Type::CloseBrace) {
-		Statement *s = parseStatement(it, context);
+		std::unique_ptr<Statement> s = parseStatement(it, context);
 		if (s != nullptr) {
-			context.statements.push_back(s);
+			context.statements.push_back(std::move(s));
 		}
 		punc = dynamic_cast<Punctuation *>(*it);
 	}
 	it++;
 }
 
-Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
+std::unique_ptr<Statement> Parser::parseStatement(std::vector<Token *>::iterator &it,
       CodeBlock &context) {
 	auto *punc = dynamic_cast<Punctuation *>(*it);
 	while (punc && punc->type == Punctuation::Type::Semicolon) {
@@ -144,7 +145,7 @@ Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
 		return nullptr;
 	}
 
-	rvalue *rval;
+	std::unique_ptr<rvalue> rval;
 	if (auto *type = dynamic_cast<Primitive *>(*it)) {
 		it++;
 		if (auto *id = dynamic_cast<Identifier *>(*it)) {
@@ -160,7 +161,7 @@ Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
 				errors.error(*it, "parseRvalue should have at least returned the "
 				                  "Variable we declared...");
 			}
-			if (dynamic_cast<Variable *>(rval)) {
+			if (dynamic_cast<Variable *>(rval.get())) {
 				if (auto *punc = dynamic_cast<Punctuation *>(*it);
 				      !punc || punc->type != Punctuation::Type::Semicolon) {
 					errors.error(*it, "Expected ';' after statement");
@@ -168,7 +169,7 @@ Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
 				it++;
 				return nullptr;
 			}
-			if (!dynamic_cast<Assignment *>(rval)) {
+			if (!dynamic_cast<Assignment *>(rval.get())) {
 				errors.error(*it, "Unexpected expression following declaration");
 			}
 		} else {
@@ -187,8 +188,7 @@ Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
 			errors.error(*it, "Expected ';' after statement");
 		}
 		it++;
-		Return *ret = new Return(rval, return_token);
-		return ret;
+		return std::make_unique<Return>(std::move(rval), return_token);
 	} else {
 		rval = parseRvalue(it, context);
 	}
@@ -202,7 +202,7 @@ Statement *Parser::parseStatement(std::vector<Token *>::iterator &it,
 	}
 	it++;
 	if (rval != nullptr) {
-		return new Expression(rval);
+		return std::make_unique<Expression>(std::move(rval));
 	}
 	return nullptr;
 }
@@ -270,7 +270,7 @@ Precedence          Operator            Associativity
     }
 */
 
-rvalue *Parser::e0(std::vector<Token *>::iterator &it) {
+std::unique_ptr<AST::rvalue> Parser::e0(std::vector<Token *>::iterator &it) {
 	if (auto *id = dynamic_cast<Identifier *>(*it)) {
 		it++;
 		bool isInt = true;
@@ -280,36 +280,44 @@ rvalue *Parser::e0(std::vector<Token *>::iterator &it) {
 				break;
 			}
 		}
-		return (isInt) ? dynamic_cast<rvalue *>(new Literal(id))
-		               : dynamic_cast<rvalue *>(new Variable(id));
+		if (isInt) {
+			return std::make_unique<Literal>(id);
+		}
+		return std::make_unique<Variable>(id);
 	}
 	return nullptr;
 }
 
-rvalue *Parser::e1(std::vector<Token *>::iterator &it, CodeBlock &context) {
-	rvalue *temp = e0(it);
+std::unique_ptr<AST::rvalue> Parser::e1(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
+	std::unique_ptr<rvalue> temp = e0(it);
 
 	if (auto *punc = dynamic_cast<Punctuation *>(*it);
 	      punc && punc->type == Punctuation::Type::OpenParen) {
 		it++;
-		rvalue *rval = parseRvalue(it, context);
-		if (auto *id = dynamic_cast<Variable *>(temp)) {
-			CodeBlock::IdentifierStatus status = context.find(id);
+		std::unique_ptr<rvalue> rval = parseRvalue(it, context);
+		Variable *tmp = dynamic_cast<Variable *>(temp.get());
+		if (tmp != nullptr) {
+			std::unique_ptr<Variable> id;
+			temp.release();
+			id.reset(tmp);
+			CodeBlock::IdentifierStatus status = context.find(id.get()); // TODO
 			switch (status) {
 				case CodeBlock::IdentifierStatus::VARIABLE: {
 					errors.error(*it, std::string(id->variable->s) + " is not callable");
 					break;
 				}
 				case CodeBlock::IdentifierStatus::UNKNOWN: {
-					context.defer(id);
+					context.defer(id.get()); // TODO
 				}
 				case CodeBlock::IdentifierStatus::FUNCTION: {
 					break;
 				}
 			}
-			FunctionCall *call = new FunctionCall(id);
+			std::unique_ptr<FunctionCall> call
+			      = std::make_unique<FunctionCall>(std::move(id));
 			while (rval) {
-				call->arguments.push_back(rval);
+				call->arguments.push_back(std::move(rval));
 				if (auto *punc = dynamic_cast<Punctuation *>(*it);
 				      punc && punc->type == Punctuation::Type::Comma) {
 					it++;
@@ -322,8 +330,10 @@ rvalue *Parser::e1(std::vector<Token *>::iterator &it, CodeBlock &context) {
 					rval = nullptr;
 				}
 			}
-			context.global->functionCalls.push_back(call);
-			rval = call;
+			// context.global->functionCalls.push_back(call);
+			// TODO replace the global functionCalls with recursion through Statements and
+			// rvalues
+			rval = std::move(call);
 		}
 		if (rval == nullptr) {
 			errors.error(*it, "Expected expression");
@@ -336,41 +346,50 @@ rvalue *Parser::e1(std::vector<Token *>::iterator &it, CodeBlock &context) {
 		return rval;
 	}
 
-	if (auto *id = dynamic_cast<Variable *>(temp)) {
-		CodeBlock::IdentifierStatus status = context.find(id);
+	Variable *tmp = dynamic_cast<Variable *>(temp.get());
+	std::unique_ptr<Variable> id;
+	if (tmp != nullptr) {
+		temp.release();
+		id.reset(tmp);
+		CodeBlock::IdentifierStatus status = context.find(id.get()); // TODO
 		switch (status) {
 			case CodeBlock::IdentifierStatus::FUNCTION: {
 				errors.error(*it, std::string(id->variable->s) + " is not a variable");
 				break;
 			}
 			case CodeBlock::IdentifierStatus::UNKNOWN: {
-				context.defer(id);
+				context.defer(id.get()); // TODO
 			}
 			case CodeBlock::IdentifierStatus::VARIABLE: {
 				break;
 			}
 		}
+		return id;
 	}
 	return temp;
 }
 
-rvalue *Parser::e2(std::vector<Token *>::iterator &it, CodeBlock &context) {
+std::unique_ptr<AST::rvalue> Parser::e2(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
 	return e1(it, context);
 }
 
-rvalue *Parser::e3(std::vector<Token *>::iterator &it, CodeBlock &context) {
-	rvalue *operand1 = e2(it, context);
+std::unique_ptr<AST::rvalue> Parser::e3(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
+	std::unique_ptr<rvalue> operand1 = e2(it, context);
 	while (true) {
 		if (auto *punc = dynamic_cast<Punctuation *>(*it)) {
 			if (punc->type == Punctuation::Type::Times) {
 				it++;
-				operand1 = new Multiplication(operand1, e2(it, context));
+				operand1 = std::make_unique<Multiplication>(std::move(operand1),
+				      e2(it, context));
 			} else if (punc->type == Punctuation::Type::Divide) {
 				it++;
-				operand1 = new Division(operand1, e2(it, context));
+				operand1
+				      = std::make_unique<Division>(std::move(operand1), e2(it, context));
 			} else if (punc->type == Punctuation::Type::Mod) {
 				it++;
-				operand1 = new Modulo(operand1, e2(it, context));
+				operand1 = std::make_unique<Modulo>(std::move(operand1), e2(it, context));
 			} else {
 				return operand1;
 			}
@@ -380,16 +399,19 @@ rvalue *Parser::e3(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	}
 }
 
-rvalue *Parser::e4(std::vector<Token *>::iterator &it, CodeBlock &context) {
-	rvalue *operand1 = e3(it, context);
+std::unique_ptr<AST::rvalue> Parser::e4(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
+	std::unique_ptr<rvalue> operand1 = e3(it, context);
 	while (true) {
 		if (auto *punc = dynamic_cast<Punctuation *>(*it)) {
 			if (punc->type == Punctuation::Type::Plus) {
 				it++;
-				operand1 = new Addition(operand1, e3(it, context));
+				operand1
+				      = std::make_unique<Addition>(std::move(operand1), e3(it, context));
 			} else if (punc->type == Punctuation::Type::Minus) {
 				it++;
-				operand1 = new Subtraction(operand1, e3(it, context));
+				operand1 = std::make_unique<Subtraction>(std::move(operand1),
+				      e3(it, context));
 			} else {
 				return operand1;
 			}
@@ -399,43 +421,53 @@ rvalue *Parser::e4(std::vector<Token *>::iterator &it, CodeBlock &context) {
 	}
 }
 
-rvalue *Parser::e5(std::vector<Token *>::iterator &it, CodeBlock &context) {
+std::unique_ptr<AST::rvalue> Parser::e5(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
 	return e4(it, context);
 }
 
-rvalue *Parser::e6(std::vector<Token *>::iterator &it, CodeBlock &context) {
+std::unique_ptr<AST::rvalue> Parser::e6(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
 	return e5(it, context);
 }
 
-rvalue *Parser::e7(std::vector<Token *>::iterator &it, CodeBlock &context) {
+std::unique_ptr<AST::rvalue> Parser::e7(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
 	return e6(it, context);
 }
 
-rvalue *Parser::e8(std::vector<Token *>::iterator &it, CodeBlock &context) {
+std::unique_ptr<AST::rvalue> Parser::e8(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
 	return e7(it, context);
 }
 
-rvalue *Parser::e9(std::vector<Token *>::iterator &it, CodeBlock &context) {
+std::unique_ptr<AST::rvalue> Parser::e9(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
 	return e8(it, context);
 }
 
-rvalue *Parser::e10(std::vector<Token *>::iterator &it, CodeBlock &context) {
+std::unique_ptr<AST::rvalue> Parser::e10(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
 	return e9(it, context);
 }
 
-rvalue *Parser::e11(std::vector<Token *>::iterator &it, CodeBlock &context) {
+std::unique_ptr<AST::rvalue> Parser::e11(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
 	return e10(it, context);
 }
 
-rvalue *Parser::e12(std::vector<Token *>::iterator &it, CodeBlock &context) {
+std::unique_ptr<AST::rvalue> Parser::e12(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
 	return e11(it, context);
 }
 
-rvalue *Parser::e13(std::vector<Token *>::iterator &it, CodeBlock &context) {
+std::unique_ptr<AST::rvalue> Parser::e13(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
 	return e12(it, context);
 }
 
-rvalue *Parser::e14(std::vector<Token *>::iterator &it, CodeBlock &context) {
+std::unique_ptr<AST::rvalue> Parser::e14(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
 	if (auto *id = dynamic_cast<Identifier *>(*it)) {
 		if (auto *punc = dynamic_cast<Punctuation *>(*(it + 1));
 		      punc && punc->type == Punctuation::Type::Equals) {
@@ -443,17 +475,19 @@ rvalue *Parser::e14(std::vector<Token *>::iterator &it, CodeBlock &context) {
 				errors.error(id, std::string("Undeclared variable ").append(id->s));
 			}
 			it += 2;
-			return new Assignment(id, e14(it, context));
+			return std::make_unique<Assignment>(id, e14(it, context));
 		}
 		return e13(it, context);
 	}
 	return e13(it, context);
 }
 
-rvalue *Parser::e15(std::vector<Token *>::iterator &it, CodeBlock &context) {
+std::unique_ptr<AST::rvalue> Parser::e15(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
 	return e14(it, context);
 }
 
-rvalue *Parser::parseRvalue(std::vector<Token *>::iterator &it, CodeBlock &context) {
+std::unique_ptr<AST::rvalue> Parser::parseRvalue(std::vector<Token *>::iterator &it,
+      CodeBlock &context) {
 	return e15(it, context);
 }
