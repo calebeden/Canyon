@@ -19,7 +19,7 @@ void ErrorHandler::error(Token *token, std::string message) {
 
 void ErrorHandler::error(std::filesystem::path source, size_t row, size_t col,
       std::string message) {
-	errors.push(Error(source, row, col, std::move(message)));
+	errors.push(Error(std::move(source), row, col, std::move(message)));
 	// TODO make this actually queueable
 	printErrors(std::cerr);
 	exit(EXIT_FAILURE);

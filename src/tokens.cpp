@@ -54,11 +54,11 @@ std::ostream &operator<<(std::ostream &os, const Type type) {
 
 Slice::Slice(std::string_view contents, std::filesystem::path source, size_t row,
       size_t col)
-    : contents(contents), source(source), row(row), col(col) {
+    : contents(contents), source(std::move(source)), row(row), col(col) {
 }
 
 Token::Token(std::filesystem::path source, size_t row, size_t col)
-    : source(source), row(row), col(col) {
+    : source(std::move(source)), row(row), col(col) {
 }
 
 Keyword::Keyword(const Slice &s, Type type) : Token(s.source, s.row, s.col), type(type) {
