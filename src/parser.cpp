@@ -89,7 +89,7 @@ void Parser::parseParameters(std::vector<std::unique_ptr<Token>>::iterator &it,
 	while (true) {
 		if (auto *type = dynamic_cast<Primitive *>(it->get())) {
 			it++;
-			Identifier *tmp = dynamic_cast<Identifier *>(it->get());
+			auto *tmp = dynamic_cast<Identifier *>(it->get());
 			if (tmp != nullptr) {
 				// std::unique_ptr<Identifier> id;
 				std::unique_ptr<Identifier> id = std::unique_ptr<Identifier>(tmp);
@@ -156,7 +156,7 @@ std::unique_ptr<Statement> Parser::parseStatement(
 	std::unique_ptr<rvalue> rval;
 	if (auto *type = dynamic_cast<Primitive *>(it->get())) {
 		it++;
-		if (Identifier *id = dynamic_cast<Identifier *>(it->get())) {
+		if (auto *id = dynamic_cast<Identifier *>(it->get())) {
 			if (context.locals.find(id->s) != context.locals.end()) {
 				errors.error(**it,
 				      std::string("Re-declaration of variable ").append(id->s));
@@ -280,7 +280,7 @@ Precedence          Operator            Associativity
 
 std::unique_ptr<AST::rvalue> Parser::e0(
       std::vector<std::unique_ptr<Token>>::iterator &it) {
-	Identifier *tmp = dynamic_cast<Identifier *>(it->get());
+	auto *tmp = dynamic_cast<Identifier *>(it->get());
 	if (tmp != nullptr) {
 		std::unique_ptr<Identifier> id;
 		it->release();
@@ -309,7 +309,7 @@ std::unique_ptr<AST::rvalue> Parser::e1(std::vector<std::unique_ptr<Token>>::ite
 	      punc && punc->type == Punctuation::Type::OpenParen) {
 		it++;
 		std::unique_ptr<rvalue> rval = parseRvalue(it, context);
-		Variable *tmp = dynamic_cast<Variable *>(temp.get());
+		auto *tmp = dynamic_cast<Variable *>(temp.get());
 		if (tmp != nullptr) {
 			std::unique_ptr<Variable> id;
 			temp.release();
@@ -359,7 +359,7 @@ std::unique_ptr<AST::rvalue> Parser::e1(std::vector<std::unique_ptr<Token>>::ite
 		return rval;
 	}
 
-	Variable *tmp = dynamic_cast<Variable *>(temp.get());
+	auto *tmp = dynamic_cast<Variable *>(temp.get());
 	std::unique_ptr<Variable> id;
 	if (tmp != nullptr) {
 		temp.release();
@@ -481,7 +481,7 @@ std::unique_ptr<AST::rvalue> Parser::e13(
 
 std::unique_ptr<AST::rvalue> Parser::e14(
       std::vector<std::unique_ptr<Token>>::iterator &it, CodeBlock &context) {
-	Identifier *tmp = dynamic_cast<Identifier *>(it->get());
+	auto *tmp = dynamic_cast<Identifier *>(it->get());
 	if (tmp != nullptr) {
 		std::unique_ptr<Identifier> id = std::make_unique<Identifier>(*tmp);
 		if (auto *punc = dynamic_cast<Punctuation *>((it + 1)->get());
