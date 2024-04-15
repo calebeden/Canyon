@@ -93,7 +93,7 @@ void Parser::parseParameters(std::vector<std::unique_ptr<Token>>::iterator &it,
 			if (tmp != nullptr) {
 				// std::unique_ptr<Identifier> id;
 				std::unique_ptr<Identifier> id = std::unique_ptr<Identifier>(tmp);
-				it->release();
+				(void) it->release();
 				// id.reset(tmp);
 				it++;
 				if (context.locals.find(id->s) != context.locals.end()) {
@@ -283,7 +283,7 @@ std::unique_ptr<AST::rvalue> Parser::e0(
 	auto *tmp = dynamic_cast<Identifier *>(it->get());
 	if (tmp != nullptr) {
 		std::unique_ptr<Identifier> id;
-		it->release();
+		(void) it->release();
 		id.reset(tmp);
 		it++;
 		bool isInt = true;
@@ -312,7 +312,7 @@ std::unique_ptr<AST::rvalue> Parser::e1(std::vector<std::unique_ptr<Token>>::ite
 		auto *tmp = dynamic_cast<Variable *>(temp.get());
 		if (tmp != nullptr) {
 			std::unique_ptr<Variable> id;
-			temp.release();
+			(void) temp.release();
 			id.reset(tmp);
 			CodeBlock::IdentifierStatus status = context.find(id.get()); // TODO
 			switch (status) {
@@ -362,7 +362,7 @@ std::unique_ptr<AST::rvalue> Parser::e1(std::vector<std::unique_ptr<Token>>::ite
 	auto *tmp = dynamic_cast<Variable *>(temp.get());
 	std::unique_ptr<Variable> id;
 	if (tmp != nullptr) {
-		temp.release();
+		(void) temp.release();
 		id.reset(tmp);
 		CodeBlock::IdentifierStatus status = context.find(id.get()); // TODO
 		switch (status) {
