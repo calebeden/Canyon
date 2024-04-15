@@ -20,11 +20,11 @@ rvalue::rvalue(std::filesystem::path source, size_t row, size_t col)
     : source(std::move(source)), row(row), col(col) {
 }
 
-Literal::Literal(const Identifier *const value)
-    : rvalue(value->source, value->row, value->col), value(0) {
+Literal::Literal(Identifier &value)
+    : rvalue(value.source, value.row, value.col), value(0) {
 	// https://stackoverflow.com/a/56634586
-	auto result = std::from_chars(value->s.data(), value->s.data() + value->s.size(),
-	      this->value);
+	auto result
+	      = std::from_chars(value.s.data(), value.s.data() + value.s.size(), this->value);
 	if (result.ec == std::errc::invalid_argument
 	      || result.ec == std::errc::result_out_of_range) {
 		std::cerr << "Error creating Literal: Expected an integer\n";
@@ -45,8 +45,9 @@ Type Literal::typeCheck([[maybe_unused]] const CodeBlock &context,
 	return Type::INT;
 }
 
-Variable::Variable(Identifier *variable)
-    : rvalue(variable->source, variable->row, variable->col), variable(variable) {
+Variable::Variable(std::unique_ptr<Identifier> variable)
+    : rvalue(variable->source, variable->row, variable->col),
+      variable(std::move(variable)) {
 }
 
 void Variable::print(std::ostream &os) const {
@@ -59,12 +60,13 @@ void Variable::compile(std::ostream &outfile) const {
 
 Type Variable::typeCheck(const CodeBlock &context,
       [[maybe_unused]] ErrorHandler &errors) const {
-	return context.getType(variable);
+	return context.getType(variable.get());
 }
 
-Assignment::Assignment(Identifier *variable, std::unique_ptr<rvalue> expression)
-    : rvalue(variable->source, variable->row, variable->col), variable(variable),
-      expression(std::move(expression)) {
+Assignment::Assignment(std::unique_ptr<Identifier> variable,
+      std::unique_ptr<rvalue> expression)
+    : rvalue(variable->source, variable->row, variable->col),
+      variable(std::move(variable)), expression(std::move(expression)) {
 }
 
 void Assignment::print(std::ostream &os) const {
@@ -79,7 +81,7 @@ void Assignment::compile(std::ostream &outfile) const {
 }
 
 Type Assignment::typeCheck(const CodeBlock &context, ErrorHandler &errors) const {
-	Type varType = context.getType(variable);
+	Type varType = context.getType(variable.get());
 	Type expType = expression->typeCheck(context, errors);
 	if (varType != expType) {
 		errors.error(source, row, col, "Incompatible types");
@@ -292,8 +294,8 @@ void FunctionCall::compile(std::ostream &outfile) const {
 }
 
 Type FunctionCall::typeCheck(const CodeBlock &context, ErrorHandler &errors) const {
-	auto function = context.global->functions.find(name->variable->s);
-	if (function == context.global->functions.end()) {
+	auto function = context.global.functions.find(name->variable->s);
+	if (function == context.global.functions.end()) {
 		throw std::invalid_argument("Could not find function");
 	}
 	for (size_t i = 0; i < arguments.size(); i++) {
@@ -306,8 +308,8 @@ Type FunctionCall::typeCheck(const CodeBlock &context, ErrorHandler &errors) con
 	return function->second->type;
 }
 
-Return::Return(std::unique_ptr<rvalue> rval, Token *token)
-    : rval(std::move(rval)), source(token->source), row(token->row), col(token->col) {
+Return::Return(std::unique_ptr<rvalue> rval, Token &token)
+    : rval(std::move(rval)), source(token.source), row(token.row), col(token.col) {
 }
 
 void Return::print(std::ostream &os) const {
@@ -345,19 +347,19 @@ Type Return::typeCheck(const CodeBlock &context, Type returnType,
 	return type;
 }
 
-CodeBlock::CodeBlock(Module *global) : global(global) {
+CodeBlock::CodeBlock(Module &global) : global(global) {
 }
 
 void CodeBlock::compile(std::ostream &outfile) const {
-	for (std::pair<Identifier *, std::tuple<Type, bool>> var : locals) {
-		Identifier *name = var.first;
+	for (const std::pair<const std::string_view, std::tuple<Type, bool>> &var : locals) {
+		const std::string_view name = var.first;
 		std::tuple<Type, bool> info = var.second;
 		if (!std::get<1>(info)) {
 			Type type = std::get<0>(info);
 			outfile << "    ";
 			Primitive::compile(outfile, type);
 			outfile << " ";
-			name->compile(outfile);
+			Identifier::compile(outfile, name);
 			outfile << ";\n";
 		}
 	}
@@ -372,11 +374,11 @@ void CodeBlock::defer(Variable *rval) {
 }
 
 CodeBlock::IdentifierStatus CodeBlock::find(const Variable *id) const {
-	if (locals.find(id->variable) != locals.end()) {
+	if (locals.find(id->variable->s) != locals.end()) {
 		return VARIABLE;
 	}
 	if (parent == nullptr) {
-		if (global->functions.find(id->variable->s) != global->functions.end()) {
+		if (global.functions.find(id->variable->s) != global.functions.end()) {
 			return FUNCTION;
 		}
 		return UNKNOWN;
@@ -386,15 +388,15 @@ CodeBlock::IdentifierStatus CodeBlock::find(const Variable *id) const {
 
 void CodeBlock::resolve(ErrorHandler &errors) {
 	for (Variable *id : deferred) {
-		if (global->functions.find(id->variable->s) == global->functions.end()) {
-			errors.error(id->variable,
+		if (global.functions.find(id->variable->s) == global.functions.end()) {
+			errors.error(*id->variable,
 			      std::string("Undeclared identifier ").append(id->variable->s));
 		}
 	}
 }
 
 Type CodeBlock::getType(Identifier *var) const {
-	auto local = locals.find(var);
+	auto local = locals.find(var->s);
 	if (local != locals.end()) {
 		return std::get<0>(local->second);
 	}
@@ -410,7 +412,7 @@ void CodeBlock::typeCheck(Type returnType, ErrorHandler &errors) const {
 	}
 }
 
-Function::Function(Module *module) : body(module) {
+Function::Function(Module &module) : body(module) {
 }
 
 void Function::compile(std::ostream &outfile, std::string_view name) const {
@@ -419,13 +421,13 @@ void Function::compile(std::ostream &outfile, std::string_view name) const {
 	size_t size = parameters.size();
 	if (size > 0) {
 		for (size_t i = 0; i < size - 1; i++) {
-			std::pair<Identifier *, Type> param = parameters[i];
+			const std::pair<std::unique_ptr<Identifier>, Type> &param = parameters[i];
 			Primitive::compile(outfile, param.second);
 			outfile << ' ';
 			param.first->compile(outfile);
 			outfile << ',';
 		}
-		std::pair<Identifier *, Type> param = parameters[size - 1];
+		const std::pair<std::unique_ptr<Identifier>, Type> &param = parameters[size - 1];
 		Primitive::compile(outfile, param.second);
 		outfile << ' ';
 		param.first->compile(outfile);
@@ -441,13 +443,13 @@ void Function::forward(std::ostream &outfile, std::string_view name) const {
 	size_t size = parameters.size();
 	if (size > 0) {
 		for (size_t i = 0; i < size - 1; i++) {
-			std::pair<Identifier *, Type> param = parameters[i];
+			const std::pair<std::unique_ptr<Identifier>, Type> &param = parameters[i];
 			Primitive::compile(outfile, param.second);
 			outfile << ' ';
 			param.first->compile(outfile);
 			outfile << ',';
 		}
-		std::pair<Identifier *, Type> param = parameters[size - 1];
+		const std::pair<std::unique_ptr<Identifier>, Type> &param = parameters[size - 1];
 		Primitive::compile(outfile, param.second);
 		outfile << ' ';
 		param.first->compile(outfile);
@@ -464,13 +466,14 @@ void Function::typeCheck(ErrorHandler &errors) const {
 }
 
 Module::Module() {
-	functions["print"] = new Print(this);
+	functions["print"] = std::make_unique<Print>(*this);
 }
 
 void Module::compile(std::ostream &outfile) const {
 	outfile << "#include <stdio.h>\n";
 	// Forward declarations
-	for (std::pair<std::string_view, Function *> f : functions) {
+	for (const std::pair<const std::string_view, std::unique_ptr<Function>> &f :
+	      functions) {
 		f.second->forward(outfile, f.first);
 	}
 	outfile << "int main(int argc, char **argv) {\n"
@@ -478,13 +481,15 @@ void Module::compile(std::ostream &outfile) const {
 	           "    return 0;\n"
 	           "}\n";
 	// Actual code
-	for (std::pair<std::string_view, Function *> f : functions) {
+	for (const std::pair<const std::string_view, std::unique_ptr<Function>> &f :
+	      functions) {
 		f.second->compile(outfile, f.first);
 	}
 }
 
 void Module::resolve(ErrorHandler &errors) {
-	for (std::pair<std::string_view, Function *> f : functions) {
+	for (const std::pair<const std::string_view, std::unique_ptr<Function>> &f :
+	      functions) {
 		f.second->resolve(errors);
 	}
 	for (FunctionCall *call : functionCalls) {
@@ -512,7 +517,8 @@ void Module::resolve(ErrorHandler &errors) {
 			}
 		}
 	}
-	for (std::pair<std::string_view, Function *> f : functions) {
+	for (const std::pair<const std::string_view, std::unique_ptr<Function>> &f :
+	      functions) {
 		f.second->typeCheck(errors);
 	}
 }

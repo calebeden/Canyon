@@ -13,8 +13,8 @@ ErrorHandler::Error::Error(std::filesystem::path source, size_t row, size_t col,
     : message(std::move(message)), source(std::move(source)), row(row), col(col) {
 }
 
-void ErrorHandler::error(Token *token, std::string message) {
-	error(token->source, token->row, token->col, std::move(message));
+void ErrorHandler::error(Token &token, std::string message) {
+	error(token.source, token.row, token.col, std::move(message));
 }
 
 void ErrorHandler::error(std::filesystem::path source, size_t row, size_t col,

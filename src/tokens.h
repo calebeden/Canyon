@@ -102,17 +102,11 @@ struct Punctuation : public Token {
 struct Identifier : public Token {
 	std::string_view s;
 	explicit Identifier(const Slice &s);
+	explicit Identifier(const Identifier &id);
 	virtual void print(std::ostream &os) const;
 	void compile(std::ostream &outfile) const;
+	static void compile(std::ostream &outfile, std::string_view s);
 	virtual ~Identifier() = default;
-};
-
-struct Hasher {
-	std::size_t operator()(Identifier *const id) const;
-};
-
-struct Comparator {
-	bool operator()(Identifier *a, Identifier *b) const;
 };
 
 #endif

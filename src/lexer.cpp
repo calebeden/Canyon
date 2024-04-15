@@ -15,33 +15,33 @@ Lexer::Lexer(std::string_view program, std::filesystem::path source, uint32_t ta
 	}
 }
 
-std::vector<Token *> Lexer::tokenize() {
+std::vector<std::unique_ptr<Token>> Lexer::tokenize() {
 	slice();
 
-	std::vector<Token *> tokens;
+	std::vector<std::unique_ptr<Token>> tokens;
 	// for (Slice s : slices) {
 	for (; !slices.empty(); slices.pop()) {
 		Slice &s = slices.front();
 		std::cerr << s.contents << '\n';
-		Keyword *keyword = createKeyword(s);
+		std::unique_ptr<Token> keyword = createKeyword(s);
 		if (keyword) {
-			tokens.push_back(keyword);
+			tokens.push_back(std::move(keyword));
 			continue;
 		}
-		Primitive *primitive = createPrimitive(s);
+		std::unique_ptr<Token> primitive = createPrimitive(s);
 		if (primitive) {
-			tokens.push_back(primitive);
+			tokens.push_back(std::move(primitive));
 			continue;
 		}
-		Punctuation *punctuation = createPunctuation(s);
+		std::unique_ptr<Token> punctuation = createPunctuation(s);
 		if (punctuation) {
-			tokens.push_back(punctuation);
+			tokens.push_back(std::move(punctuation));
 			continue;
 		}
 		tokens.push_back(createIdentifier(s));
 	}
 
-	for (Token *t : tokens) {
+	for (auto &t : tokens) {
 		t->print(std::cerr);
 		std::cerr << '\n';
 	}
@@ -104,84 +104,84 @@ bool Lexer::isSep(std::string_view s, size_t offset) {
 	return false;
 }
 
-Keyword *Lexer::createKeyword(const Slice &s) {
+std::unique_ptr<Keyword> Lexer::createKeyword(const Slice &s) {
 	if (s.contents == "void") {
-		return new Keyword(s, Keyword::Type::VOID);
+		return std::make_unique<Keyword>(s, Keyword::Type::VOID);
 	}
 	if (s.contents == "return") {
-		return new Keyword(s, Keyword::Type::RETURN);
+		return std::make_unique<Keyword>(s, Keyword::Type::RETURN);
 	}
 	return nullptr;
 }
 
-Primitive *Lexer::createPrimitive(const Slice &s) {
+std::unique_ptr<Primitive> Lexer::createPrimitive(const Slice &s) {
 	if (s.contents == "int") {
-		return new Primitive(s, Type::INT);
+		return std::make_unique<Primitive>(s, Type::INT);
 	}
 	if (s.contents == "byte") {
-		return new Primitive(s, Type::BYTE);
+		return std::make_unique<Primitive>(s, Type::BYTE);
 	}
 	if (s.contents == "short") {
-		return new Primitive(s, Type::SHORT);
+		return std::make_unique<Primitive>(s, Type::SHORT);
 	}
 	if (s.contents == "long") {
-		return new Primitive(s, Type::LONG);
+		return std::make_unique<Primitive>(s, Type::LONG);
 	}
 	if (s.contents == "float") {
-		return new Primitive(s, Type::FLOAT);
+		return std::make_unique<Primitive>(s, Type::FLOAT);
 	}
 	if (s.contents == "double") {
-		return new Primitive(s, Type::DOUBLE);
+		return std::make_unique<Primitive>(s, Type::DOUBLE);
 	}
 	if (s.contents == "bool") {
-		return new Primitive(s, Type::BOOL);
+		return std::make_unique<Primitive>(s, Type::BOOL);
 	}
 	if (s.contents == "char") {
-		return new Primitive(s, Type::CHAR);
+		return std::make_unique<Primitive>(s, Type::CHAR);
 	}
 	return nullptr;
 }
 
-Punctuation *Lexer::createPunctuation(const Slice &s) {
+std::unique_ptr<Punctuation> Lexer::createPunctuation(const Slice &s) {
 	if (s.contents == "(") {
-		return new Punctuation(s, Punctuation::Type::OpenParen);
+		return std::make_unique<Punctuation>(s, Punctuation::Type::OpenParen);
 	}
 	if (s.contents == ")") {
-		return new Punctuation(s, Punctuation::Type::CloseParen);
+		return std::make_unique<Punctuation>(s, Punctuation::Type::CloseParen);
 	}
 	if (s.contents == ";") {
-		return new Punctuation(s, Punctuation::Type::Semicolon);
+		return std::make_unique<Punctuation>(s, Punctuation::Type::Semicolon);
 	}
 	if (s.contents == "{") {
-		return new Punctuation(s, Punctuation::Type::OpenBrace);
+		return std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace);
 	}
 	if (s.contents == "}") {
-		return new Punctuation(s, Punctuation::Type::CloseBrace);
+		return std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace);
 	}
 	if (s.contents == ",") {
-		return new Punctuation(s, Punctuation::Type::Comma);
+		return std::make_unique<Punctuation>(s, Punctuation::Type::Comma);
 	}
 	if (s.contents == "=") {
-		return new Punctuation(s, Punctuation::Type::Equals);
+		return std::make_unique<Punctuation>(s, Punctuation::Type::Equals);
 	}
 	if (s.contents == "+") {
-		return new Punctuation(s, Punctuation::Type::Plus);
+		return std::make_unique<Punctuation>(s, Punctuation::Type::Plus);
 	}
 	if (s.contents == "-") {
-		return new Punctuation(s, Punctuation::Type::Minus);
+		return std::make_unique<Punctuation>(s, Punctuation::Type::Minus);
 	}
 	if (s.contents == "*") {
-		return new Punctuation(s, Punctuation::Type::Times);
+		return std::make_unique<Punctuation>(s, Punctuation::Type::Times);
 	}
 	if (s.contents == "/") {
-		return new Punctuation(s, Punctuation::Type::Divide);
+		return std::make_unique<Punctuation>(s, Punctuation::Type::Divide);
 	}
 	if (s.contents == "%") {
-		return new Punctuation(s, Punctuation::Type::Mod);
+		return std::make_unique<Punctuation>(s, Punctuation::Type::Mod);
 	}
 	return nullptr;
 }
 
-Identifier *Lexer::createIdentifier(const Slice &s) {
-	return new Identifier(s);
+std::unique_ptr<Identifier> Lexer::createIdentifier(const Slice &s) {
+	return std::make_unique<Identifier>(s);
 }

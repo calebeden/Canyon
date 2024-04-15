@@ -38,7 +38,7 @@ public:
 	 *
 	 * @return the source code as a series of Tokens, stored in a vector
 	 */
-	mockable std::vector<Token *> tokenize();
+	mockable std::vector<std::unique_ptr<Token>> tokenize();
 #ifndef DEBUG_TEST_MODE
 private:
 #endif
@@ -58,10 +58,10 @@ private:
 	 */
 	mockable bool isSep(std::string_view s, size_t offset);
 
-	mockable Keyword *createKeyword(const Slice &s);
-	mockable Primitive *createPrimitive(const Slice &s);
-	mockable Punctuation *createPunctuation(const Slice &s);
-	mockable Identifier *createIdentifier(const Slice &s);
+	mockable std::unique_ptr<Keyword> createKeyword(const Slice &s);
+	mockable std::unique_ptr<Primitive> createPrimitive(const Slice &s);
+	mockable std::unique_ptr<Punctuation> createPunctuation(const Slice &s);
+	mockable std::unique_ptr<Identifier> createIdentifier(const Slice &s);
 public:
 	~Lexer() = default;
 };

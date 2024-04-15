@@ -8,8 +8,8 @@
 
 #include <cstdint>
 #include <fcntl.h>
-#include <vector>
 #include <memory>
+#include <vector>
 
 #ifdef DEBUG_TEST_MODE
 #	define mockable virtual
@@ -32,7 +32,7 @@ public:
 	 * @param tokens the tokens to parse
 	 * @return the parsed Module
 	 */
-	mockable AST::Module parseModule(std::vector<Token *> &tokens);
+	mockable AST::Module parseModule(std::vector<std::unique_ptr<Token>> &tokens);
 
 	/**
 	 * @brief Parses entire rvalues, taking operator precedence into consideration
@@ -43,8 +43,8 @@ public:
 	 * @param context the AST::CodeBlock in which the current expression occurs
 	 * @return the parsed rvalue
 	 */
-	mockable std::unique_ptr<AST::rvalue> parseRvalue(std::vector<Token *>::iterator &it,
-	      AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> parseRvalue(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
 #ifndef DEBUG_TEST_MODE
 private:
 #endif
@@ -55,7 +55,8 @@ private:
 	 * @param tokens the stream of tokens representing the current module
 	 * @param module the Module to place the parsed functions inside of
 	 */
-	mockable void parseFunctions(std::vector<Token *> &tokens, AST::Module &module);
+	mockable void parseFunctions(std::vector<std::unique_ptr<Token>> &tokens,
+	      AST::Module &module);
 	/**
 	 * @brief Converts tokens to the AST representation of a function
 	 *
@@ -64,7 +65,8 @@ private:
 	 * will point to the token IMMEDIATELY AFTER the closing curly brace
 	 * @param module the Module to place the parsed function inside of
 	 */
-	mockable void parseFunction(std::vector<Token *>::iterator &it, AST::Module &module);
+	mockable void parseFunction(std::vector<std::unique_ptr<Token>>::iterator &it,
+	      AST::Module &module);
 	/**
 	 * @brief Converts tokens to the AST representation of a function parameter list
 	 *
@@ -73,8 +75,8 @@ private:
 	 * returns, it will point to the token IMMEDIATELY AFTER the closing parenthesis
 	 * @param function the Function to determine its parameters
 	 */
-	mockable void parseParameters(std::vector<Token *>::iterator &it,
-	      AST::Function *function);
+	mockable void parseParameters(std::vector<std::unique_ptr<Token>>::iterator &it,
+	      AST::Function &function);
 	/**
 	 * @brief Parses tokens into a code block
 	 *
@@ -83,7 +85,8 @@ private:
 	 * returns it will point to the token IMMEDIATELY AFTER the closing curly brace
 	 * @param context the "fresh" CodeBlock to fill its contents with
 	 */
-	mockable void parseBlock(std::vector<Token *>::iterator &it, AST::CodeBlock &context);
+	mockable void parseBlock(std::vector<std::unique_ptr<Token>>::iterator &it,
+	      AST::CodeBlock &context);
 	/**
 	 * @brief Parses tokens into a statement
 	 *
@@ -93,8 +96,8 @@ private:
 	 * @param context the most specific context that the statement is a part of
 	 * @return the parsed Statement
 	 */
-	mockable std::unique_ptr<AST::Statement> parseStatement(std::vector<Token *>::iterator &it,
-	      AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::Statement> parseStatement(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
 	/**
 	 * @brief Deeper than any operators - identifiers and literals
 	 *
@@ -103,7 +106,8 @@ private:
 	 * returns it will point to the token IMMEDIATELY AFTER the rvalue
 	 * @return the parsed rvalue
 	 */
-	mockable std::unique_ptr<AST::rvalue> e0(std::vector<Token *>::iterator &it);
+	mockable std::unique_ptr<AST::rvalue> e0(
+	      std::vector<std::unique_ptr<Token>>::iterator &it);
 	/**
 	 * @brief () - grouping for precedence and function calls
 	 *
@@ -113,8 +117,10 @@ private:
 	 * @param context the AST::CodeBlock in which the current expression occurs
 	 * @return the parsed rvalue
 	 */
-	mockable std::unique_ptr<AST::rvalue> e1(std::vector<Token *>::iterator &it, AST::CodeBlock &context);
-	mockable std::unique_ptr<AST::rvalue> e2(std::vector<Token *>::iterator &it, AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e1(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e2(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
 	/**
 	 * @brief Multiplication, division, modulo operators * / % (LTR)
 	 *
@@ -124,7 +130,8 @@ private:
 	 * @param context the AST::CodeBlock in which the current expression occurs
 	 * @return the parsed rvalue
 	 */
-	mockable std::unique_ptr<AST::rvalue> e3(std::vector<Token *>::iterator &it, AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e3(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
 	/**
 	 * @brief Addition and subtraction operators + - (LTR)
 	 *
@@ -134,20 +141,26 @@ private:
 	 * @param context the AST::CodeBlock in which the current expression occurs
 	 * @return the parsed rvalue
 	 */
-	mockable std::unique_ptr<AST::rvalue> e4(std::vector<Token *>::iterator &it, AST::CodeBlock &context);
-	mockable std::unique_ptr<AST::rvalue> e5(std::vector<Token *>::iterator &it, AST::CodeBlock &context);
-	mockable std::unique_ptr<AST::rvalue> e6(std::vector<Token *>::iterator &it, AST::CodeBlock &context);
-	mockable std::unique_ptr<AST::rvalue> e7(std::vector<Token *>::iterator &it, AST::CodeBlock &context);
-	mockable std::unique_ptr<AST::rvalue> e8(std::vector<Token *>::iterator &it, AST::CodeBlock &context);
-	mockable std::unique_ptr<AST::rvalue> e9(std::vector<Token *>::iterator &it, AST::CodeBlock &context);
-	mockable std::unique_ptr<AST::rvalue> e10(std::vector<Token *>::iterator &it,
-	      AST::CodeBlock &context);
-	mockable std::unique_ptr<AST::rvalue> e11(std::vector<Token *>::iterator &it,
-	      AST::CodeBlock &context);
-	mockable std::unique_ptr<AST::rvalue> e12(std::vector<Token *>::iterator &it,
-	      AST::CodeBlock &context);
-	mockable std::unique_ptr<AST::rvalue> e13(std::vector<Token *>::iterator &it,
-	      AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e4(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e5(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e6(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e7(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e8(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e9(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e10(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e11(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e12(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e13(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
 	/**
 	 * @brief Assignment operators = += -= *= /= %= <<= >>= &= ^= |= (RTL)
 	 *
@@ -157,10 +170,10 @@ private:
 	 * @param context the AST::CodeBlock in which the current expression occurs
 	 * @return the parsed rvalue
 	 */
-	mockable std::unique_ptr<AST::rvalue> e14(std::vector<Token *>::iterator &it,
-	      AST::CodeBlock &context);
-	mockable std::unique_ptr<AST::rvalue> e15(std::vector<Token *>::iterator &it,
-	      AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e14(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
+	mockable std::unique_ptr<AST::rvalue> e15(
+	      std::vector<std::unique_ptr<Token>>::iterator &it, AST::CodeBlock &context);
 public:
 	~Parser() = default;
 };

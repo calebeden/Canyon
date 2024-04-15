@@ -4,7 +4,7 @@
 
 using namespace AST;
 
-Print::Print(Module *module) : Function(module) {
+Print::Print(Module &module) : Function(module) {
 	type = Type::VOID;
 	parameters.emplace_back(nullptr, Type::INT);
 }

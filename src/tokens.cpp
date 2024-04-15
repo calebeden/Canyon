@@ -244,6 +244,9 @@ void Punctuation::print(std::ostream &os) const {
 Identifier::Identifier(const Slice &s) : Token(s.source, s.row, s.col), s(s.contents) {
 }
 
+Identifier::Identifier(const Identifier &id) : Token(id.source, id.row, id.col), s(id.s) {
+}
+
 void Identifier::print(std::ostream &os) const {
 	os << "Identifier: " << s << '\n';
 }
@@ -252,10 +255,6 @@ void Identifier::compile(std::ostream &outfile) const {
 	outfile << s;
 }
 
-std::size_t Hasher::operator()(Identifier *const id) const {
-	return std::hash<std::string_view>{}(id->s);
-}
-
-bool Comparator::operator()(Identifier *a, Identifier *b) const {
-	return a->s == b->s;
+void Identifier::compile(std::ostream &outfile, std::string_view s) {
+	outfile << s;
 }

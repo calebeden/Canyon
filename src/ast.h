@@ -29,7 +29,7 @@ protected:
 
 struct Literal : public rvalue {
 	int32_t value;
-	explicit Literal(const Identifier *value);
+	explicit Literal(Identifier &value);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, ErrorHandler &errors) const;
@@ -46,8 +46,8 @@ struct Statement {
 };
 
 struct Variable : public rvalue {
-	Identifier *variable;
-	explicit Variable(Identifier *variable);
+	std::unique_ptr<Identifier> variable;
+	explicit Variable(std::unique_ptr<Identifier> variable);
 	Type type = Type::UNKNOWN;
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
@@ -56,9 +56,9 @@ struct Variable : public rvalue {
 };
 
 struct Assignment : public rvalue {
-	Identifier *variable;
+	std::unique_ptr<Identifier> variable;
 	std::unique_ptr<rvalue> expression;
-	Assignment(Identifier *variable, std::unique_ptr<rvalue> expression);
+	Assignment(std::unique_ptr<Identifier> variable, std::unique_ptr<rvalue> expression);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, ErrorHandler &errors) const;
@@ -140,7 +140,7 @@ struct Return : public Statement {
 	std::filesystem::path source;
 	size_t row;
 	size_t col;
-	Return(std::unique_ptr<rvalue> rval, Token *token);
+	Return(std::unique_ptr<rvalue> rval, Token &token);
 	virtual void print(std::ostream &os) const;
 	virtual void compile(std::ostream &outfile) const;
 	virtual Type typeCheck(const CodeBlock &context, Type returnType,
@@ -159,11 +159,11 @@ struct CodeBlock {
 
 	std::vector<std::unique_ptr<Statement>> statements;
 	// For each local, the info tuple says the type and whether it is a parameter
-	std::unordered_map<Identifier *, std::tuple<Type, bool>, Hasher, Comparator> locals;
+	std::unordered_map<std::string_view, std::tuple<Type, bool>> locals;
 	std::vector<Variable *> deferred;
 	CodeBlock *parent = nullptr;
-	struct Module *global;
-	explicit CodeBlock(Module *global);
+	struct Module &global;
+	explicit CodeBlock(Module &global);
 	void compile(std::ostream &outfile) const;
 	/**
 	 * @brief Defers an identifier to be resolved within the global scope at the end of
@@ -188,8 +188,8 @@ struct CodeBlock {
 struct Function {
 	CodeBlock body;
 	Type type = Type::UNKNOWN;
-	std::vector<std::pair<Identifier *, Type>> parameters;
-	explicit Function(Module *module);
+	std::vector<std::pair<std::unique_ptr<Identifier>, Type>> parameters;
+	explicit Function(Module &module);
 	virtual void compile(std::ostream &outfile, std::string_view name) const;
 	virtual void forward(std::ostream &outfile, std::string_view name) const;
 	virtual void resolve(ErrorHandler &errors);
@@ -199,7 +199,9 @@ struct Function {
 
 struct Module {
 	Module();
-	std::unordered_map<std::string_view, Function *> functions;
+	Module(Module &) = delete;
+	Module(Module &&) = default;
+	std::unordered_map<std::string_view, std::unique_ptr<Function>> functions;
 	std::vector<FunctionCall *> functionCalls;
 	void compile(std::ostream &outfile) const;
 	// TODO global vars

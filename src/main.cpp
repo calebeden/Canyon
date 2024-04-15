@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 	      std::istreambuf_iterator<char>());
 
 	Lexer l = Lexer(fileData, infileName);
-	std::vector<Token *> tokens = l.tokenize();
+	std::vector<std::unique_ptr<Token>> tokens = l.tokenize();
 
 	Parser p;
 	AST::Module module = p.parseModule(tokens);
