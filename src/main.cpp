@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <span>
 #include <string>
 #include <unistd.h>
 
@@ -24,10 +25,9 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	// NOLINTBEGIN(*-pointer-arithmetic)
-	std::filesystem::path infileName = std::filesystem::path(argv[1]);
-	std::filesystem::path outfileName = std::filesystem::path(argv[2]);
-	// NOLINTEND(*-pointer-arithmetic)
+	auto args = std::span(argv, size_t(argc));
+	std::filesystem::path infileName = std::filesystem::path(args[1]);
+	std::filesystem::path outfileName = std::filesystem::path(args[2]);
 
 	// Read the source file into a string
 	std::ifstream infile = std::ifstream(infileName);
