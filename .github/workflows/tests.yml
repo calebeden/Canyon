@@ -75,8 +75,8 @@ jobs:
         working-directory: ${{github.workspace}}
         run: |
           clang-format-18 --dry-run -Werror src/*.cpp test/unit_tests/*.cpp
-          clang-tidy src/*.cpp -p ./build/compile_commands.json
-        # clang-tidy src/*.cpp test/unit_tests/*.cpp -p ./build/compile_commands.json
+          clang-tidy src/*.cpp test/unit_tests/*.cpp -p ./build/compile_commands.json
+        # clang-tidy src/*.cpp -p ./build/compile_commands.json
 
       - name: Build
         working-directory: ${{github.workspace}}/build
