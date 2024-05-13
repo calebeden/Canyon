@@ -570,7 +570,7 @@ TEST_P(TestLexerKeywords, testKeywords) {
 
 INSTANTIATE_TEST_SUITE_P(testKeywords, TestLexerKeywords,
       testing::Values(std::pair{"return", Keyword::Type::RETURN},
-            std::pair{"let", Keyword::Type::LET}));
+            std::pair{"let", Keyword::Type::LET}, std::pair{"fun", Keyword::Type::FUN}));
 
 TEST_P(TestLexerPrimitives, testPrimitives) {
 	const std::string primitive_str = GetParam().first;

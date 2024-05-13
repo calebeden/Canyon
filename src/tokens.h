@@ -70,6 +70,7 @@ struct Keyword : public Token {
 	enum Type {
 		RETURN,
 		LET,
+		FUN,
 	};
 
 	Type type;

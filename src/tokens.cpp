@@ -90,6 +90,10 @@ void Keyword::print(std::ostream &os) const {
 			os << "let";
 			break;
 		}
+		case Type::FUN: {
+			os << "fun";
+			break;
+		}
 	}
 }
 
