@@ -1,5 +1,7 @@
+#include "ast.h"
 #include "errorhandler.h"
 #include "lexer.h"
+#include "parser.h"
 #include "tokens.h"
 
 #include <cerrno>
@@ -36,8 +38,15 @@ int main(int argc, char **argv) {
 	      std::istreambuf_iterator<char>());
 
 	ErrorHandler errorHandler;
+
 	Lexer l = Lexer(fileData, infileName, errorHandler);
 	std::vector<std::unique_ptr<Token>> tokens = l.lex();
+	if (errorHandler.handleErrors(std::cerr)) {
+		return EXIT_FAILURE;
+	}
+
+	Parser p = Parser(std::move(tokens), errorHandler);
+	std::unique_ptr<Module> mod = p.parse();
 	if (errorHandler.handleErrors(std::cerr)) {
 		return EXIT_FAILURE;
 	}

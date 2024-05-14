@@ -422,7 +422,7 @@ IntegerLiteral::IntegerLiteral(const Token *t, Type type, uint64_t value)
 }
 
 void IntegerLiteral::print(std::ostream &os) const {
-	os << "IntegerLiteral: " << value << '\n';
+	os << value << type;
 }
 
 bool operator==(const IntegerLiteral &lhs, const IntegerLiteral &rhs) {
