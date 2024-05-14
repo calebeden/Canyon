@@ -84,10 +84,10 @@ private:
 	std::vector<std::unique_ptr<Statement>> statements;
 	std::unique_ptr<Expression> finalExpression;
 public:
-	BlockExpression();
+	BlockExpression() = default;
 	void pushStatement(std::unique_ptr<Statement> statement);
 	void setFinalExpression(std::unique_ptr<Expression> finalExpression);
-	void forEachStatement(std::function<void(Statement &)> statementHandler);
+	void forEachStatement(const std::function<void(Statement &)> &statementHandler);
 	Expression *getFinalExpression();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~BlockExpression() = default;
@@ -156,9 +156,9 @@ class Module {
 private:
 	std::vector<std::unique_ptr<Function>> functions;
 public:
-	Module();
+	Module() = default;
 	void pushFunction(std::unique_ptr<Function> function);
-	void forEachFunction(std::function<void(Function &)> functionHandler);
+	void forEachFunction(const std::function<void(Function &)> &functionHandler);
 	~Module() = default;
 };
 

@@ -79,19 +79,16 @@ void SymbolExpression::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-BlockExpression::BlockExpression() {
-}
-
 void BlockExpression::pushStatement(std::unique_ptr<Statement> statement) {
 	statements.push_back(std::move(statement));
 }
 
-void BlockExpression::setFinalExpression(std::unique_ptr<Expression> expr) {
-	finalExpression = std::move(expr);
+void BlockExpression::setFinalExpression(std::unique_ptr<Expression> finalExpression) {
+	this->finalExpression = std::move(finalExpression);
 }
 
 void BlockExpression::forEachStatement(
-      std::function<void(Statement &)> statementHandler) {
+      const std::function<void(Statement &)> &statementHandler) {
 	for (auto &statement : statements) {
 		statementHandler(*statement);
 	}
@@ -184,16 +181,13 @@ void Function::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-Module::Module() {
-}
-
 void Module::pushFunction(std::unique_ptr<Function> function) {
 	functions.push_back(std::move(function));
 }
 
-void Module::forEachFunction(std::function<void(Function &)> funcHandler) {
+void Module::forEachFunction(const std::function<void(Function &)> &functionHandler) {
 	for (auto &function : functions) {
-		funcHandler(*function);
+		functionHandler(*function);
 	}
 }
 

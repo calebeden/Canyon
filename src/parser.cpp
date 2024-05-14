@@ -62,7 +62,7 @@ std::unique_ptr<Function> Parser::parseFunction() {
 		return nullptr;
 	}
 	i++;
-	Symbol *type;
+	Symbol *type = nullptr;
 	punc = dynamic_cast<Punctuation *>(tokens[i].get());
 	if (punc != nullptr && punc->type == Punctuation::Type::Colon) {
 		i++;
@@ -96,7 +96,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
 			return nullptr;
 		}
 		symbol = dynamic_cast<Symbol *>(tokens[i++].release());
-		Symbol *type;
+		Symbol *type = nullptr;
 		auto *punc = dynamic_cast<Punctuation *>(tokens[i].get());
 		if (punc != nullptr && punc->type == Punctuation::Type::Colon) {
 			i++;
@@ -124,12 +124,12 @@ std::unique_ptr<Statement> Parser::parseStatement() {
 				if (punc->type == Punctuation::Type::Semicolon) {
 					i++;
 					return nullptr;
-				} else if (punc->type == Punctuation::Type::CloseBrace) {
-					return nullptr;
-				} else {
-					std::cerr << "Unexpected token in parseExpression" << std::endl;
-					exit(EXIT_FAILURE);
 				}
+				if (punc->type == Punctuation::Type::CloseBrace) {
+					return nullptr;
+				}
+				std::cerr << "Unexpected token in parseExpression" << std::endl;
+				exit(EXIT_FAILURE);
 			}
 		}
 		punc = dynamic_cast<Punctuation *>(tokens[i].get());
@@ -168,7 +168,8 @@ std::unique_ptr<BlockExpression> Parser::parseBlock() {
 		if (statement != nullptr) {
 			block->pushStatement(std::move(statement));
 			continue;
-		} else if (mustSynchronize) {
+		}
+		if (mustSynchronize) {
 			synchronize();
 			mustSynchronize = false;
 			auto *punc = dynamic_cast<Punctuation *>(tokens[i].get());
