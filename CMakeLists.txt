@@ -119,10 +119,6 @@ add_subdirectory(./googletest)
 
 enable_testing()
 
-# Include the gtest library
-include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
-include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
-
 # #######################################
 # Test files
 # #######################################
@@ -133,6 +129,10 @@ file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/unit_tests/*.cpp)
 # #######################################
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     add_executable(${PROJECT_TESTS} ${TEST_SRC_FILES})
+    target_include_directories(${PROJECT_TESTS} PRIVATE ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+    target_include_directories(${PROJECT_TESTS} PRIVATE ${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
+    target_include_directories(${PROJECT_TESTS} PRIVATE ${PROJECT_SOURCE_DIR}/test/unit_tests)
+    target_include_directories(${PROJECT_TESTS} PRIVATE ${PROJECT_SOURCE_DIR}/test/unit_tests/utilities)
     target_include_directories(${PROJECT_TESTS} PRIVATE ${PROJECT_SOURCE_DIR}/src)
     target_include_directories(${PROJECT_TESTS} PRIVATE ${COMMON_INCLUDES})
     target_include_directories(${PROJECT_TESTS} PRIVATE ${PROJECT_BINARY_DIR})
