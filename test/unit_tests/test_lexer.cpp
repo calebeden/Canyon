@@ -94,7 +94,8 @@ protected:
 
 class TestLexerPrimitives
     : public TestLexer,
-      public testing::WithParamInterface<std::pair<std::string, Type>> { };
+      public testing::WithParamInterface<std::pair<std::string, IntegerLiteral::Type>> {
+};
 
 class TestLexerKeywords
     : public TestLexer,
@@ -519,98 +520,13 @@ INSTANTIATE_TEST_SUITE_P(testKeywords, TestLexerKeywords,
       testing::Values(std::pair{"return", Keyword::Type::RETURN},
             std::pair{"let", Keyword::Type::LET}, std::pair{"fun", Keyword::Type::FUN}));
 
-TEST_P(TestLexerPrimitives, testPrimitives) {
-	const std::string primitive_str = GetParam().first;
-	const Type primitive_type = GetParam().second;
-
-	// Test 1: substring prefixes
-	for (size_t i = 0; i < primitive_str.size() - 1; i++) {
-		const std::string program = primitive_str.substr(0, i + 1);
-		l = Lexer(program, "", e);
-		tokens = l.lex();
-		EXPECT_EQ(tokens.size(), 2);
-		EXPECT_FALSE(dynamic_cast<Primitive *>(tokens[0].get()));
-		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
-	}
-
-	// Test 2: actual primitive
-	l = Lexer(primitive_str, "", e);
-	tokens = l.lex();
-	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(dynamic_cast<Primitive *>(tokens[0].get())->type, primitive_type);
-	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
-
-	// Test 3: alphanumeric suffixes
-	for (const auto &suffix : {"x", "0"}) {
-		const std::string program = primitive_str + suffix;
-		l = Lexer(program, "", e);
-		tokens = l.lex();
-		EXPECT_EQ(tokens.size(), 2);
-		EXPECT_FALSE(dynamic_cast<Primitive *>(tokens[0].get()));
-		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
-	}
-
-	// Test 4: whitespace suffixes
-	for (const auto suffix : whitespaces) {
-		const std::string program = primitive_str + suffix;
-		l = Lexer(program, "", e);
-		tokens = l.lex();
-		EXPECT_EQ(tokens.size(), 2);
-		EXPECT_EQ(dynamic_cast<Primitive *>(tokens[0].get())->type, primitive_type);
-		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
-	}
-
-	// Test 5: whitespace prefixes
-	for (const auto prefix : whitespaces) {
-		const std::string program = prefix + primitive_str;
-		l = Lexer(program, "", e);
-		tokens = l.lex();
-		EXPECT_EQ(tokens.size(), 2);
-		EXPECT_EQ(dynamic_cast<Primitive *>(tokens[0].get())->type, primitive_type);
-		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
-	}
-
-	// Test 6: punctuation suffixes
-	for (const auto &suffix : punctuations) {
-		const std::string program = primitive_str + suffix.first;
-		l = Lexer(program, "", e);
-		tokens = l.lex();
-		EXPECT_EQ(tokens.size(), 3);
-		EXPECT_EQ(dynamic_cast<Primitive *>(tokens[0].get())->type, primitive_type);
-		EXPECT_TRUE(dynamic_cast<Punctuation *>(tokens[1].get())
-		            || dynamic_cast<Operator *>(tokens[1].get()));
-		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
-	}
-
-	// Test 7: punctuation prefixes
-	for (const auto &prefix : punctuations) {
-		const std::string program = prefix.first + primitive_str;
-		l = Lexer(program, "", e);
-		tokens = l.lex();
-		EXPECT_EQ(tokens.size(), 3);
-		EXPECT_TRUE(dynamic_cast<Punctuation *>(tokens[0].get())
-		            || dynamic_cast<Operator *>(tokens[0].get()));
-		EXPECT_EQ(dynamic_cast<Primitive *>(tokens[1].get())->type, primitive_type);
-		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
-	}
-}
-
-INSTANTIATE_TEST_SUITE_P(testPrimitives, TestLexerPrimitives,
-      testing::Values(std::pair{"i8", Type::I8}, std::pair{"i16", Type::I16},
-            std::pair{"i32", Type::I32}, std::pair{"i64", Type::I64},
-            std::pair{"u8", Type::U8}, std::pair{"u16", Type::U16},
-            std::pair{"u32", Type::U32}, std::pair{"u64", Type::U64},
-            std::pair{"f32", Type::F32}, std::pair{"f64", Type::F64},
-            std::pair{"c8", Type::C8}, std::pair{"c16", Type::C16},
-            std::pair{"c32", Type::C32}, std::pair{"bool", Type::BOOL}));
-
 TEST_P(TestLexerSymbols, testSymbols) {
 	const std::string symbol = GetParam();
 	// Test 1: Single symbol
 	l = Lexer(symbol, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(dynamic_cast<Symbol *>(tokens[0].get())->s, symbol);
+	EXPECT_EQ(dynamic_cast<Symbol *>(tokens[0].get())->s.contents, symbol);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	// Test 2: whitespace suffixes
@@ -619,7 +535,7 @@ TEST_P(TestLexerSymbols, testSymbols) {
 		l = Lexer(program, "", e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
-		EXPECT_EQ(dynamic_cast<Symbol *>(tokens[0].get())->s, symbol);
+		EXPECT_EQ(dynamic_cast<Symbol *>(tokens[0].get())->s.contents, symbol);
 		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	}
 
@@ -629,7 +545,7 @@ TEST_P(TestLexerSymbols, testSymbols) {
 		l = Lexer(program, "", e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
-		EXPECT_EQ(dynamic_cast<Symbol *>(tokens[0].get())->s, symbol);
+		EXPECT_EQ(dynamic_cast<Symbol *>(tokens[0].get())->s.contents, symbol);
 		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	}
 
@@ -639,7 +555,7 @@ TEST_P(TestLexerSymbols, testSymbols) {
 		l = Lexer(program, "", e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 3);
-		EXPECT_EQ(dynamic_cast<Symbol *>(tokens[0].get())->s, symbol);
+		EXPECT_EQ(dynamic_cast<Symbol *>(tokens[0].get())->s.contents, symbol);
 		EXPECT_TRUE(dynamic_cast<Punctuation *>(tokens[1].get())
 		            || dynamic_cast<Operator *>(tokens[1].get()));
 		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
@@ -653,7 +569,7 @@ TEST_P(TestLexerSymbols, testSymbols) {
 		EXPECT_EQ(tokens.size(), 3);
 		EXPECT_TRUE(dynamic_cast<Punctuation *>(tokens[0].get())
 		            || dynamic_cast<Operator *>(tokens[0].get()));
-		EXPECT_EQ(dynamic_cast<Symbol *>(tokens[1].get())->s, symbol);
+		EXPECT_EQ(dynamic_cast<Symbol *>(tokens[1].get())->s.contents, symbol);
 		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	}
 }
@@ -719,7 +635,7 @@ TEST_P(TestLexerLiterals, testLiterals) {
 
 class DummyToken : public Token {
 public:
-	DummyToken() noexcept : Token("", 0, 0) {
+	DummyToken() noexcept : Token(Slice("", "", 0, 0)) {
 	}
 
 	void print([[maybe_unused]] std::ostream &os) const override {
@@ -729,215 +645,263 @@ public:
 static const DummyToken dummy;
 
 INSTANTIATE_TEST_SUITE_P(testDecimalLiterals, TestLexerLiterals,
-      testing::Values(std::pair("1", IntegerLiteral(&dummy, Type::I32, 1UL)),
-            std::pair("18", IntegerLiteral(&dummy, Type::I32, 18UL)),
-            std::pair("0", IntegerLiteral(&dummy, Type::I32, 0UL)),
-            std::pair("00", IntegerLiteral(&dummy, Type::I32, 0UL)),
-            std::pair("01", IntegerLiteral(&dummy, Type::I32, 1UL)),
-            std::pair("001", IntegerLiteral(&dummy, Type::I32, 1UL)),
-            std::pair("2147483647", IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
-            std::pair("02147483647", IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
-            std::pair("128i8", IntegerLiteral(&dummy, Type::I8, 128UL)), // i8_MIN
-            std::pair("127i8", IntegerLiteral(&dummy, Type::I8, 127UL)),
-            std::pair("0127i8", IntegerLiteral(&dummy, Type::I8, 127UL)),
-            std::pair("0u8", IntegerLiteral(&dummy, Type::U8, 0UL)),
-            std::pair("00u8", IntegerLiteral(&dummy, Type::U8, 0UL)),
-            std::pair("255u8", IntegerLiteral(&dummy, Type::U8, 255UL)),
-            std::pair("0255u8", IntegerLiteral(&dummy, Type::U8, 255UL)),
-            std::pair("32768i16", IntegerLiteral(&dummy, Type::I16, 32768UL)), // i16_MIN
-            std::pair("32767i16", IntegerLiteral(&dummy, Type::I16, 32767UL)),
-            std::pair("032767i16", IntegerLiteral(&dummy, Type::I16, 32767UL)),
-            std::pair("0u16", IntegerLiteral(&dummy, Type::U16, 0UL)),
-            std::pair("00u16", IntegerLiteral(&dummy, Type::U16, 0UL)),
-            std::pair("65535u16", IntegerLiteral(&dummy, Type::U16, 65535UL)),
-            std::pair("065535u16", IntegerLiteral(&dummy, Type::U16, 65535UL)),
-            std::pair("2147483648i32",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'648UL)), // i32_MIN
+      testing::Values(
+            std::pair("1", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 1UL)),
+            std::pair("18", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 18UL)),
+            std::pair("0", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 0UL)),
+            std::pair("00", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 0UL)),
+            std::pair("01", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 1UL)),
+            std::pair("001", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 1UL)),
+            std::pair("2147483647",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
+            std::pair("02147483647",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
+            std::pair("128i8",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I8, 128UL)), // i8_MIN
+            std::pair("127i8", IntegerLiteral(dummy, IntegerLiteral::Type::I8, 127UL)),
+            std::pair("0127i8", IntegerLiteral(dummy, IntegerLiteral::Type::I8, 127UL)),
+            std::pair("0u8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 0UL)),
+            std::pair("00u8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 0UL)),
+            std::pair("255u8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 255UL)),
+            std::pair("0255u8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 255UL)),
+            std::pair("32768i16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I16, 32768UL)), // i16_MIN
+            std::pair("32767i16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I16, 32767UL)),
+            std::pair("032767i16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I16, 32767UL)),
+            std::pair("0u16", IntegerLiteral(dummy, IntegerLiteral::Type::U16, 0UL)),
+            std::pair("00u16", IntegerLiteral(dummy, IntegerLiteral::Type::U16, 0UL)),
+            std::pair("65535u16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U16, 65535UL)),
+            std::pair("065535u16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U16, 65535UL)),
+            std::pair("2147483648i32", IntegerLiteral(dummy, IntegerLiteral::Type::I32,
+                                             2'147'483'648UL)), // i32_MIN
             std::pair("2147483647i32",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
             std::pair("02147483647i32",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
-            std::pair("0u32", IntegerLiteral(&dummy, Type::U32, 0UL)),
-            std::pair("00u32", IntegerLiteral(&dummy, Type::U32, 0UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
+            std::pair("0u32", IntegerLiteral(dummy, IntegerLiteral::Type::U32, 0UL)),
+            std::pair("00u32", IntegerLiteral(dummy, IntegerLiteral::Type::U32, 0UL)),
             std::pair("4294967295u32",
-                  IntegerLiteral(&dummy, Type::U32, 4'294'967'295UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U32, 4'294'967'295UL)),
             std::pair("04294967295u32",
-                  IntegerLiteral(&dummy, Type::U32, 4'294'967'295UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U32, 4'294'967'295UL)),
             std::pair("9223372036854775808i64",
-                  IntegerLiteral(&dummy, Type::I64,
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I64,
                         9'223'372'036'854'775'808UL)), // i64_MIN
             std::pair("9223372036854775807i64",
-                  IntegerLiteral(&dummy, Type::I64, 9'223'372'036'854'775'807UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I64,
+                        9'223'372'036'854'775'807UL)),
             std::pair("09223372036854775807i64",
-                  IntegerLiteral(&dummy, Type::I64, 9'223'372'036'854'775'807UL)),
-            std::pair("0u64", IntegerLiteral(&dummy, Type::U64, 0UL)),
-            std::pair("00u64", IntegerLiteral(&dummy, Type::U64, 0UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I64,
+                        9'223'372'036'854'775'807UL)),
+            std::pair("0u64", IntegerLiteral(dummy, IntegerLiteral::Type::U64, 0UL)),
+            std::pair("00u64", IntegerLiteral(dummy, IntegerLiteral::Type::U64, 0UL)),
             std::pair("18446744073709551615u64",
-                  IntegerLiteral(&dummy, Type::U64, 18'446'744'073'709'551'615UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U64,
+                        18'446'744'073'709'551'615UL)),
             std::pair("018446744073709551615u64",
-                  IntegerLiteral(&dummy, Type::U64, 18'446'744'073'709'551'615UL))));
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U64,
+                        18'446'744'073'709'551'615UL))));
 INSTANTIATE_TEST_SUITE_P(testHexLiterals, TestLexerLiterals,
-      testing::Values(std::pair("0x1", IntegerLiteral(&dummy, Type::I32, 1UL)),
-            std::pair("0x12", IntegerLiteral(&dummy, Type::I32, 18UL)),
-            std::pair("0x0", IntegerLiteral(&dummy, Type::I32, 0UL)),
-            std::pair("0x00", IntegerLiteral(&dummy, Type::I32, 0UL)),
-            std::pair("0x01", IntegerLiteral(&dummy, Type::I32, 1UL)),
-            std::pair("0x001", IntegerLiteral(&dummy, Type::I32, 1UL)),
-            std::pair("0xa", IntegerLiteral(&dummy, Type::I32, 10UL)),
-            std::pair("0xA", IntegerLiteral(&dummy, Type::I32, 10UL)),
-            std::pair("0xf", IntegerLiteral(&dummy, Type::I32, 15UL)),
-            std::pair("0xF", IntegerLiteral(&dummy, Type::I32, 15UL)),
-            std::pair("0x7FFFFFFF", IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
-            std::pair("0x07FFFFFFF", IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
-            std::pair("0x80i8", IntegerLiteral(&dummy, Type::I8, 128UL)), // i8_MIN
-            std::pair("0x7Fi8", IntegerLiteral(&dummy, Type::I8, 127UL)),
-            std::pair("0x07Fi8", IntegerLiteral(&dummy, Type::I8, 127UL)),
-            std::pair("0x0u8", IntegerLiteral(&dummy, Type::U8, 0UL)),
-            std::pair("0x00u8", IntegerLiteral(&dummy, Type::U8, 0UL)),
-            std::pair("0xFFu8", IntegerLiteral(&dummy, Type::U8, 255UL)),
-            std::pair("0x0FFu8", IntegerLiteral(&dummy, Type::U8, 255UL)),
-            std::pair("0x8000i16", IntegerLiteral(&dummy, Type::I16, 32768UL)), // i16_MIN
-            std::pair("0x7FFFi16", IntegerLiteral(&dummy, Type::I16, 32767UL)),
-            std::pair("0x07FFFi16", IntegerLiteral(&dummy, Type::I16, 32767UL)),
-            std::pair("0x0u16", IntegerLiteral(&dummy, Type::U16, 0UL)),
-            std::pair("0x00u16", IntegerLiteral(&dummy, Type::U16, 0UL)),
-            std::pair("0xFFFFu16", IntegerLiteral(&dummy, Type::U16, 65535UL)),
-            std::pair("0x0FFFFu16", IntegerLiteral(&dummy, Type::U16, 65535UL)),
-            std::pair("0x80000000i32",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'648UL)), // i32_MIN
+      testing::Values(
+            std::pair("0x1", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 1UL)),
+            std::pair("0x12", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 18UL)),
+            std::pair("0x0", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 0UL)),
+            std::pair("0x00", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 0UL)),
+            std::pair("0x01", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 1UL)),
+            std::pair("0x001", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 1UL)),
+            std::pair("0xa", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 10UL)),
+            std::pair("0xA", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 10UL)),
+            std::pair("0xf", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 15UL)),
+            std::pair("0xF", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 15UL)),
+            std::pair("0x7FFFFFFF",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
+            std::pair("0x07FFFFFFF",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
+            std::pair("0x80i8",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I8, 128UL)), // i8_MIN
+            std::pair("0x7Fi8", IntegerLiteral(dummy, IntegerLiteral::Type::I8, 127UL)),
+            std::pair("0x07Fi8", IntegerLiteral(dummy, IntegerLiteral::Type::I8, 127UL)),
+            std::pair("0x0u8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 0UL)),
+            std::pair("0x00u8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 0UL)),
+            std::pair("0xFFu8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 255UL)),
+            std::pair("0x0FFu8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 255UL)),
+            std::pair("0x8000i16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I16, 32768UL)), // i16_MIN
+            std::pair("0x7FFFi16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I16, 32767UL)),
+            std::pair("0x07FFFi16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I16, 32767UL)),
+            std::pair("0x0u16", IntegerLiteral(dummy, IntegerLiteral::Type::U16, 0UL)),
+            std::pair("0x00u16", IntegerLiteral(dummy, IntegerLiteral::Type::U16, 0UL)),
+            std::pair("0xFFFFu16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U16, 65535UL)),
+            std::pair("0x0FFFFu16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U16, 65535UL)),
+            std::pair("0x80000000i32", IntegerLiteral(dummy, IntegerLiteral::Type::I32,
+                                             2'147'483'648UL)), // i32_MIN
             std::pair("0x7FFFFFFFi32",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
             std::pair("0x07FFFFFFFi32",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
-            std::pair("0x0u32", IntegerLiteral(&dummy, Type::U32, 0UL)),
-            std::pair("0x00u32", IntegerLiteral(&dummy, Type::U32, 0UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
+            std::pair("0x0u32", IntegerLiteral(dummy, IntegerLiteral::Type::U32, 0UL)),
+            std::pair("0x00u32", IntegerLiteral(dummy, IntegerLiteral::Type::U32, 0UL)),
             std::pair("0xFFFFFFFFu32",
-                  IntegerLiteral(&dummy, Type::U32, 4'294'967'295UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U32, 4'294'967'295UL)),
             std::pair("0x0FFFFFFFFu32",
-                  IntegerLiteral(&dummy, Type::U32, 4'294'967'295UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U32, 4'294'967'295UL)),
             std::pair("0x8000000000000000i64",
-                  IntegerLiteral(&dummy, Type::I64,
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I64,
                         9'223'372'036'854'775'808UL)), // i64_MIN
             std::pair("0x7FFFFFFFFFFFFFFFi64",
-                  IntegerLiteral(&dummy, Type::I64, 9'223'372'036'854'775'807UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I64,
+                        9'223'372'036'854'775'807UL)),
             std::pair("0x07FFFFFFFFFFFFFFFi64",
-                  IntegerLiteral(&dummy, Type::I64, 9'223'372'036'854'775'807UL)),
-            std::pair("0x0u64", IntegerLiteral(&dummy, Type::U64, 0UL)),
-            std::pair("0x00u64", IntegerLiteral(&dummy, Type::U64, 0UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I64,
+                        9'223'372'036'854'775'807UL)),
+            std::pair("0x0u64", IntegerLiteral(dummy, IntegerLiteral::Type::U64, 0UL)),
+            std::pair("0x00u64", IntegerLiteral(dummy, IntegerLiteral::Type::U64, 0UL)),
             std::pair("0xFFFFFFFFFFFFFFFFu64",
-                  IntegerLiteral(&dummy, Type::U64, 18'446'744'073'709'551'615UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U64,
+                        18'446'744'073'709'551'615UL)),
             std::pair("0x0FFFFFFFFFFFFFFFFu64",
-                  IntegerLiteral(&dummy, Type::U64, 18'446'744'073'709'551'615UL))));
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U64,
+                        18'446'744'073'709'551'615UL))));
 INSTANTIATE_TEST_SUITE_P(testOctalLiterals, TestLexerLiterals,
-      testing::Values(std::pair("0o1", IntegerLiteral(&dummy, Type::I32, 1UL)),
-            std::pair("0o22", IntegerLiteral(&dummy, Type::I32, 18UL)),
-            std::pair("0o0", IntegerLiteral(&dummy, Type::I32, 0UL)),
-            std::pair("0o00", IntegerLiteral(&dummy, Type::I32, 0UL)),
-            std::pair("0o01", IntegerLiteral(&dummy, Type::I32, 1UL)),
-            std::pair("0o001", IntegerLiteral(&dummy, Type::I32, 1UL)),
+      testing::Values(
+            std::pair("0o1", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 1UL)),
+            std::pair("0o22", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 18UL)),
+            std::pair("0o0", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 0UL)),
+            std::pair("0o00", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 0UL)),
+            std::pair("0o01", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 1UL)),
+            std::pair("0o001", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 1UL)),
             std::pair("0o17777777777",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
             std::pair("0o017777777777",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
-            std::pair("0o200i8", IntegerLiteral(&dummy, Type::I8, 128UL)), // i8_MIN
-            std::pair("0o177i8", IntegerLiteral(&dummy, Type::I8, 127UL)),
-            std::pair("0o0177i8", IntegerLiteral(&dummy, Type::I8, 127UL)),
-            std::pair("0o0u8", IntegerLiteral(&dummy, Type::U8, 0UL)),
-            std::pair("0o00u8", IntegerLiteral(&dummy, Type::U8, 0UL)),
-            std::pair("0o377u8", IntegerLiteral(&dummy, Type::U8, 255UL)),
-            std::pair("0o0377u8", IntegerLiteral(&dummy, Type::U8, 255UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
+            std::pair("0o200i8",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I8, 128UL)), // i8_MIN
+            std::pair("0o177i8", IntegerLiteral(dummy, IntegerLiteral::Type::I8, 127UL)),
+            std::pair("0o0177i8", IntegerLiteral(dummy, IntegerLiteral::Type::I8, 127UL)),
+            std::pair("0o0u8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 0UL)),
+            std::pair("0o00u8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 0UL)),
+            std::pair("0o377u8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 255UL)),
+            std::pair("0o0377u8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 255UL)),
             std::pair("0o100000i16",
-                  IntegerLiteral(&dummy, Type::I16, 32768UL)), // i16_MIN
-            std::pair("0o77777i16", IntegerLiteral(&dummy, Type::I16, 32767UL)),
-            std::pair("0o077777i16", IntegerLiteral(&dummy, Type::I16, 32767UL)),
-            std::pair("0o0u16", IntegerLiteral(&dummy, Type::U16, 0UL)),
-            std::pair("0o00u16", IntegerLiteral(&dummy, Type::U16, 0UL)),
-            std::pair("0o177777u16", IntegerLiteral(&dummy, Type::U16, 65535UL)),
-            std::pair("0o0177777u16", IntegerLiteral(&dummy, Type::U16, 65535UL)),
-            std::pair("0o20000000000i32",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'648UL)), // i32_MIN
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I16, 32768UL)), // i16_MIN
+            std::pair("0o77777i16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I16, 32767UL)),
+            std::pair("0o077777i16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I16, 32767UL)),
+            std::pair("0o0u16", IntegerLiteral(dummy, IntegerLiteral::Type::U16, 0UL)),
+            std::pair("0o00u16", IntegerLiteral(dummy, IntegerLiteral::Type::U16, 0UL)),
+            std::pair("0o177777u16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U16, 65535UL)),
+            std::pair("0o0177777u16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U16, 65535UL)),
+            std::pair("0o20000000000i32", IntegerLiteral(dummy, IntegerLiteral::Type::I32,
+                                                2'147'483'648UL)), // i32_MIN
             std::pair("0o17777777777i32",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
             std::pair("0o017777777777i32",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
-            std::pair("0o0u32", IntegerLiteral(&dummy, Type::U32, 0UL)),
-            std::pair("0o00u32", IntegerLiteral(&dummy, Type::U32, 0UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
+            std::pair("0o0u32", IntegerLiteral(dummy, IntegerLiteral::Type::U32, 0UL)),
+            std::pair("0o00u32", IntegerLiteral(dummy, IntegerLiteral::Type::U32, 0UL)),
             std::pair("0o37777777777u32",
-                  IntegerLiteral(&dummy, Type::U32, 4'294'967'295UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U32, 4'294'967'295UL)),
             std::pair("0o037777777777u32",
-                  IntegerLiteral(&dummy, Type::U32, 4'294'967'295UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U32, 4'294'967'295UL)),
             std::pair("0o1000000000000000000000i64",
-                  IntegerLiteral(&dummy, Type::I64,
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I64,
                         9'223'372'036'854'775'808UL)), // i64_MIN
             std::pair("0o777777777777777777777i64",
-                  IntegerLiteral(&dummy, Type::I64, 9'223'372'036'854'775'807UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I64,
+                        9'223'372'036'854'775'807UL)),
             std::pair("0o0777777777777777777777i64",
-                  IntegerLiteral(&dummy, Type::I64, 9'223'372'036'854'775'807UL)),
-            std::pair("0o0u64", IntegerLiteral(&dummy, Type::U64, 0UL)),
-            std::pair("0o00u64", IntegerLiteral(&dummy, Type::U64, 0UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I64,
+                        9'223'372'036'854'775'807UL)),
+            std::pair("0o0u64", IntegerLiteral(dummy, IntegerLiteral::Type::U64, 0UL)),
+            std::pair("0o00u64", IntegerLiteral(dummy, IntegerLiteral::Type::U64, 0UL)),
             std::pair("0o1777777777777777777777u64",
-                  IntegerLiteral(&dummy, Type::U64, 18'446'744'073'709'551'615UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U64,
+                        18'446'744'073'709'551'615UL)),
             std::pair("0o01777777777777777777777u64",
-                  IntegerLiteral(&dummy, Type::U64, 18'446'744'073'709'551'615UL))));
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U64,
+                        18'446'744'073'709'551'615UL))));
 INSTANTIATE_TEST_SUITE_P(testBinaryLiterals, TestLexerLiterals,
-      testing::Values(std::pair("0b1", IntegerLiteral(&dummy, Type::I32, 1UL)),
-            std::pair("0b10010", IntegerLiteral(&dummy, Type::I32, 18UL)),
-            std::pair("0b0", IntegerLiteral(&dummy, Type::I32, 0UL)),
-            std::pair("0b00", IntegerLiteral(&dummy, Type::I32, 0UL)),
-            std::pair("0b01", IntegerLiteral(&dummy, Type::I32, 1UL)),
-            std::pair("0b001", IntegerLiteral(&dummy, Type::I32, 1UL)),
+      testing::Values(
+            std::pair("0b1", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 1UL)),
+            std::pair("0b10010", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 18UL)),
+            std::pair("0b0", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 0UL)),
+            std::pair("0b00", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 0UL)),
+            std::pair("0b01", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 1UL)),
+            std::pair("0b001", IntegerLiteral(dummy, IntegerLiteral::Type::I32, 1UL)),
             std::pair("0b1111111111111111111111111111111",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
             std::pair("0b01111111111111111111111111111111",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
-            std::pair("0b10000000i8", IntegerLiteral(&dummy, Type::I8, 128UL)), // i8_MIN
-            std::pair("0b1111111i8", IntegerLiteral(&dummy, Type::I8, 127UL)),
-            std::pair("0b01111111i8", IntegerLiteral(&dummy, Type::I8, 127UL)),
-            std::pair("0b0u8", IntegerLiteral(&dummy, Type::U8, 0UL)),
-            std::pair("0b00u8", IntegerLiteral(&dummy, Type::U8, 0UL)),
-            std::pair("0b11111111u8", IntegerLiteral(&dummy, Type::U8, 255UL)),
-            std::pair("0b011111111u8", IntegerLiteral(&dummy, Type::U8, 255UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
+            std::pair("0b10000000i8",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I8, 128UL)), // i8_MIN
+            std::pair("0b1111111i8",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I8, 127UL)),
+            std::pair("0b01111111i8",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I8, 127UL)),
+            std::pair("0b0u8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 0UL)),
+            std::pair("0b00u8", IntegerLiteral(dummy, IntegerLiteral::Type::U8, 0UL)),
+            std::pair("0b11111111u8",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U8, 255UL)),
+            std::pair("0b011111111u8",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U8, 255UL)),
             std::pair("0b1000000000000000i16",
-                  IntegerLiteral(&dummy, Type::I16, 32768UL)), // i16_MIN
-            std::pair("0b111111111111111i16", IntegerLiteral(&dummy, Type::I16, 32767UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I16, 32768UL)), // i16_MIN
+            std::pair("0b111111111111111i16",
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I16, 32767UL)),
             std::pair("0b0111111111111111i16",
-                  IntegerLiteral(&dummy, Type::I16, 32767UL)),
-            std::pair("0b0u16", IntegerLiteral(&dummy, Type::U16, 0UL)),
-            std::pair("0b00u16", IntegerLiteral(&dummy, Type::U16, 0UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I16, 32767UL)),
+            std::pair("0b0u16", IntegerLiteral(dummy, IntegerLiteral::Type::U16, 0UL)),
+            std::pair("0b00u16", IntegerLiteral(dummy, IntegerLiteral::Type::U16, 0UL)),
             std::pair("0b1111111111111111u16",
-                  IntegerLiteral(&dummy, Type::U16, 65535UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U16, 65535UL)),
             std::pair("0b01111111111111111u16",
-                  IntegerLiteral(&dummy, Type::U16, 65535UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U16, 65535UL)),
             std::pair("0b10000000000000000000000000000000i32",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'648UL)), // i32_MIN
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32,
+                        2'147'483'648UL)), // i32_MIN
             std::pair("0b1111111111111111111111111111111i32",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
             std::pair("0b01111111111111111111111111111111i32",
-                  IntegerLiteral(&dummy, Type::I32, 2'147'483'647UL)),
-            std::pair("0b0u32", IntegerLiteral(&dummy, Type::U32, 0UL)),
-            std::pair("0b00u32", IntegerLiteral(&dummy, Type::U32, 0UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I32, 2'147'483'647UL)),
+            std::pair("0b0u32", IntegerLiteral(dummy, IntegerLiteral::Type::U32, 0UL)),
+            std::pair("0b00u32", IntegerLiteral(dummy, IntegerLiteral::Type::U32, 0UL)),
             std::pair("0b11111111111111111111111111111111u32",
-                  IntegerLiteral(&dummy, Type::U32, 4'294'967'295UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U32, 4'294'967'295UL)),
             std::pair("0b011111111111111111111111111111111u32",
-                  IntegerLiteral(&dummy, Type::U32, 4'294'967'295UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U32, 4'294'967'295UL)),
             std::pair(
                   "0b1000000000000000000000000000000000000000000000000000000000000000i64",
-                  IntegerLiteral(&dummy, Type::I64,
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I64,
                         9'223'372'036'854'775'808UL)), // i64_MIN
             std::pair(
                   "0b111111111111111111111111111111111111111111111111111111111111111i64",
-                  IntegerLiteral(&dummy, Type::I64, 9'223'372'036'854'775'807UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I64,
+                        9'223'372'036'854'775'807UL)),
             std::pair(
                   "0b0111111111111111111111111111111111111111111111111111111111111111i64",
-                  IntegerLiteral(&dummy, Type::I64, 9'223'372'036'854'775'807UL)),
-            std::pair("0b0u64", IntegerLiteral(&dummy, Type::U64, 0UL)),
-            std::pair("0b00u64", IntegerLiteral(&dummy, Type::U64, 0UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::I64,
+                        9'223'372'036'854'775'807UL)),
+            std::pair("0b0u64", IntegerLiteral(dummy, IntegerLiteral::Type::U64, 0UL)),
+            std::pair("0b00u64", IntegerLiteral(dummy, IntegerLiteral::Type::U64, 0UL)),
             std::pair(
                   "0b1111111111111111111111111111111111111111111111111111111111111111u64",
-                  IntegerLiteral(&dummy, Type::U64, 18'446'744'073'709'551'615UL)),
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U64,
+                        18'446'744'073'709'551'615UL)),
             std::pair("0b0111111111111111111111111111111111111111111111111111111111111111"
                       "1u64",
-                  IntegerLiteral(&dummy, Type::U64, 18'446'744'073'709'551'615UL))));
+                  IntegerLiteral(dummy, IntegerLiteral::Type::U64,
+                        18'446'744'073'709'551'615UL))));
 
 TEST_P(TestLexerInvalidLiterals, testLiteralErrors) {
 	const std::string literal_str = GetParam().first;
@@ -1040,77 +1004,77 @@ TEST_F(TestLexer, testNewlines) {
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "x\n";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "x\n\n";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "\nx";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 2);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 2);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "\n\nx";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 3);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 3);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "x\ny";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 2);
-	EXPECT_EQ(tokens[1]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 2);
+	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\n\ny";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 3);
-	EXPECT_EQ(tokens[1]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 3);
+	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\ny\nz";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 2);
-	EXPECT_EQ(tokens[1]->col, 1);
-	EXPECT_EQ(tokens[2]->row, 3);
-	EXPECT_EQ(tokens[2]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 2);
+	EXPECT_EQ(tokens[1]->s.col, 1);
+	EXPECT_EQ(tokens[2]->s.row, 3);
+	EXPECT_EQ(tokens[2]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 
 	program = "\nx\ny";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 2);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 3);
-	EXPECT_EQ(tokens[1]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 2);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 3);
+	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 }
 
@@ -1119,77 +1083,77 @@ TEST_F(TestLexer, testCarriageReturns) {
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "x\r";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "x\r\r";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "\rx";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 2);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 2);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "\r\rx";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 3);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 3);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "x\ry";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 2);
-	EXPECT_EQ(tokens[1]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 2);
+	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\r\ry";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 3);
-	EXPECT_EQ(tokens[1]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 3);
+	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\ry\rz";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 2);
-	EXPECT_EQ(tokens[1]->col, 1);
-	EXPECT_EQ(tokens[2]->row, 3);
-	EXPECT_EQ(tokens[2]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 2);
+	EXPECT_EQ(tokens[1]->s.col, 1);
+	EXPECT_EQ(tokens[2]->s.row, 3);
+	EXPECT_EQ(tokens[2]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 
 	program = "\rx\ry";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 2);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 3);
-	EXPECT_EQ(tokens[1]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 2);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 3);
+	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 }
 
@@ -1198,77 +1162,77 @@ TEST_F(TestLexer, testWindowsLineEndings) {
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "x\r\n";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "x\r\n\r\n";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "\r\nx";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 2);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 2);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "\r\n\r\nx";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 3);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 3);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "x\r\ny";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 2);
-	EXPECT_EQ(tokens[1]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 2);
+	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\r\n\r\ny";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 3);
-	EXPECT_EQ(tokens[1]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 3);
+	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\r\ny\r\nz";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 2);
-	EXPECT_EQ(tokens[1]->col, 1);
-	EXPECT_EQ(tokens[2]->row, 3);
-	EXPECT_EQ(tokens[2]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 2);
+	EXPECT_EQ(tokens[1]->s.col, 1);
+	EXPECT_EQ(tokens[2]->s.row, 3);
+	EXPECT_EQ(tokens[2]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 
 	program = "\r\nx\r\ny";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 2);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 3);
-	EXPECT_EQ(tokens[1]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 2);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 3);
+	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 }
 
@@ -1277,149 +1241,149 @@ TEST_F(TestLexer, testColumnNumbering) {
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = " x";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 2);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 2);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "  x";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 3);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 3);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "   x";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 4);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 4);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "\nx";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 2);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 2);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "\n x";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 2);
-	EXPECT_EQ(tokens[0]->col, 2);
+	EXPECT_EQ(tokens[0]->s.row, 2);
+	EXPECT_EQ(tokens[0]->s.col, 2);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "\n  x";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 2);
-	EXPECT_EQ(tokens[0]->col, 3);
+	EXPECT_EQ(tokens[0]->s.row, 2);
+	EXPECT_EQ(tokens[0]->s.col, 3);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "\n   x";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->row, 2);
-	EXPECT_EQ(tokens[0]->col, 4);
+	EXPECT_EQ(tokens[0]->s.row, 2);
+	EXPECT_EQ(tokens[0]->s.col, 4);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "x\ny";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 2);
-	EXPECT_EQ(tokens[1]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 2);
+	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = " x\ny";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 2);
-	EXPECT_EQ(tokens[1]->row, 2);
-	EXPECT_EQ(tokens[1]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 2);
+	EXPECT_EQ(tokens[1]->s.row, 2);
+	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\n y";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 2);
-	EXPECT_EQ(tokens[1]->col, 2);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 2);
+	EXPECT_EQ(tokens[1]->s.col, 2);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = " x\n y";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 2);
-	EXPECT_EQ(tokens[1]->row, 2);
-	EXPECT_EQ(tokens[1]->col, 2);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 2);
+	EXPECT_EQ(tokens[1]->s.row, 2);
+	EXPECT_EQ(tokens[1]->s.col, 2);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x \ny";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 2);
-	EXPECT_EQ(tokens[1]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 2);
+	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\n y\nz";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 2);
-	EXPECT_EQ(tokens[1]->col, 2);
-	EXPECT_EQ(tokens[2]->row, 3);
-	EXPECT_EQ(tokens[2]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 2);
+	EXPECT_EQ(tokens[1]->s.col, 2);
+	EXPECT_EQ(tokens[2]->s.row, 3);
+	EXPECT_EQ(tokens[2]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 
 	program = "123 567 90";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 1);
-	EXPECT_EQ(tokens[1]->col, 5);
-	EXPECT_EQ(tokens[2]->row, 1);
-	EXPECT_EQ(tokens[2]->col, 9);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 1);
+	EXPECT_EQ(tokens[1]->s.col, 5);
+	EXPECT_EQ(tokens[2]->s.row, 1);
+	EXPECT_EQ(tokens[2]->s.col, 9);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 	program = "12  56  90";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 1);
-	EXPECT_EQ(tokens[1]->col, 5);
-	EXPECT_EQ(tokens[2]->row, 1);
-	EXPECT_EQ(tokens[2]->col, 9);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 1);
+	EXPECT_EQ(tokens[1]->s.col, 5);
+	EXPECT_EQ(tokens[2]->s.row, 1);
+	EXPECT_EQ(tokens[2]->s.col, 9);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 	program = "1    6  9";
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
-	EXPECT_EQ(tokens[1]->row, 1);
-	EXPECT_EQ(tokens[1]->col, 6);
-	EXPECT_EQ(tokens[2]->row, 1);
-	EXPECT_EQ(tokens[2]->col, 9);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
+	EXPECT_EQ(tokens[1]->s.row, 1);
+	EXPECT_EQ(tokens[1]->s.col, 6);
+	EXPECT_EQ(tokens[2]->s.row, 1);
+	EXPECT_EQ(tokens[2]->s.col, 9);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 
 	program = "1;2,3-4*5!6&7||8::9";
@@ -1427,56 +1391,56 @@ TEST_F(TestLexer, testColumnNumbering) {
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 18);
 	// 1
-	EXPECT_EQ(tokens[0]->row, 1);
-	EXPECT_EQ(tokens[0]->col, 1);
+	EXPECT_EQ(tokens[0]->s.row, 1);
+	EXPECT_EQ(tokens[0]->s.col, 1);
 	// ;
-	EXPECT_EQ(tokens[1]->row, 1);
-	EXPECT_EQ(tokens[1]->col, 2);
+	EXPECT_EQ(tokens[1]->s.row, 1);
+	EXPECT_EQ(tokens[1]->s.col, 2);
 	// 2
-	EXPECT_EQ(tokens[2]->row, 1);
-	EXPECT_EQ(tokens[2]->col, 3);
+	EXPECT_EQ(tokens[2]->s.row, 1);
+	EXPECT_EQ(tokens[2]->s.col, 3);
 	// ,
-	EXPECT_EQ(tokens[3]->row, 1);
-	EXPECT_EQ(tokens[3]->col, 4);
+	EXPECT_EQ(tokens[3]->s.row, 1);
+	EXPECT_EQ(tokens[3]->s.col, 4);
 	// 3
-	EXPECT_EQ(tokens[4]->row, 1);
-	EXPECT_EQ(tokens[4]->col, 5);
+	EXPECT_EQ(tokens[4]->s.row, 1);
+	EXPECT_EQ(tokens[4]->s.col, 5);
 	// -
-	EXPECT_EQ(tokens[5]->row, 1);
-	EXPECT_EQ(tokens[5]->col, 6);
+	EXPECT_EQ(tokens[5]->s.row, 1);
+	EXPECT_EQ(tokens[5]->s.col, 6);
 	// 4
-	EXPECT_EQ(tokens[6]->row, 1);
-	EXPECT_EQ(tokens[6]->col, 7);
+	EXPECT_EQ(tokens[6]->s.row, 1);
+	EXPECT_EQ(tokens[6]->s.col, 7);
 	// *
-	EXPECT_EQ(tokens[7]->row, 1);
-	EXPECT_EQ(tokens[7]->col, 8);
+	EXPECT_EQ(tokens[7]->s.row, 1);
+	EXPECT_EQ(tokens[7]->s.col, 8);
 	// 5
-	EXPECT_EQ(tokens[8]->row, 1);
-	EXPECT_EQ(tokens[8]->col, 9);
+	EXPECT_EQ(tokens[8]->s.row, 1);
+	EXPECT_EQ(tokens[8]->s.col, 9);
 	// !
-	EXPECT_EQ(tokens[9]->row, 1);
-	EXPECT_EQ(tokens[9]->col, 10);
+	EXPECT_EQ(tokens[9]->s.row, 1);
+	EXPECT_EQ(tokens[9]->s.col, 10);
 	// 6
-	EXPECT_EQ(tokens[10]->row, 1);
-	EXPECT_EQ(tokens[10]->col, 11);
+	EXPECT_EQ(tokens[10]->s.row, 1);
+	EXPECT_EQ(tokens[10]->s.col, 11);
 	// &
-	EXPECT_EQ(tokens[11]->row, 1);
-	EXPECT_EQ(tokens[11]->col, 12);
+	EXPECT_EQ(tokens[11]->s.row, 1);
+	EXPECT_EQ(tokens[11]->s.col, 12);
 	// 7
-	EXPECT_EQ(tokens[12]->row, 1);
-	EXPECT_EQ(tokens[12]->col, 13);
+	EXPECT_EQ(tokens[12]->s.row, 1);
+	EXPECT_EQ(tokens[12]->s.col, 13);
 	// ||
-	EXPECT_EQ(tokens[13]->row, 1);
-	EXPECT_EQ(tokens[13]->col, 14);
+	EXPECT_EQ(tokens[13]->s.row, 1);
+	EXPECT_EQ(tokens[13]->s.col, 14);
 	// 8
-	EXPECT_EQ(tokens[14]->row, 1);
-	EXPECT_EQ(tokens[14]->col, 16);
+	EXPECT_EQ(tokens[14]->s.row, 1);
+	EXPECT_EQ(tokens[14]->s.col, 16);
 	// ::
-	EXPECT_EQ(tokens[15]->row, 1);
-	EXPECT_EQ(tokens[15]->col, 17);
+	EXPECT_EQ(tokens[15]->s.row, 1);
+	EXPECT_EQ(tokens[15]->s.col, 17);
 	// 9
-	EXPECT_EQ(tokens[16]->row, 1);
-	EXPECT_EQ(tokens[16]->col, 19);
+	EXPECT_EQ(tokens[16]->s.row, 1);
+	EXPECT_EQ(tokens[16]->s.col, 19);
 }
 
 TEST_F(TestLexer, testTabSizeConfiguration) {
@@ -1485,7 +1449,7 @@ TEST_F(TestLexer, testTabSizeConfiguration) {
 	l = Lexer(program, "", e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(tokens[0]->col, 5);
+	EXPECT_EQ(tokens[0]->s.col, 5);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	// Customizable tab width
@@ -1495,14 +1459,14 @@ TEST_F(TestLexer, testTabSizeConfiguration) {
 			l = Lexer(program, "", e, tabSize);
 			tokens = l.lex();
 			EXPECT_EQ(tokens.size(), 2);
-			EXPECT_EQ(tokens[0]->col, tabSize + 1);
+			EXPECT_EQ(tokens[0]->s.col, tabSize + 1);
 			EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 			program = " " + program;
 		}
 		l = Lexer(program, "", e, tabSize);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
-		EXPECT_EQ(tokens[0]->col, 2 * tabSize + 1);
+		EXPECT_EQ(tokens[0]->s.col, 2 * tabSize + 1);
 		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	}
 }

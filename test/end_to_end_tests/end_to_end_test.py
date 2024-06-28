@@ -25,7 +25,11 @@ def run(program: str, stdin: TextIO, stdout: TextIO, stderr: TextIO):
 
 
 def discover_tests(directory: str):
-    return [pathlib.Path(entry).name for entry in os.listdir(directory) if os.path.isdir(os.path.join(directory, entry))]
+    tests: list[str] = []
+    for test_family in os.listdir(directory):
+        for test in os.listdir(os.path.join(directory, test_family)):
+            tests.append(str(pathlib.Path(test_family) / pathlib.Path(test)))
+    return tests
 
 
 @pytest.mark.parametrize("test_name", discover_tests(os.path.join(tests, "success")))
@@ -39,9 +43,9 @@ def test_success(test_name: str, monkeypatch: pytest.MonkeyPatch, tmp_path: path
     out, err = process.communicate()
     assert process.wait() == 0
     assert out.decode() == ""
-    # assert err.decode() == ""
+    assert err.decode() == ""
 
-    process = gcc("main.c", "a.out", None, subprocess.PIPE, subprocess.PIPE)
+    process = gcc("main.c", "main.out", None, subprocess.PIPE, subprocess.PIPE)
     assert process.wait() == 0
     out, err = process.communicate()
     assert process.wait() == 0
@@ -49,7 +53,7 @@ def test_success(test_name: str, monkeypatch: pytest.MonkeyPatch, tmp_path: path
     assert err.decode() == ""
 
     process = subprocess.Popen(
-        "./a.out", stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        "./main.out", stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = process.communicate()
     assert process.wait() == 0
 

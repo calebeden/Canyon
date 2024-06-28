@@ -5,18 +5,31 @@
 
 #include <functional>
 #include <memory>
+#include <tuple>
+#include <unordered_map>
 #include <vector>
 
 class ASTVisitor;
 
 class Expression {
+protected:
+	Slice s;
+	int typeID = -1;
+	Expression(const Slice &s);
 public:
+	int getTypeID();
+	void setTypeID(int typeID);
+	Slice &getSlice();
 	virtual void accept(ASTVisitor &visitor) = 0;
 	virtual ~Expression() = default;
 };
 
 class Statement {
+protected:
+	Slice s;
+	Statement(const Slice &s);
 public:
+	Slice &getSlice();
 	virtual void accept(ASTVisitor &visitor) = 0;
 	virtual ~Statement() = default;
 };
@@ -82,12 +95,15 @@ class BlockExpression : public Expression {
 private:
 	std::vector<std::unique_ptr<Statement>> statements;
 	std::unique_ptr<Expression> finalExpression;
+	std::unordered_map<std::string_view, int> symbols;
 public:
-	BlockExpression() = default;
-	void pushStatement(std::unique_ptr<Statement> statement);
-	void setFinalExpression(std::unique_ptr<Expression> finalExpression);
+	BlockExpression(const Punctuation &open,
+	      std::vector<std::unique_ptr<Statement>> statements,
+	      std::unique_ptr<Expression> finalExpression, const Punctuation &close);
 	void forEachStatement(const std::function<void(Statement &)> &statementHandler);
 	Expression *getFinalExpression();
+	int getSymbolType(std::string_view symbol);
+	void setSymbolType(std::string_view symbol, int typeID);
 	void accept(ASTVisitor &visitor) override;
 	virtual ~BlockExpression() = default;
 };
@@ -95,7 +111,8 @@ public:
 class ReturnExpression : public Expression {
 	std::unique_ptr<Expression> expression;
 public:
-	ReturnExpression(std::unique_ptr<Expression> expression);
+	ReturnExpression(const Keyword &returnKeyword,
+	      std::unique_ptr<Expression> expression);
 	Expression *getExpression();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~ReturnExpression() = default;
@@ -105,7 +122,8 @@ class ParenthesizedExpression : public Expression {
 private:
 	std::unique_ptr<Expression> expression;
 public:
-	ParenthesizedExpression(std::unique_ptr<Expression> expression);
+	ParenthesizedExpression(const Punctuation &open,
+	      std::unique_ptr<Expression> expression, const Punctuation &close);
 	Expression &getExpression();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~ParenthesizedExpression() = default;
@@ -115,7 +133,9 @@ class ExpressionStatement : public Statement {
 private:
 	std::unique_ptr<Expression> expression;
 public:
-	ExpressionStatement(std::unique_ptr<Expression> expression);
+	ExpressionStatement(std::unique_ptr<Expression> expression,
+	      const Punctuation &semicolon);
+	ExpressionStatement(std::unique_ptr<BlockExpression> expression);
 	Expression &getExpression();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~ExpressionStatement() = default;
@@ -124,40 +144,58 @@ public:
 class LetStatement : public Statement {
 private:
 	std::unique_ptr<Symbol> symbol;
-	std::unique_ptr<Symbol> type;
+	std::unique_ptr<Symbol> typeAnnotation;
+	std::unique_ptr<Operator> equalSign;
 	std::unique_ptr<Expression> expression;
 public:
-	LetStatement(std::unique_ptr<Symbol> symbol, std::unique_ptr<Symbol> type,
-	      std::unique_ptr<Expression> expression);
+	LetStatement(const Keyword &let, std::unique_ptr<Symbol> symbol,
+	      std::unique_ptr<Symbol> typeAnnotation, std::unique_ptr<Operator> equalSign,
+	      std::unique_ptr<Expression> expression, const Punctuation &semicolon);
 	Symbol &getSymbol();
 	Expression &getExpression();
-	Symbol &getType();
+	Symbol &getTypeAnnotation();
+	Operator &getEqualSign();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~LetStatement() = default;
 };
 
 class Function {
 private:
-	std::unique_ptr<Symbol> name;
-	std::unique_ptr<Symbol> returnType;
+	std::unique_ptr<Symbol> returnTypeAnnotation;
 	std::unique_ptr<BlockExpression> body;
+	int typeID = -1;
 public:
-	Function(std::unique_ptr<Symbol> name, std::unique_ptr<Symbol> returnType,
+	Function(std::unique_ptr<Symbol> returnTypeAnnotation,
 	      std::unique_ptr<BlockExpression> body);
-	Symbol &getName();
-	Symbol &getReturnType();
+	Symbol *getReturnTypeAnnotation();
 	BlockExpression &getBody();
+	int getTypeID();
+	void setTypeID(int typeID);
 	void accept(ASTVisitor &visitor);
 	~Function() = default;
 };
 
 class Module {
 private:
-	std::vector<std::unique_ptr<Function>> functions;
+	std::unordered_map<std::string_view, std::unique_ptr<Function>> functions;
+	std::unordered_map<std::string_view, int> typeTable;
+	std::unordered_map<Operator::Type, std::vector<std::tuple<int, int>>> unaryOperators;
+	std::unordered_map<Operator::Type, std::vector<std::tuple<int, int, int>>>
+	      binaryOperators;
 public:
-	Module() = default;
-	void pushFunction(std::unique_ptr<Function> function);
-	void forEachFunction(const std::function<void(Function &)> &functionHandler);
+	Module();
+	void addFunction(std::unique_ptr<Symbol> name, std::unique_ptr<Function> function);
+	void forEachFunction(
+	      const std::function<void(std::string_view, Function &)> &functionHandler);
+	int getType(std::string_view type);
+	void insertType(std::string_view type);
+	bool isTypeConvertible(int from, int to);
+	void addUnaryOperator(Operator::Type op, int operandType, int resultType);
+	int getUnaryOperator(Operator::Type op, int operandType);
+	void addBinaryOperator(Operator::Type op, int leftType, int rightType,
+	      int resultType);
+	int getBinaryOperator(Operator::Type op, int leftType, int rightType);
+	Function *getFunction(std::string_view name);
 	~Module() = default;
 };
 

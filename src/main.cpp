@@ -2,6 +2,7 @@
 #include "errorhandler.h"
 #include "lexer.h"
 #include "parser.h"
+#include "semanticanalyzer.h"
 #include "tokens.h"
 
 #include <cerrno>
@@ -51,6 +52,12 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
+	SemanticAnalyzer analyzer = SemanticAnalyzer(std::move(mod), errorHandler);
+	analyzer.analyze();
+	if (errorHandler.handleErrors(std::cerr)) {
+		return EXIT_FAILURE;
+	}
+
 	std::ofstream outfile = std::ofstream(outfileName, std::ios::out | std::ios::trunc);
 	if (!outfile) {
 		int e = errno;
@@ -59,7 +66,7 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	outfile << "// Compiled code\n";
+	outfile << "// Compiled code\nint main() { return 0; }\n";
 
 	// Close the files
 	outfile.close();

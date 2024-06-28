@@ -6,43 +6,6 @@
 #include <iostream>
 #include <string_view>
 
-enum class Type {
-	/** 8 bit signed integer */
-	I8,
-	/** 16 bit signed integer */
-	I16,
-	/** 32 bit signed integer */
-	I32,
-	/** 64 bit signed integer */
-	I64,
-	/** 8 bit unsigned integer */
-	U8,
-	/** 16 bit unsigned integer */
-	U16,
-	/** 32 bit unsigned integer */
-	U32,
-	/** 64 bit unsigned integer */
-	U64,
-	/** 32 bit floating point number */
-	F32,
-	/** 64 bit floating point number */
-	F64,
-	/** 8 bit character value */
-	C8,
-	/** 16 bit character value */
-	C16,
-	/** 32 bit character value */
-	C32,
-	/** boolean true or false */
-	BOOL,
-	/** unit type */
-	UNIT,
-	/** unknown type */
-	UNKNOWN,
-};
-
-std::ostream &operator<<(std::ostream &os, Type type);
-
 struct Slice {
 	std::string_view contents;
 	std::filesystem::path source;
@@ -50,20 +13,30 @@ struct Slice {
 	size_t col;
 	Slice(std::string_view contents, std::filesystem::path source, size_t row,
 	      size_t col);
+	Slice(const Slice &s);
 	~Slice() = default;
+	/**
+	 * @brief Generates a new Slice beginning at start through end, picking up any
+	 * intermediate characters from the underlying source code, regardless of whether they
+	 * were in either of the parameter Slices.
+	 *
+	 * @param start the Slice to start from
+	 * @param end the Slice to end at
+	 * @return a new Slice containing the characters from the beginning of ` to the
+	 * end of `end`
+	 */
+	static Slice merge(const Slice &start, const Slice &end);
 };
 
 std::ostream &operator<<(std::ostream &os, const Slice &slice);
 
 struct Token {
-	std::filesystem::path source;
-	size_t row;
-	size_t col;
+	Slice s;
 
 	virtual void print(std::ostream &os) const = 0;
 	virtual ~Token() = default;
 protected:
-	Token(std::filesystem::path source, size_t row, size_t col);
+	Token(const Slice &s);
 };
 
 struct Keyword : public Token {
@@ -77,15 +50,6 @@ struct Keyword : public Token {
 	Keyword(const Slice &s, Type type);
 	virtual void print(std::ostream &os) const;
 	virtual ~Keyword() = default;
-};
-
-struct Primitive : public Token {
-	Type type;
-	Primitive(const Slice &s, Type type);
-	virtual void print(std::ostream &os) const;
-	void compile(std::ostream &outfile) const;
-	static void compile(std::ostream &outfile, Type type);
-	virtual ~Primitive() = default;
 };
 
 struct Punctuation : public Token {
@@ -151,7 +115,6 @@ struct Operator : public Token {
 };
 
 struct SymbolOrLiteral : public Token {
-	std::string_view s;
 	explicit SymbolOrLiteral(const Slice &s);
 	explicit SymbolOrLiteral(const SymbolOrLiteral &s);
 	virtual void print(std::ostream &os) const;
@@ -161,7 +124,6 @@ struct SymbolOrLiteral : public Token {
 };
 
 struct Symbol : public Token {
-	std::string_view s;
 	explicit Symbol(const Slice &s);
 	explicit Symbol(const SymbolOrLiteral *const s);
 	explicit Symbol(const Symbol &s);
@@ -172,10 +134,21 @@ struct Symbol : public Token {
 };
 
 struct IntegerLiteral : public Token {
+	enum class Type {
+		I8,
+		I16,
+		I32,
+		I64,
+		U8,
+		U16,
+		U32,
+		U64,
+	};
 	Type type;
 	uint64_t value;
-	explicit IntegerLiteral(const Token *t, Type type, uint64_t value);
+	explicit IntegerLiteral(const Token &t, Type type, uint64_t value);
 	virtual void print(std::ostream &os) const;
+	static std::string_view typeToStringView(Type type);
 	virtual ~IntegerLiteral() = default;
 };
 
@@ -188,7 +161,7 @@ struct Whitespace : public Token {
 };
 
 struct EndOfFile : public Token {
-	EndOfFile();
+	EndOfFile(const Slice &s);
 	virtual void print(std::ostream &os) const;
 	virtual ~EndOfFile() = default;
 };

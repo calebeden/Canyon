@@ -15,7 +15,7 @@ static constexpr int BINARY = 2;
 
 Lexer::Lexer(std::string_view program, std::filesystem::path source,
       ErrorHandler &errorHandler, uint32_t tabSize)
-    : program(program), current(0), source(std::move(source)), tabSize(tabSize),
+    : program(program), source(std::move(source)), tabSize(tabSize),
       errorHandler(errorHandler) {
 	if (tabSize == 0) {
 		throw std::invalid_argument("Tab size must be greater than 0");
@@ -31,6 +31,8 @@ Lexer &Lexer::operator=(const Lexer &l) {
 	source = l.source;
 	tabSize = l.tabSize;
 	errorHandler = l.errorHandler;
+	line = l.line;
+	col = l.col;
 	return *this;
 }
 
@@ -43,7 +45,7 @@ std::vector<std::unique_ptr<Token>> Lexer::scan() {
 
 	std::vector<std::unique_ptr<Token>> tokens;
 	while (!slices.empty()) {
-		auto &s = slices.front();
+		auto s = slices.front();
 		slices.pop();
 		std::unique_ptr<Whitespace> whitespace = createWhitespace(s);
 		if (whitespace != nullptr) {
@@ -55,11 +57,6 @@ std::vector<std::unique_ptr<Token>> Lexer::scan() {
 			tokens.push_back(std::move(keyword));
 			continue;
 		}
-		std::unique_ptr<Primitive> primitive = createPrimitive(s);
-		if (primitive != nullptr) {
-			tokens.push_back(std::move(primitive));
-			continue;
-		}
 		std::unique_ptr<Punctuation> punctuation = createPunctuation(s);
 		if (punctuation != nullptr) {
 			tokens.push_back(std::move(punctuation));
@@ -68,15 +65,12 @@ std::vector<std::unique_ptr<Token>> Lexer::scan() {
 		tokens.push_back(createSymbolOrLiteral(s));
 	}
 
-	tokens.push_back(std::make_unique<EndOfFile>());
+	tokens.push_back(std::make_unique<EndOfFile>(Slice("", source, line, col)));
 
 	return tokens;
 }
 
 void Lexer::slice() {
-	size_t line = 1;
-	size_t col = 1;
-
 	while (current < program.size()) {
 		while (std::isspace(program[current]) != 0) {
 			if (program[current] == '\n') {
@@ -169,55 +163,6 @@ std::unique_ptr<Keyword> Lexer::createKeyword(const Slice &s) {
 	return nullptr;
 }
 
-std::unique_ptr<Primitive> Lexer::createPrimitive(const Slice &s) {
-	if (s.contents == "i8") {
-		return std::make_unique<Primitive>(s, Type::I8);
-	}
-	if (s.contents == "i16") {
-		return std::make_unique<Primitive>(s, Type::I16);
-	}
-	if (s.contents == "i32") {
-		return std::make_unique<Primitive>(s, Type::I32);
-	}
-	if (s.contents == "i64") {
-		return std::make_unique<Primitive>(s, Type::I64);
-	}
-	if (s.contents == "u8") {
-		return std::make_unique<Primitive>(s, Type::U8);
-	}
-	if (s.contents == "u16") {
-		return std::make_unique<Primitive>(s, Type::U16);
-	}
-	if (s.contents == "u32") {
-		return std::make_unique<Primitive>(s, Type::U32);
-	}
-	if (s.contents == "u64") {
-		return std::make_unique<Primitive>(s, Type::U64);
-	}
-	if (s.contents == "f32") {
-		return std::make_unique<Primitive>(s, Type::F32);
-	}
-	if (s.contents == "f64") {
-		return std::make_unique<Primitive>(s, Type::F64);
-	}
-	if (s.contents == "c8") {
-		return std::make_unique<Primitive>(s, Type::C8);
-	}
-	if (s.contents == "c16") {
-		return std::make_unique<Primitive>(s, Type::C16);
-	}
-	if (s.contents == "c32") {
-		return std::make_unique<Primitive>(s, Type::C32);
-	}
-	if (s.contents == "bool") {
-		return std::make_unique<Primitive>(s, Type::BOOL);
-	}
-	if (s.contents == "()") {
-		return std::make_unique<Primitive>(s, Type::UNIT);
-	}
-	return nullptr;
-}
-
 std::unique_ptr<Punctuation> Lexer::createPunctuation(const Slice &s) {
 	if (s.contents == "(") {
 		return std::make_unique<Punctuation>(s, Punctuation::Type::OpenParen);
@@ -295,8 +240,7 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 	std::unique_ptr<Token> token = std::move(tokens[i]);
 	std::vector<std::unique_ptr<Token>> evaluated;
 	while (!dynamic_cast<EndOfFile *>(token.get())) {
-		if (dynamic_cast<Keyword *>(token.get())
-		      || dynamic_cast<Primitive *>(token.get())) {
+		if (dynamic_cast<Keyword *>(token.get())) {
 			evaluated.push_back(std::move(token));
 		} else if (dynamic_cast<Punctuation *>(token.get())) {
 			switch (dynamic_cast<Punctuation *>(token.get())->type) {
@@ -460,7 +404,8 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 				}
 			}
 		} else if (dynamic_cast<SymbolOrLiteral *>(token.get())) {
-			if (std::isdigit(dynamic_cast<SymbolOrLiteral *>(token.get())->s[0]) != 0) {
+			if (std::isdigit(dynamic_cast<SymbolOrLiteral *>(token.get())->s.contents[0])
+			      != 0) {
 				std::unique_ptr<Token> literal
 				      = evaluateLiteral(dynamic_cast<SymbolOrLiteral *>(token.get()));
 				if (literal == nullptr) {
@@ -506,29 +451,29 @@ std::unique_ptr<IntegerLiteral> Lexer::evaluateLiteral(SymbolOrLiteral *literal)
 	int base = DECIMAL;
 	size_t start = 0;
 	size_t pos = 0;
-	for (size_t i = 0; i < literal->s.size(); i++) {
-		if (!isDigitInBase(literal->s[i], base)) {
+	for (size_t i = 0; i < literal->s.contents.size(); i++) {
+		if (!isDigitInBase(literal->s.contents[i], base)) {
 			if (i == 1) {
-				if (literal->s[0] == '0') {
-					if (literal->s[1] == 'x') {
+				if (literal->s.contents[0] == '0') {
+					if (literal->s.contents[1] == 'x') {
 						base = HEXADECIMAL;
 						start = 2;
 						continue;
 					}
-					if (literal->s[1] == 'o') {
+					if (literal->s.contents[1] == 'o') {
 						base = OCTAL;
 						start = 2;
 						continue;
 					}
-					if (literal->s[1] == 'b') {
+					if (literal->s.contents[1] == 'b') {
 						base = BINARY;
 						start = 2;
 						continue;
 					}
 				}
 			}
-			std::string_view suffix = literal->s.substr(i);
-			std::string_view value = literal->s.substr(start, i);
+			std::string_view suffix = literal->s.contents.substr(i);
+			std::string_view value = literal->s.contents.substr(start, i);
 			// Inspired by Rust - parse all integers as u128 (here, u64 since no support
 			// for 128bit at the moment) and then when we build the AST we will convert to
 			// the proper sized type
@@ -539,66 +484,76 @@ std::unique_ptr<IntegerLiteral> Lexer::evaluateLiteral(SymbolOrLiteral *literal)
 				if (pos != i - start) {
 					return nullptr;
 				}
-				return std::make_unique<IntegerLiteral>(literal, Type::I8, intValue);
+				return std::make_unique<IntegerLiteral>(*literal,
+				      IntegerLiteral::Type::I8, intValue);
 			}
 			if (suffix == "i16") {
 				uint64_t intValue = std::stoul(std::string(value), &pos, base);
 				if (pos != i - start) {
 					return nullptr;
 				}
-				return std::make_unique<IntegerLiteral>(literal, Type::I16, intValue);
+				return std::make_unique<IntegerLiteral>(*literal,
+				      IntegerLiteral::Type::I16, intValue);
 			}
 			if (suffix == "i32") {
 				uint64_t intValue = std::stoul(std::string(value), &pos, base);
 				if (pos != i - start) {
 					return nullptr;
 				}
-				return std::make_unique<IntegerLiteral>(literal, Type::I32, intValue);
+				return std::make_unique<IntegerLiteral>(*literal,
+				      IntegerLiteral::Type::I32, intValue);
 			}
 			if (suffix == "i64") {
 				uint64_t intValue = std::stoul(std::string(value), &pos, base);
 				if (pos != i - start) {
 					return nullptr;
 				}
-				return std::make_unique<IntegerLiteral>(literal, Type::I64, intValue);
+				return std::make_unique<IntegerLiteral>(*literal,
+				      IntegerLiteral::Type::I64, intValue);
 			}
 			if (suffix == "u8") {
 				uint64_t intValue = std::stoul(std::string(value), &pos, base);
 				if (pos != i - start) {
 					return nullptr;
 				}
-				return std::make_unique<IntegerLiteral>(literal, Type::U8, intValue);
+				return std::make_unique<IntegerLiteral>(*literal,
+				      IntegerLiteral::Type::U8, intValue);
 			}
 			if (suffix == "u16") {
 				uint64_t intValue = std::stoul(std::string(value), &pos, base);
 				if (pos != i - start) {
 					return nullptr;
 				}
-				return std::make_unique<IntegerLiteral>(literal, Type::U16, intValue);
+				return std::make_unique<IntegerLiteral>(*literal,
+				      IntegerLiteral::Type::U16, intValue);
 			}
 			if (suffix == "u32") {
 				uint64_t intValue = std::stoul(std::string(value), &pos, base);
 				if (pos != i - start) {
 					return nullptr;
 				}
-				return std::make_unique<IntegerLiteral>(literal, Type::U32, intValue);
+				return std::make_unique<IntegerLiteral>(*literal,
+				      IntegerLiteral::Type::U32, intValue);
 			}
 			if (suffix == "u64") {
 				uint64_t intValue = std::stoul(std::string(value), &pos, base);
 				if (pos != i - start) {
 					return nullptr;
 				}
-				return std::make_unique<IntegerLiteral>(literal, Type::U64, intValue);
+				return std::make_unique<IntegerLiteral>(*literal,
+				      IntegerLiteral::Type::U64, intValue);
 			}
 			// Not a suffix, but not a digit, so not a valid literal
 			return nullptr;
 		}
 	}
 	// No non-digit character found, treat as regular i32 literal
-	std::string_view value = literal->s.substr(start, literal->s.size());
+	std::string_view value
+	      = literal->s.contents.substr(start, literal->s.contents.size());
 	uint64_t intValue = std::stoul(std::string(value), &pos, base);
-	if (pos != literal->s.size() - start) {
+	if (pos != literal->s.contents.size() - start) {
 		return nullptr;
 	}
-	return std::make_unique<IntegerLiteral>(literal, Type::I32, intValue);
+	return std::make_unique<IntegerLiteral>(*literal, IntegerLiteral::Type::I32,
+	      intValue);
 }

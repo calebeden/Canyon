@@ -5,66 +5,24 @@
 #include <iostream>
 #include <string_view>
 
-std::ostream &operator<<(std::ostream &os, Type type) {
-	switch (type) {
-		case Type::I8: {
-			return os << "i8";
-		}
-		case Type::I16: {
-			return os << "i16";
-		}
-		case Type::I32: {
-			return os << "i32";
-		}
-		case Type::I64: {
-			return os << "i64";
-		}
-		case Type::U8: {
-			return os << "u8";
-		}
-		case Type::U16: {
-			return os << "u16";
-		}
-		case Type::U32: {
-			return os << "u32";
-		}
-		case Type::U64: {
-			return os << "u64";
-		}
-		case Type::F32: {
-			return os << "f32";
-		}
-		case Type::F64: {
-			return os << "f64";
-		}
-		case Type::C8: {
-			return os << "c8";
-		}
-		case Type::C16: {
-			return os << "c16";
-		}
-		case Type::C32: {
-			return os << "c32";
-		}
-		case Type::BOOL: {
-			return os << "bool";
-		}
-		case Type::UNIT: {
-			return os << "()";
-		}
-		case Type::UNKNOWN: {
-			return os << "UNKNOWN";
-		}
-		default: {
-			std::cerr << "Unknown type";
-			exit(EXIT_FAILURE);
-		}
-	}
-}
-
 Slice::Slice(std::string_view contents, std::filesystem::path source, size_t row,
       size_t col)
     : contents(contents), source(std::move(source)), row(row), col(col) {
+}
+
+Slice::Slice(const Slice &s)
+    : contents(s.contents), source(s.source), row(s.row), col(s.col) {
+}
+
+Slice Slice::merge(const Slice &start, const Slice &end) {
+	if (start.source != end.source) {
+		std::cerr << "Cannot merge slices from different sources";
+		exit(EXIT_FAILURE);
+	}
+	return Slice(
+	      std::string_view(start.contents.data(),
+	            (end.contents.data() - start.contents.data()) + end.contents.size()),
+	      start.source, start.row, start.col);
 }
 
 std::ostream &operator<<(std::ostream &os, const Slice &slice) {
@@ -72,11 +30,10 @@ std::ostream &operator<<(std::ostream &os, const Slice &slice) {
 	return os;
 }
 
-Token::Token(std::filesystem::path source, size_t row, size_t col)
-    : source(std::move(source)), row(row), col(col) {
+Token::Token(const Slice &s) : s(s) {
 }
 
-Keyword::Keyword(const Slice &s, Type type) : Token(s.source, s.row, s.col), type(type) {
+Keyword::Keyword(const Slice &s, Type type) : Token(s), type(type) {
 }
 
 void Keyword::print(std::ostream &os) const {
@@ -97,93 +54,7 @@ void Keyword::print(std::ostream &os) const {
 	}
 }
 
-Primitive::Primitive(const Slice &s, Type type)
-    : Token(s.source, s.row, s.col), type(type) {
-}
-
-void Primitive::print(std::ostream &os) const {
-	os << "Primitive: " << type;
-}
-
-void Primitive::compile(std::ostream &outfile) const {
-	return Primitive::compile(outfile, type);
-}
-
-void Primitive::compile(std::ostream &outfile, Type type) {
-	switch (type) {
-		case Type::I8: {
-			outfile << "int8_t";
-			return;
-		}
-		case Type::I16: {
-			outfile << "int16_t";
-			return;
-		}
-		case Type::I32: {
-			outfile << "int32_t";
-			return;
-		}
-		case Type::I64: {
-			outfile << "int64_t";
-			return;
-		}
-		case Type::U8: {
-			outfile << "uint8_t";
-			return;
-		}
-		case Type::U16: {
-			outfile << "uint16_t";
-			return;
-		}
-		case Type::U32: {
-			outfile << "uint32_t";
-			return;
-		}
-		case Type::U64: {
-			outfile << "uint64_t";
-			return;
-		}
-		case Type::F32: {
-			outfile << "_Float32";
-			return;
-		}
-		case Type::F64: {
-			outfile << "_Float64";
-			return;
-		}
-		case Type::C8: {
-			outfile << "char8_t";
-			return;
-		}
-		case Type::C16: {
-			outfile << "char16_t";
-			return;
-		}
-		case Type::C32: {
-			outfile << "chat32_t";
-			return;
-		}
-		case Type::BOOL: {
-			outfile << "bool";
-			return;
-		}
-		case Type::UNIT: {
-			outfile << "void";
-			return;
-		}
-		case Type::UNKNOWN: {
-			std::cerr << "Unknown type in Primitive::compile";
-			exit(EXIT_FAILURE);
-		}
-		default: {
-			std::cerr << "Unknown type case in Primitive::compile";
-			exit(EXIT_FAILURE);
-		}
-	}
-}
-
-Punctuation::Punctuation(const Slice &s, Type type)
-    : Token(s.source, s.row, s.col), type(type) {
+Punctuation::Punctuation(const Slice &s, Type type) : Token(s), type(type) {
 }
 
 void Punctuation::print(std::ostream &os) const {
@@ -275,7 +146,7 @@ void Punctuation::print(std::ostream &os) const {
 	}
 }
 
-Operator::Operator(Token *t, Type type) : Token(t->source, t->row, t->col), type(type) {
+Operator::Operator(Token *t, Type type) : Token(t->s), type(type) {
 }
 
 void Operator::print(std::ostream &os) const {
@@ -375,12 +246,10 @@ void Operator::print(std::ostream &os) const {
 	}
 }
 
-SymbolOrLiteral::SymbolOrLiteral(const Slice &s)
-    : Token(s.source, s.row, s.col), s(s.contents) {
+SymbolOrLiteral::SymbolOrLiteral(const Slice &s) : Token(s) {
 }
 
-SymbolOrLiteral::SymbolOrLiteral(const SymbolOrLiteral &s)
-    : Token(s.source, s.row, s.col), s(s.s) {
+SymbolOrLiteral::SymbolOrLiteral(const SymbolOrLiteral &s) : Token(s) {
 }
 
 void SymbolOrLiteral::print(std::ostream &os) const {
@@ -395,14 +264,13 @@ void SymbolOrLiteral::compile(std::ostream &outfile, const std::string_view s) {
 	outfile << s;
 }
 
-Symbol::Symbol(const Slice &s) : Token(s.source, s.row, s.col), s(s.contents) {
+Symbol::Symbol(const Slice &s) : Token(s) {
 }
 
-Symbol::Symbol(const SymbolOrLiteral *const s)
-    : Token(s->source, s->row, s->col), s(s->s) {
+Symbol::Symbol(const SymbolOrLiteral *const s) : Token(s->s) {
 }
 
-Symbol::Symbol(const Symbol &s) : Token(s.source, s.row, s.col), s(s.s) {
+Symbol::Symbol(const Symbol &s) : Token(s.s) {
 }
 
 void Symbol::print(std::ostream &os) const {
@@ -417,26 +285,59 @@ void Symbol::compile(std::ostream &outfile, const std::string_view s) {
 	outfile << s;
 }
 
-IntegerLiteral::IntegerLiteral(const Token *t, Type type, uint64_t value)
-    : Token(t->source, t->row, t->col), type(type), value(value) {
+IntegerLiteral::IntegerLiteral(const Token &t, Type type, uint64_t value)
+    : Token(t.s), type(type), value(value) {
 }
 
 void IntegerLiteral::print(std::ostream &os) const {
-	os << value << type;
+	os << value << typeToStringView(type);
+}
+
+std::string_view IntegerLiteral::typeToStringView(Type type) {
+	switch (type) {
+		case Type::I8: {
+			return "i8";
+		}
+		case Type::I16: {
+			return "i16";
+		}
+		case Type::I32: {
+			return "i32";
+		}
+		case Type::I64: {
+			return "i64";
+		}
+		case Type::U8: {
+			return "u8";
+		}
+		case Type::U16: {
+			return "u16";
+		}
+		case Type::U32: {
+			return "u32";
+		}
+		case Type::U64: {
+			return "u64";
+		}
+		default: {
+			std::cerr << "Unknown type";
+			exit(EXIT_FAILURE);
+		}
+	}
 }
 
 bool operator==(const IntegerLiteral &lhs, const IntegerLiteral &rhs) {
 	return (lhs.type == rhs.type) && (lhs.value == rhs.value);
 }
 
-Whitespace::Whitespace(const Slice &s) : Token(s.source, s.row, s.col) {
+Whitespace::Whitespace(const Slice &s) : Token(s) {
 }
 
 void Whitespace::print(std::ostream &os) const {
 	os << " ";
 }
 
-EndOfFile::EndOfFile() : Token("", 0, 0) {
+EndOfFile::EndOfFile(const Slice &s) : Token(s) {
 }
 
 void EndOfFile::print(std::ostream &os) const {

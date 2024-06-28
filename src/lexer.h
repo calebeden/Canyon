@@ -13,11 +13,13 @@
 
 class Lexer {
 	std::string_view program;
-	size_t current;
+	size_t current = 0;
 	std::filesystem::path source;
 	std::queue<Slice> slices;
 	uint32_t tabSize;
 	ErrorHandler &errorHandler;
+	size_t line = 1;
+	size_t col = 1;
 public:
 	/**
 	 * @brief Construct a new Lexer object to tokenize Canyon source code
@@ -60,7 +62,6 @@ private:
 
 	static std::unique_ptr<Whitespace> createWhitespace(const Slice &s);
 	static std::unique_ptr<Keyword> createKeyword(const Slice &s);
-	static std::unique_ptr<Primitive> createPrimitive(const Slice &s);
 	static std::unique_ptr<Punctuation> createPunctuation(const Slice &s);
 	static std::unique_ptr<SymbolOrLiteral> createSymbolOrLiteral(const Slice &s);
 };

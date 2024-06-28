@@ -6,6 +6,7 @@
 #include "tokens.h"
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 class Parser {
@@ -18,7 +19,7 @@ public:
 	std::unique_ptr<Module> parse();
 	~Parser() = default;
 private:
-	std::unique_ptr<Function> parseFunction();
+	std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> parseFunction();
 	std::unique_ptr<Statement> parseStatement();
 	std::unique_ptr<Expression> parseExpression();
 	std::unique_ptr<BlockExpression> parseBlock();

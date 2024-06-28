@@ -1,0 +1,25 @@
+fun foo() {
+    let a: i8 = 1i8;
+    let b: i8 = a;
+
+    let c: i16 = 1i16;
+    let d: i16 = c;
+
+    let e: i32 = 1i32;
+    let f: i32 = e;
+
+    let g: i64 = 1i64;
+    let h: i64 = g;
+
+    let i: u8 = 1u8;
+    let j: u8 = i;
+
+    let k: u16 = 1u16;
+    let l: u16 = k;
+
+    let m: u32 = 1u32;
+    let n: u32 = m;
+
+    let o: u64 = 1u64;
+    let p: u64 = o;
+}

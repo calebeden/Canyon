@@ -1,6 +1,8 @@
 #ifndef TEST_UTILITIES_H
 #define TEST_UTILITIES_H
 
+#include "errorhandler.h"
+
 #include "gtest/gtest.h"
 
 #include <filesystem>

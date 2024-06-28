@@ -13,14 +13,16 @@ Parser::Parser(std::vector<std::unique_ptr<Token>> tokens, ErrorHandler &errorHa
 std::unique_ptr<Module> Parser::parse() {
 	auto mod = std::make_unique<Module>();
 	while (!isAtEnd()) {
-		std::unique_ptr<Function> func = parseFunction();
-		if (func == nullptr) {
+		std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> func
+		      = parseFunction();
+		if (func.second == nullptr) {
 			synchronize();
 			auto *punc = dynamic_cast<Punctuation *>(tokens[i].get());
 			while (punc != nullptr) {
 				if (punc->type == Punctuation::Type::Semicolon) {
 					i++;
 					synchronize();
+					punc = dynamic_cast<Punctuation *>(tokens[i].get());
 				} else if (punc->type == Punctuation::Type::CloseBrace) {
 					i++;
 					break;
@@ -31,35 +33,36 @@ std::unique_ptr<Module> Parser::parse() {
 			}
 			continue;
 		}
-		mod->pushFunction(std::move(func));
+		mod->addFunction(std::move(func.first), std::move(func.second));
 	}
 	return mod;
 }
 
-std::unique_ptr<Function> Parser::parseFunction() {
+std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> Parser::parseFunction() {
 	auto *keyword = dynamic_cast<Keyword *>(tokens[i].get());
 	if (keyword == nullptr || keyword->type != Keyword::Type::FUN) {
 		errorHandler.error(*tokens[i], "Expected keyword `fun`");
-		return nullptr;
+		return {nullptr, nullptr};
 	}
 	i++;
 	auto *symbol = dynamic_cast<Symbol *>(tokens[i].get());
 	if (symbol == nullptr) {
 		errorHandler.error(*tokens[i], "Expected symbol following `fun`");
-		return nullptr;
+		return {nullptr, nullptr};
 	}
 	symbol = dynamic_cast<Symbol *>(tokens[i++].release());
 	auto *punc = dynamic_cast<Punctuation *>(tokens[i].get());
 	if (punc == nullptr || punc->type != Punctuation::Type::OpenParen) {
 		errorHandler.error(*tokens[i],
 		      "Expected '(' following symbol in function definition");
-		return nullptr;
+		mustSynchronize = true;
+		return {nullptr, nullptr};
 	}
 	i++;
 	punc = dynamic_cast<Punctuation *>(tokens[i].get());
 	if (punc == nullptr || punc->type != Punctuation::Type::CloseParen) {
 		errorHandler.error(*tokens[i], "Expected ')' in function definition");
-		return nullptr;
+		return {nullptr, nullptr};
 	}
 	i++;
 	Symbol *type = nullptr;
@@ -70,7 +73,7 @@ std::unique_ptr<Function> Parser::parseFunction() {
 		if (type == nullptr) {
 			errorHandler.error(*tokens[i],
 			      "Expected type symbol following ':' in function definition");
-			return nullptr;
+			return {nullptr, nullptr};
 		}
 		type = dynamic_cast<Symbol *>(tokens[i++].release());
 	} else {
@@ -78,21 +81,21 @@ std::unique_ptr<Function> Parser::parseFunction() {
 	}
 	std::unique_ptr<BlockExpression> block = parseBlock();
 	if (block == nullptr) {
-		return nullptr;
+		return {nullptr, nullptr};
 	}
 
-	return std::make_unique<Function>(std::unique_ptr<Symbol>(symbol),
-	      std::unique_ptr<Symbol>(type), std::move(block));
+	return {std::unique_ptr<Symbol>(symbol),
+	      std::make_unique<Function>(std::unique_ptr<Symbol>(type), std::move(block))};
 }
 
 std::unique_ptr<Statement> Parser::parseStatement() {
 	auto *keyword = dynamic_cast<Keyword *>(tokens[i].get());
 	if (keyword != nullptr && keyword->type == Keyword::Type::LET) {
-		mustSynchronize = true;
 		i++;
 		auto *symbol = dynamic_cast<Symbol *>(tokens[i].get());
 		if (symbol == nullptr) {
 			errorHandler.error(*tokens[i], "Expected symbol following `let`");
+			mustSynchronize = true;
 			return nullptr;
 		}
 		symbol = dynamic_cast<Symbol *>(tokens[i++].release());
@@ -104,6 +107,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
 			if (type == nullptr) {
 				errorHandler.error(*tokens[i],
 				      "Expected type symbol following ':' in `let` statement");
+				mustSynchronize = true;
 				return nullptr;
 			}
 			type = dynamic_cast<Symbol *>(tokens[i++].release());
@@ -113,12 +117,15 @@ std::unique_ptr<Statement> Parser::parseStatement() {
 		auto *op = dynamic_cast<Operator *>(tokens[i].get());
 		if (op == nullptr || op->type != Operator::Type::Assignment) {
 			errorHandler.error(*tokens[i], "Expected '=' in `let` statement");
+			mustSynchronize = true;
 			return nullptr;
 		}
+		op = dynamic_cast<Operator *>(tokens[i].release());
 		i++;
 		std::unique_ptr<Expression> expr = parseExpression();
 		if (expr == nullptr) {
 			synchronize();
+			mustSynchronize = false;
 			auto *punc = dynamic_cast<Punctuation *>(tokens[i].get());
 			if (punc != nullptr) {
 				if (punc->type == Punctuation::Type::Semicolon) {
@@ -134,13 +141,18 @@ std::unique_ptr<Statement> Parser::parseStatement() {
 		}
 		punc = dynamic_cast<Punctuation *>(tokens[i].get());
 		if (punc == nullptr || punc->type != Punctuation::Type::Semicolon) {
-			errorHandler.error(*tokens[i],
-			      "Expected ';' following expression in `let` statement");
-			return nullptr;
+			if (!dynamic_cast<BlockExpression *>(expr.get())) {
+				errorHandler.error(*tokens[i],
+				      "Expected ';' following expression in `let` statement");
+				mustSynchronize = true;
+				return nullptr;
+			}
+		} else {
+			i++;
 		}
-		i++;
-		return std::make_unique<LetStatement>(std::unique_ptr<Symbol>(symbol),
-		      std::unique_ptr<Symbol>(type), std::move(expr));
+		return std::make_unique<LetStatement>(*keyword, std::unique_ptr<Symbol>(symbol),
+		      std::unique_ptr<Symbol>(type), std::unique_ptr<Operator>(op),
+		      std::move(expr), *punc);
 	}
 
 	return nullptr;
@@ -161,12 +173,12 @@ std::unique_ptr<BlockExpression> Parser::parseBlock() {
 		errorHandler.error(*tokens[i], "Expected '{'");
 		return nullptr;
 	}
-	std::unique_ptr<BlockExpression> block = std::make_unique<BlockExpression>();
+	std::vector<std::unique_ptr<Statement>> statements;
 	i++;
 	while (true) {
 		std::unique_ptr<Statement> statement = parseStatement();
 		if (statement != nullptr) {
-			block->pushStatement(std::move(statement));
+			statements.push_back(std::move(statement));
 			continue;
 		}
 		if (mustSynchronize) {
@@ -176,7 +188,8 @@ std::unique_ptr<BlockExpression> Parser::parseBlock() {
 			if (punc != nullptr) {
 				i++;
 				if (punc->type == Punctuation::Type::CloseBrace) {
-					return block;
+					return std::make_unique<BlockExpression>(*p1, std::move(statements),
+					      nullptr, *punc);
 				}
 			}
 			if (isAtEnd()) {
@@ -188,7 +201,8 @@ std::unique_ptr<BlockExpression> Parser::parseBlock() {
 		auto *p2 = dynamic_cast<Punctuation *>(tokens[i].get());
 		if (p2 != nullptr && p2->type == Punctuation::Type::CloseBrace) {
 			i++;
-			return block;
+			return std::make_unique<BlockExpression>(*p1, std::move(statements), nullptr,
+			      *p2);
 		}
 		if (isAtEnd()) {
 			errorHandler.error(*tokens[i], "Expected '}'");
@@ -201,7 +215,8 @@ std::unique_ptr<BlockExpression> Parser::parseBlock() {
 			if (punc != nullptr) {
 				i++;
 				if (punc->type == Punctuation::Type::CloseBrace) {
-					return block;
+					return std::make_unique<BlockExpression>(*p1, std::move(statements),
+					      nullptr, *punc);
 				}
 			}
 			if (isAtEnd()) {
@@ -211,15 +226,25 @@ std::unique_ptr<BlockExpression> Parser::parseBlock() {
 			continue;
 		}
 		auto *p3 = dynamic_cast<Punctuation *>(tokens[i].get());
+		auto *block = dynamic_cast<BlockExpression *>(expr.get());
 		if (p3 != nullptr && p3->type == Punctuation::Type::Semicolon) {
 			i++;
-			block->pushStatement(std::make_unique<ExpressionStatement>(std::move(expr)));
+			statements.push_back(
+			      std::make_unique<ExpressionStatement>(std::move(expr), *p3));
 		} else if (p3 != nullptr && p3->type == Punctuation::Type::CloseBrace) {
 			i++;
 			if (expr != nullptr) {
-				block->setFinalExpression(std::move(expr));
+				return std::make_unique<BlockExpression>(*p1, std::move(statements),
+				      std::move(expr), *p3);
 			}
-			return block;
+			return std::make_unique<BlockExpression>(*p1, std::move(statements), nullptr,
+			      *p3);
+		} else if (block != nullptr) {
+			// A block expression can be a statement without semicolon if not at the end
+			// of the enclosing scope
+			statements.push_back(
+			      std::make_unique<ExpressionStatement>(std::unique_ptr<BlockExpression>(
+			            dynamic_cast<BlockExpression *>(expr.release()))));
 		} else {
 			errorHandler.error(*tokens[i], "Expected '}'");
 			return nullptr;
@@ -235,10 +260,10 @@ std::unique_ptr<Expression> Parser::parseReturnBreakExpression() {
 		if (punc != nullptr
 		      && (punc->type == Punctuation::Type::Semicolon
 		            || punc->type == Punctuation::Type::CloseBrace)) {
-			return std::make_unique<ReturnExpression>(nullptr);
+			return std::make_unique<ReturnExpression>(*keyword, nullptr);
 		}
-		std::unique_ptr<Expression> expr = parseAssignmentExpression();
-		return std::make_unique<ReturnExpression>(std::move(expr));
+		std::unique_ptr<Expression> expr = parseReturnBreakExpression();
+		return std::make_unique<ReturnExpression>(*keyword, std::move(expr));
 	}
 	return parseAssignmentExpression();
 }
@@ -251,7 +276,7 @@ std::unique_ptr<Expression> Parser::parseAssignmentExpression() {
 	auto *op = dynamic_cast<Operator *>(tokens[i].get());
 	if (op != nullptr && (op->type == Operator::Type::Assignment)) {
 		op = dynamic_cast<Operator *>(tokens[i++].release());
-		std::unique_ptr<Expression> expr2 = parseLogicalOrExpression();
+		std::unique_ptr<Expression> expr2 = parseAssignmentExpression();
 		if (expr2 == nullptr) {
 			return nullptr;
 		}
@@ -521,7 +546,7 @@ std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
 			return nullptr;
 		}
 		i++;
-		return std::make_unique<ParenthesizedExpression>(std::move(expr));
+		return std::make_unique<ParenthesizedExpression>(*p1, std::move(expr), *p2);
 	}
 
 	errorHandler.error(*tokens[i], "Expected expression");

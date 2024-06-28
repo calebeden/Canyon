@@ -27,6 +27,7 @@ protected:
 	std::queue<Error> errors;
 public:
 	ErrorHandler() = default;
+	test_virtual void error(const Slice &slice, std::string message);
 	test_virtual void error(const Token &token, std::string message);
 	test_virtual void error(std::filesystem::path source, size_t row, size_t col,
 	      std::string message);
