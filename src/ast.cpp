@@ -8,7 +8,7 @@
 Expression::Expression(const Slice &s) : s(s) {
 }
 
-int Expression::getTypeID() {
+int Expression::getTypeID() const {
 	return typeID;
 }
 
@@ -190,10 +190,11 @@ void ExpressionStatement::accept(ASTVisitor &visitor) {
 
 LetStatement::LetStatement(const Keyword &let, std::unique_ptr<Symbol> symbol,
       std::unique_ptr<Symbol> typeAnnotation, std::unique_ptr<Operator> equalSign,
-      std::unique_ptr<Expression> expression, const Punctuation &semicolon)
-    : Statement(Slice::merge(let.s, semicolon.s)), symbol(std::move(symbol)),
-      typeAnnotation(std::move(typeAnnotation)), equalSign(std::move(equalSign)),
-      expression(std::move(expression)) {
+      std::unique_ptr<Expression> expression, Punctuation *semicolon)
+    : Statement(Slice::merge(let.s,
+            semicolon != nullptr ? semicolon->s : expression->getSlice())),
+      symbol(std::move(symbol)), typeAnnotation(std::move(typeAnnotation)),
+      equalSign(std::move(equalSign)), expression(std::move(expression)) {
 }
 
 Symbol &LetStatement::getSymbol() {
@@ -229,7 +230,7 @@ BlockExpression &Function::getBody() {
 	return *body;
 }
 
-int Function::getTypeID() {
+int Function::getTypeID() const {
 	return typeID;
 }
 
@@ -286,7 +287,6 @@ bool Module::isTypeConvertible(int from, int to) {
 	if (from == to) {
 		return true;
 	}
-	// TODO make this extensible to allow for user-defined types
 	if (from == getType("!")) {
 		return true;
 	}

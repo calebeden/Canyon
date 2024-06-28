@@ -17,11 +17,13 @@ std::unique_ptr<Module> Parser::parse() {
 		      = parseFunction();
 		if (func.second == nullptr) {
 			synchronize();
+			mustSynchronize = false;
 			auto *punc = dynamic_cast<Punctuation *>(tokens[i].get());
 			while (punc != nullptr) {
 				if (punc->type == Punctuation::Type::Semicolon) {
 					i++;
 					synchronize();
+					mustSynchronize = false;
 					punc = dynamic_cast<Punctuation *>(tokens[i].get());
 				} else if (punc->type == Punctuation::Type::CloseBrace) {
 					i++;
@@ -152,7 +154,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
 		}
 		return std::make_unique<LetStatement>(*keyword, std::unique_ptr<Symbol>(symbol),
 		      std::unique_ptr<Symbol>(type), std::unique_ptr<Operator>(op),
-		      std::move(expr), *punc);
+		      std::move(expr), punc);
 	}
 
 	return nullptr;

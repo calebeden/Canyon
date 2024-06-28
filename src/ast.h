@@ -17,7 +17,7 @@ protected:
 	int typeID = -1;
 	Expression(const Slice &s);
 public:
-	int getTypeID();
+	int getTypeID() const;
 	void setTypeID(int typeID);
 	Slice &getSlice();
 	virtual void accept(ASTVisitor &visitor) = 0;
@@ -150,7 +150,7 @@ private:
 public:
 	LetStatement(const Keyword &let, std::unique_ptr<Symbol> symbol,
 	      std::unique_ptr<Symbol> typeAnnotation, std::unique_ptr<Operator> equalSign,
-	      std::unique_ptr<Expression> expression, const Punctuation &semicolon);
+	      std::unique_ptr<Expression> expression, Punctuation *semicolon);
 	Symbol &getSymbol();
 	Expression &getExpression();
 	Symbol &getTypeAnnotation();
@@ -169,7 +169,7 @@ public:
 	      std::unique_ptr<BlockExpression> body);
 	Symbol *getReturnTypeAnnotation();
 	BlockExpression &getBody();
-	int getTypeID();
+	int getTypeID() const;
 	void setTypeID(int typeID);
 	void accept(ASTVisitor &visitor);
 	~Function() = default;

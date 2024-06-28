@@ -11,12 +11,12 @@
 #include <utility>
 #include <vector>
 
-static void addDefaultOperators(Module &module);
-static void addDefaultIntegerOperators(Module &module);
-static void addSameSignIntegerTypes(Module &module,
-      const std::span<const std::string_view> types,
-      const std::span<const Operator::Type> binaryOperators,
-      const std::span<const Operator::Type> unaryOperators);
+static void addDefaultOperators(Module *module);
+static void addDefaultIntegerOperators(Module *module);
+static void addSameSignIntegerTypes(Module *module,
+      std::span<const std::string_view> types,
+      std::span<const Operator::Type> binaryOperators,
+      std::span<const Operator::Type> unaryOperators);
 
 SemanticAnalyzer::SemanticAnalyzer(std::unique_ptr<Module> module,
       ErrorHandler &errorHandler)
@@ -214,7 +214,7 @@ void SemanticAnalyzer::visit(Function &node) {
 }
 
 void SemanticAnalyzer::visit(Module &node) {
-	addDefaultOperators(node);
+	addDefaultOperators(&node);
 	node.forEachFunction([this]([[maybe_unused]]
 	                            std::string_view name,
 	                           Function &function) {
@@ -233,11 +233,11 @@ void SemanticAnalyzer::visit(Module &node) {
 	});
 }
 
-static void addDefaultOperators(Module &module) {
+static void addDefaultOperators(Module *module) {
 	addDefaultIntegerOperators(module);
 }
 
-static void addDefaultIntegerOperators(Module &module) {
+static void addDefaultIntegerOperators(Module *module) {
 	const std::array unaryIntegerOperators = {
 	      Operator::Type::Addition,
 	      Operator::Type::Subtraction,
@@ -280,19 +280,19 @@ static void addDefaultIntegerOperators(Module &module) {
 	      unaryIntegerOperators);
 }
 
-static void addSameSignIntegerTypes(Module &module,
+static void addSameSignIntegerTypes(Module *module,
       const std::span<const std::string_view> types,
       const std::span<const Operator::Type> binaryOperators,
       const std::span<const Operator::Type> unaryOperators) {
-	static const int unitTypeID = module.getType("()");
+	static const int unitTypeID = module->getType("()");
 	for (auto it = types.begin(); it != types.end(); it++) {
-		int typeID = module.getType(*it);
+		int typeID = module->getType(*it);
 		for (const auto &op : unaryOperators) {
-			module.addUnaryOperator(op, typeID, typeID);
+			module->addUnaryOperator(op, typeID, typeID);
 		}
 		for (const auto &op : binaryOperators) {
-			module.addBinaryOperator(op, typeID, typeID, typeID);
+			module->addBinaryOperator(op, typeID, typeID, typeID);
 		}
-		module.addBinaryOperator(Operator::Type::Assignment, typeID, typeID, unitTypeID);
+		module->addBinaryOperator(Operator::Type::Assignment, typeID, typeID, unitTypeID);
 	}
 }

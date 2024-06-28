@@ -13,7 +13,7 @@ struct Slice {
 	size_t col;
 	Slice(std::string_view contents, std::filesystem::path source, size_t row,
 	      size_t col);
-	Slice(const Slice &s);
+	Slice(const Slice &s) = default;
 	~Slice() = default;
 	/**
 	 * @brief Generates a new Slice beginning at start through end, picking up any
@@ -116,7 +116,7 @@ struct Operator : public Token {
 
 struct SymbolOrLiteral : public Token {
 	explicit SymbolOrLiteral(const Slice &s);
-	explicit SymbolOrLiteral(const SymbolOrLiteral &s);
+	explicit SymbolOrLiteral(const SymbolOrLiteral &s) = default;
 	virtual void print(std::ostream &os) const;
 	void compile(std::ostream &outfile) const;
 	static void compile(std::ostream &outfile, const std::string_view s);

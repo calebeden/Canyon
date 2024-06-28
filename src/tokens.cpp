@@ -10,10 +10,6 @@ Slice::Slice(std::string_view contents, std::filesystem::path source, size_t row
     : contents(contents), source(std::move(source)), row(row), col(col) {
 }
 
-Slice::Slice(const Slice &s)
-    : contents(s.contents), source(s.source), row(s.row), col(s.col) {
-}
-
 Slice Slice::merge(const Slice &start, const Slice &end) {
 	if (start.source != end.source) {
 		std::cerr << "Cannot merge slices from different sources";
@@ -247,9 +243,6 @@ void Operator::print(std::ostream &os) const {
 }
 
 SymbolOrLiteral::SymbolOrLiteral(const Slice &s) : Token(s) {
-}
-
-SymbolOrLiteral::SymbolOrLiteral(const SymbolOrLiteral &s) : Token(s) {
 }
 
 void SymbolOrLiteral::print(std::ostream &os) const {
