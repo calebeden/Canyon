@@ -1,1 +1,1 @@
-Error at {main}:2:5: Unary operator not defined for type
+Error at {main}:4:5: Unary operator not defined for type

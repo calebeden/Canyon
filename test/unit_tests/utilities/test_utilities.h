@@ -52,10 +52,12 @@ public:
 		for (; !errors.empty(); errors.pop(), expected.pop()) {
 			const auto &actual = errors.front();
 			const auto &expect = expected.front();
-			EXPECT_EQ(actual.source, std::get<0>(expect));
-			EXPECT_EQ(actual.row, std::get<1>(expect));
-			EXPECT_EQ(actual.col, std::get<2>(expect));
-			EXPECT_EQ(actual.message, std::get<3>(expect));
+			EXPECT_EQ(actual->source, std::get<0>(expect));
+			EXPECT_EQ(dynamic_cast<ErrorWithLocation *>(actual.get())->row,
+			      std::get<1>(expect));
+			EXPECT_EQ(dynamic_cast<ErrorWithLocation *>(actual.get())->col,
+			      std::get<2>(expect));
+			EXPECT_EQ(actual->message, std::get<3>(expect));
 		}
 		checked = true;
 	}

@@ -1,3 +1,5 @@
+fun main() {}
+
 fun foo(): i64 {
     1i8
 }

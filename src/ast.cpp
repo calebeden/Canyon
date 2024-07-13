@@ -8,11 +8,11 @@
 Expression::Expression(const Slice &s) : s(s) {
 }
 
-int Expression::getTypeID() const {
+unsigned long Expression::getTypeID() const {
 	return typeID;
 }
 
-void Expression::setTypeID(int typeID) {
+void Expression::setTypeID(unsigned long typeID) {
 	this->typeID = typeID;
 }
 
@@ -110,6 +110,9 @@ BlockExpression::BlockExpression(const Punctuation &open,
       finalExpression(std::move(finalExpression)) {
 }
 
+BlockExpression::BlockExpression() : Expression(Slice("", "", 0, 0)) {
+}
+
 void BlockExpression::forEachStatement(
       const std::function<void(Statement &)> &statementHandler) {
 	for (auto &statement : statements) {
@@ -137,6 +140,10 @@ void BlockExpression::setSymbolType(std::string_view symbol, int typeID) {
 	}
 }
 
+void BlockExpression::pushStatement(std::unique_ptr<Statement> statement) {
+	statements.push_back(std::move(statement));
+}
+
 void BlockExpression::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
@@ -147,6 +154,10 @@ ReturnExpression::ReturnExpression(const Keyword &returnKeyword,
                        ? returnKeyword.s
                        : Slice::merge(returnKeyword.s, expression->getSlice())),
       expression(std::move(expression)) {
+}
+
+ReturnExpression::ReturnExpression(std::unique_ptr<Expression> expression)
+    : Expression(Slice("", "", 0, 0)), expression(std::move(expression)) {
 }
 
 Expression *ReturnExpression::getExpression() {
@@ -160,6 +171,10 @@ void ReturnExpression::accept(ASTVisitor &visitor) {
 ParenthesizedExpression::ParenthesizedExpression(const Punctuation &open,
       std::unique_ptr<Expression> expression, const Punctuation &close)
     : Expression(Slice::merge(open.s, close.s)), expression(std::move(expression)) {
+}
+
+ParenthesizedExpression::ParenthesizedExpression(std::unique_ptr<Expression> expression)
+    : Expression(expression->getSlice()), expression(std::move(expression)) {
 }
 
 Expression &ParenthesizedExpression::getExpression() {
@@ -176,7 +191,7 @@ ExpressionStatement::ExpressionStatement(std::unique_ptr<Expression> expression,
       expression(std::move(expression)) {
 }
 
-ExpressionStatement::ExpressionStatement(std::unique_ptr<BlockExpression> expression)
+ExpressionStatement::ExpressionStatement(std::unique_ptr<Expression> expression)
     : Statement(expression->getSlice()), expression(std::move(expression)) {
 }
 
@@ -197,20 +212,34 @@ LetStatement::LetStatement(const Keyword &let, std::unique_ptr<Symbol> symbol,
       equalSign(std::move(equalSign)), expression(std::move(expression)) {
 }
 
+LetStatement::LetStatement(std::unique_ptr<Symbol> symbol,
+      std::unique_ptr<Expression> expression)
+    : Statement(Slice("", "", 0, 0)), symbol(std::move(symbol)), typeAnnotation(nullptr),
+      equalSign(nullptr), expression(std::move(expression)) {
+}
+
 Symbol &LetStatement::getSymbol() {
 	return *symbol;
 }
 
-Expression &LetStatement::getExpression() {
-	return *expression;
+Expression *LetStatement::getExpression() {
+	return expression.get();
 }
 
-Symbol &LetStatement::getTypeAnnotation() {
-	return *typeAnnotation;
+Symbol *LetStatement::getTypeAnnotation() {
+	return typeAnnotation.get();
 }
 
 Operator &LetStatement::getEqualSign() {
 	return *equalSign;
+}
+
+void LetStatement::setSymbolTypeID(unsigned long typeID) {
+	symbolTypeID = typeID;
+}
+
+unsigned long LetStatement::getSymbolTypeID() {
+	return symbolTypeID;
 }
 
 void LetStatement::accept(ASTVisitor &visitor) {
@@ -222,6 +251,10 @@ Function::Function(std::unique_ptr<Symbol> returnTypeAnnotation,
     : returnTypeAnnotation(std::move(returnTypeAnnotation)), body(std::move(body)) {
 }
 
+Function::Function(std::unique_ptr<BlockExpression> body)
+    : returnTypeAnnotation(nullptr), body(std::move(body)) {
+}
+
 Symbol *Function::getReturnTypeAnnotation() {
 	return returnTypeAnnotation.get();
 }
@@ -230,11 +263,11 @@ BlockExpression &Function::getBody() {
 	return *body;
 }
 
-int Function::getTypeID() const {
+unsigned long Function::getTypeID() const {
 	return typeID;
 }
 
-void Function::setTypeID(int typeID) {
+void Function::setTypeID(unsigned long typeID) {
 	this->typeID = typeID;
 }
 
@@ -242,7 +275,11 @@ void Function::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-Module::Module() {
+Type::Type(unsigned long id, unsigned long parentID, std::string_view name)
+    : id(id), parentID(parentID), name(name) {
+}
+
+Module::Module(std::filesystem::path source) : source(source) {
 	insertType("()");
 	insertType("!");
 	insertType("i8");
@@ -253,6 +290,12 @@ Module::Module() {
 	insertType("u16");
 	insertType("u32");
 	insertType("u64");
+}
+
+Module::Module(const Module &module)
+    : typeTableByName(module.typeTableByName), typeTableByID(module.typeTableByID),
+      unaryOperators(module.unaryOperators), binaryOperators(module.binaryOperators),
+      source(module.source) {
 }
 
 void Module::addFunction(std::unique_ptr<Symbol> name,
@@ -267,40 +310,50 @@ void Module::forEachFunction(
 	}
 }
 
-int Module::getType(std::string_view type) {
-	if (typeTable.find(type) == typeTable.end()) {
-		return -1;
+Type Module::getType(std::string_view type) {
+	if (typeTableByName.find(type) == typeTableByName.end()) {
+		return Type(-1UL, -1UL, "");
 	}
-	return typeTable[type];
+	return typeTableByName.at(type);
+}
+
+Type Module::getType(unsigned long id) {
+	if (typeTableByID.find(id) == typeTableByID.end()) {
+		return Type(-1UL, -1UL, "");
+	}
+	return typeTableByID.at(id);
 }
 
 void Module::insertType(std::string_view type) {
-	if (typeTable.find(type) == typeTable.end()) {
-		typeTable[type] = typeTable.size();
+	if (typeTableByName.find(type) == typeTableByName.end()) {
+		typeTableByName.insert({type, Type(typeTableByName.size(), -1UL, type)});
+		typeTableByID.insert(
+		      {typeTableByID.size(), Type(typeTableByID.size(), -1UL, type)});
 	} else {
 		std::cerr << "Type already exists";
 		exit(EXIT_FAILURE);
 	}
 }
 
-bool Module::isTypeConvertible(int from, int to) {
+bool Module::isTypeConvertible(unsigned long from, unsigned long to) {
 	if (from == to) {
 		return true;
 	}
-	if (from == getType("!")) {
+	if (from == getType("!").id) {
 		return true;
 	}
 	return false;
 }
 
-void Module::addUnaryOperator(Operator::Type op, int operandType, int resultType) {
+void Module::addUnaryOperator(Operator::Type op, unsigned long operandType,
+      unsigned long resultType) {
 	if (unaryOperators.find(op) == unaryOperators.end()) {
 		unaryOperators[op] = {};
 	}
 	unaryOperators[op].push_back({operandType, resultType});
 }
 
-int Module::getUnaryOperator(Operator::Type op, int operandType) {
+unsigned long Module::getUnaryOperator(Operator::Type op, unsigned long operandType) {
 	if (unaryOperators.find(op) == unaryOperators.end()) {
 		return -1;
 	}
@@ -312,15 +365,16 @@ int Module::getUnaryOperator(Operator::Type op, int operandType) {
 	return -1;
 }
 
-void Module::addBinaryOperator(Operator::Type op, int leftType, int rightType,
-      int resultType) {
+void Module::addBinaryOperator(Operator::Type op, unsigned long leftType,
+      unsigned long rightType, unsigned long resultType) {
 	if (binaryOperators.find(op) == binaryOperators.end()) {
 		binaryOperators[op] = {};
 	}
 	binaryOperators[op].push_back({leftType, rightType, resultType});
 }
 
-int Module::getBinaryOperator(Operator::Type op, int leftType, int rightType) {
+unsigned long Module::getBinaryOperator(Operator::Type op, unsigned long leftType,
+      unsigned long rightType) {
 	if (binaryOperators.find(op) == binaryOperators.end()) {
 		return -1;
 	}
@@ -337,6 +391,14 @@ Function *Module::getFunction(std::string_view name) {
 		return nullptr;
 	}
 	return functions[name].get();
+}
+
+std::filesystem::path Module::getSource() {
+	return source;
+}
+
+void Module::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
 }
 
 void ASTPrinter::visit(FunctionCallExpression &node) {
@@ -409,13 +471,27 @@ void ASTPrinter::visit(ExpressionStatement &node) {
 }
 
 void ASTPrinter::visit(LetStatement &node) {
-	std::cerr << "let ";
-	node.getSymbol().print(std::cerr);
-	std::cerr << ": ";
-	node.getTypeAnnotation().print(std::cerr);
-	std::cerr << " = ";
-	node.getExpression().accept(*this);
-	std::cerr << ';';
+	Expression *expression = node.getExpression();
+	Symbol *typeAnnotation = node.getTypeAnnotation();
+	if (expression != nullptr) {
+		std::cerr << "let ";
+		node.getSymbol().print(std::cerr);
+		if (typeAnnotation != nullptr) {
+			std::cerr << ": ";
+			typeAnnotation->print(std::cerr);
+		}
+		std::cerr << " = ";
+		expression->accept(*this);
+		std::cerr << ';';
+	} else {
+		std::cerr << "let ";
+		node.getSymbol().print(std::cerr);
+		if (typeAnnotation != nullptr) {
+			std::cerr << ": ";
+			typeAnnotation->print(std::cerr);
+		}
+		std::cerr << ';';
+	}
 }
 
 void ASTPrinter::visit([[maybe_unused]] Function &node) {

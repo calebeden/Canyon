@@ -11,20 +11,26 @@
 
 class ASTVisitor;
 
-class Expression {
+class ASTComponent {
+public:
+	virtual void accept(ASTVisitor &visitor) = 0;
+	virtual ~ASTComponent() = default;
+};
+
+class Expression : public ASTComponent {
 protected:
 	Slice s;
-	int typeID = -1;
+	unsigned long typeID = -1;
 	Expression(const Slice &s);
 public:
-	int getTypeID() const;
-	void setTypeID(int typeID);
+	unsigned long getTypeID() const;
+	void setTypeID(unsigned long typeID);
 	Slice &getSlice();
 	virtual void accept(ASTVisitor &visitor) = 0;
 	virtual ~Expression() = default;
 };
 
-class Statement {
+class Statement : public ASTComponent {
 protected:
 	Slice s;
 	Statement(const Slice &s);
@@ -100,10 +106,12 @@ public:
 	BlockExpression(const Punctuation &open,
 	      std::vector<std::unique_ptr<Statement>> statements,
 	      std::unique_ptr<Expression> finalExpression, const Punctuation &close);
+	BlockExpression();
 	void forEachStatement(const std::function<void(Statement &)> &statementHandler);
 	Expression *getFinalExpression();
 	int getSymbolType(std::string_view symbol);
 	void setSymbolType(std::string_view symbol, int typeID);
+	void pushStatement(std::unique_ptr<Statement> statement);
 	void accept(ASTVisitor &visitor) override;
 	virtual ~BlockExpression() = default;
 };
@@ -113,6 +121,7 @@ class ReturnExpression : public Expression {
 public:
 	ReturnExpression(const Keyword &returnKeyword,
 	      std::unique_ptr<Expression> expression);
+	ReturnExpression(std::unique_ptr<Expression> expression);
 	Expression *getExpression();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~ReturnExpression() = default;
@@ -124,6 +133,7 @@ private:
 public:
 	ParenthesizedExpression(const Punctuation &open,
 	      std::unique_ptr<Expression> expression, const Punctuation &close);
+	explicit ParenthesizedExpression(std::unique_ptr<Expression> expression);
 	Expression &getExpression();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~ParenthesizedExpression() = default;
@@ -135,7 +145,7 @@ private:
 public:
 	ExpressionStatement(std::unique_ptr<Expression> expression,
 	      const Punctuation &semicolon);
-	ExpressionStatement(std::unique_ptr<BlockExpression> expression);
+	ExpressionStatement(std::unique_ptr<Expression> expression);
 	Expression &getExpression();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~ExpressionStatement() = default;
@@ -147,55 +157,79 @@ private:
 	std::unique_ptr<Symbol> typeAnnotation;
 	std::unique_ptr<Operator> equalSign;
 	std::unique_ptr<Expression> expression;
+	unsigned long symbolTypeID = -1;
 public:
 	LetStatement(const Keyword &let, std::unique_ptr<Symbol> symbol,
 	      std::unique_ptr<Symbol> typeAnnotation, std::unique_ptr<Operator> equalSign,
 	      std::unique_ptr<Expression> expression, Punctuation *semicolon);
+	LetStatement(std::unique_ptr<Symbol> symbol, std::unique_ptr<Expression> expression);
 	Symbol &getSymbol();
-	Expression &getExpression();
-	Symbol &getTypeAnnotation();
+	Expression *getExpression();
+	Symbol *getTypeAnnotation();
 	Operator &getEqualSign();
+	void setSymbolTypeID(unsigned long typeID);
+	unsigned long getSymbolTypeID();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~LetStatement() = default;
 };
 
-class Function {
+class Function : public ASTComponent {
 private:
 	std::unique_ptr<Symbol> returnTypeAnnotation;
 	std::unique_ptr<BlockExpression> body;
-	int typeID = -1;
+	unsigned long typeID = -1;
 public:
 	Function(std::unique_ptr<Symbol> returnTypeAnnotation,
 	      std::unique_ptr<BlockExpression> body);
+	Function(std::unique_ptr<BlockExpression> body);
 	Symbol *getReturnTypeAnnotation();
 	BlockExpression &getBody();
-	int getTypeID() const;
-	void setTypeID(int typeID);
+	unsigned long getTypeID() const;
+	void setTypeID(unsigned long typeID);
 	void accept(ASTVisitor &visitor);
 	~Function() = default;
 };
 
-class Module {
+struct Type {
+	unsigned long id;
+	unsigned long parentID;
+	std::string_view name;
+	Type(unsigned long id, unsigned long parentID, std::string_view name);
+	Type(const Type &) = default;
+};
+
+class Module : public ASTComponent {
 private:
 	std::unordered_map<std::string_view, std::unique_ptr<Function>> functions;
-	std::unordered_map<std::string_view, int> typeTable;
-	std::unordered_map<Operator::Type, std::vector<std::tuple<int, int>>> unaryOperators;
-	std::unordered_map<Operator::Type, std::vector<std::tuple<int, int, int>>>
+	std::unordered_map<std::string_view, Type> typeTableByName;
+	std::unordered_map<unsigned long, Type> typeTableByID;
+	std::unordered_map<Operator::Type,
+	      std::vector<std::tuple<unsigned long, unsigned long>>>
+	      unaryOperators;
+	std::unordered_map<Operator::Type,
+	      std::vector<std::tuple<unsigned long, unsigned long, unsigned long>>>
 	      binaryOperators;
+	std::filesystem::path source;
 public:
-	Module();
+	explicit Module(std::filesystem::path source);
+	explicit Module(const Module &module);
 	void addFunction(std::unique_ptr<Symbol> name, std::unique_ptr<Function> function);
 	void forEachFunction(
 	      const std::function<void(std::string_view, Function &)> &functionHandler);
-	int getType(std::string_view type);
-	void insertType(std::string_view type);
-	bool isTypeConvertible(int from, int to);
-	void addUnaryOperator(Operator::Type op, int operandType, int resultType);
-	int getUnaryOperator(Operator::Type op, int operandType);
-	void addBinaryOperator(Operator::Type op, int leftType, int rightType,
-	      int resultType);
-	int getBinaryOperator(Operator::Type op, int leftType, int rightType);
+	Type getType(std::string_view name);
+	Type getType(unsigned long id);
+	void insertType(std::string_view name);
+	bool isTypeConvertible(unsigned long from, unsigned long to);
+	void addUnaryOperator(Operator::Type op, unsigned long operandType,
+	      unsigned long resultType);
+	unsigned long getUnaryOperator(Operator::Type op, unsigned long operandType);
+	void addBinaryOperator(Operator::Type op, unsigned long leftType,
+	      unsigned long rightType, unsigned long resultType);
+	unsigned long getBinaryOperator(Operator::Type op, unsigned long leftType,
+	      unsigned long rightType);
 	Function *getFunction(std::string_view name);
+	std::filesystem::path getSource();
+	void accept(ASTVisitor &visitor);
 	~Module() = default;
 };
 

@@ -1,4 +1,4 @@
-fun foo() {
+fun main() {
     return;
     1;
 }

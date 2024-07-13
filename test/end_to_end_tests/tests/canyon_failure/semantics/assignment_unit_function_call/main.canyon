@@ -1,6 +1,6 @@
-fun foo() {
+fun main() {
     let a: i32 = 1;
-    a = bar();
+    a = foo();
 }
 
-fun bar() {}
+fun foo() {}

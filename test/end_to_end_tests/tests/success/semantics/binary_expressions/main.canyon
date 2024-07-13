@@ -1,3 +1,5 @@
+fun main() {}
+
 fun foo() {
     let a: i32 = 1 + 1;
     let b: i8 = 1i8 + 1i8;
@@ -9,5 +11,4 @@ fun foo() {
     let g: u16 = 1u16 + 1u16;
     let h: u32 = 1u32 + 1u32;
     let i: u64 = 1u64 + 1u64;
-
 }

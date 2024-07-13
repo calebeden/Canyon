@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <memory>
 #include <queue>
 #include <string>
 
@@ -19,18 +20,28 @@ protected:
 	struct Error {
 		std::string message;
 		std::filesystem::path source;
-		size_t row;
-		size_t col;
-		Error(std::filesystem::path source, size_t row, size_t col, std::string message);
+		Error(std::filesystem::path source, std::string message);
+		virtual std::string toString();
+		virtual ~Error() = default;
 	};
 
-	std::queue<Error> errors;
+	struct ErrorWithLocation : Error {
+		size_t row;
+		size_t col;
+		ErrorWithLocation(std::filesystem::path source, size_t row, size_t col,
+		      std::string message);
+		std::string toString() override;
+		virtual ~ErrorWithLocation() = default;
+	};
+
+	std::queue<std::unique_ptr<Error>> errors;
 public:
 	ErrorHandler() = default;
 	test_virtual void error(const Slice &slice, std::string message);
 	test_virtual void error(const Token &token, std::string message);
 	test_virtual void error(std::filesystem::path source, size_t row, size_t col,
 	      std::string message);
+	test_virtual void error(std::filesystem::path source, std::string message);
 	test_virtual bool handleErrors(std::ostream &os);
 	test_virtual ~ErrorHandler() = default;
 };

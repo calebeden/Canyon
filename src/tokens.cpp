@@ -142,7 +142,7 @@ void Punctuation::print(std::ostream &os) const {
 	}
 }
 
-Operator::Operator(Token *t, Type type) : Token(t->s), type(type) {
+Operator::Operator(const Token &t, Type type) : Token(t.s), type(type) {
 }
 
 void Operator::print(std::ostream &os) const {

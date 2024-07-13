@@ -1,5 +1,5 @@
-fun foo() {
-    let a: i32 = (bar());
+fun main() {
+    let a: i32 = (foo());
 }
 
-fun bar() {}
+fun foo() {}

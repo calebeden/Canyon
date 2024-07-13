@@ -1,3 +1,5 @@
+fun main() {}
+
 fun foo() {
     let bar: i32 = 1;
     bar()

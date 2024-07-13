@@ -74,7 +74,7 @@ static constexpr std::array operators = {
 
 class TestLexer : public testing::Test {
 public:
-	TestLexer() : l("", "", e) {
+	TestLexer() : l("", "", &e) {
 	}
 protected:
 	NoErrorHandler e;
@@ -84,7 +84,7 @@ protected:
 
 class TestLexerError : public testing::Test {
 public:
-	TestLexerError() : l("", "", e) {
+	TestLexerError() : l("", "", &e) {
 	}
 protected:
 	HasErrorHandler e;
@@ -118,7 +118,7 @@ class TestLexerInvalidLiterals
  */
 TEST(testLexer, testConstructor) {
 	NoErrorHandler e;
-	EXPECT_THROW(Lexer("", "", e, 0), std::invalid_argument);
+	EXPECT_THROW(Lexer("", "", &e, 0), std::invalid_argument);
 }
 
 /**
@@ -126,7 +126,7 @@ TEST(testLexer, testConstructor) {
  *
  */
 TEST_F(TestLexer, testEmpty) {
-	l = Lexer("", "", e);
+	l = Lexer("", "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[0].get()));
@@ -139,7 +139,7 @@ TEST_F(TestLexer, testWhitespace) {
 	// Test 1: Single whitespace characters
 	for (const auto c : whitespaces) {
 		const std::string program = std::string(1, c);
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 1);
 		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[0].get()));
@@ -148,7 +148,7 @@ TEST_F(TestLexer, testWhitespace) {
 	// Test 2: Double whitespace characters
 	for (const auto c : whitespaces) {
 		const std::string program = std::string(1, c) + std::string(1, c);
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 1);
 		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[0].get()));
@@ -158,7 +158,7 @@ TEST_F(TestLexer, testWhitespace) {
 	for (const auto c1 : whitespaces) {
 		for (const auto c2 : whitespaces) {
 			const std::string program = std::string(1, c1) + std::string(1, c2);
-			l = Lexer(program, "", e);
+			l = Lexer(program, "", &e);
 			tokens = l.lex();
 			EXPECT_EQ(tokens.size(), 1);
 			EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[0].get()));
@@ -170,7 +170,7 @@ TEST_F(TestLexer, testWhitespace) {
 	do {
 		const std::string permutation
 		      = std::string(whitespaces2.begin(), whitespaces2.end());
-		l = Lexer(permutation, "", e);
+		l = Lexer(permutation, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 1);
 		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[0].get()));
@@ -196,7 +196,7 @@ TEST_F(TestLexer, testSinglePunctuation) {
 		const char c = pair.first;
 		const Punctuation::Type punctuation = pair.second;
 		const std::string program = std::string(1, c);
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
 		std::optional<Operator::Type> op = getOperator(std::string(1, c));
@@ -224,7 +224,7 @@ TEST_F(TestLexer, testTwoPunctuation) {
 			const char c2 = pair2.first;
 			const Punctuation::Type punctuation2 = pair2.second;
 			const std::string combo = std::string(1, c1) + std::string(1, c2);
-			l = Lexer(combo, "", e);
+			l = Lexer(combo, "", &e);
 			tokens = l.lex();
 			const std::optional<Operator::Type> op = getOperator(combo);
 			if (op.has_value()) {
@@ -273,7 +273,7 @@ TEST_F(TestLexer, testThreePunctuation) {
 				const Punctuation::Type punctuation3 = pair3.second;
 				const std::string combo
 				      = std::string(1, c1) + std::string(1, c2) + std::string(1, c3);
-				l = Lexer(combo, "", e);
+				l = Lexer(combo, "", &e);
 				tokens = l.lex();
 				const std::optional<Operator::Type> op = getOperator(combo);
 				if (op.has_value()) {
@@ -367,7 +367,7 @@ TEST_F(TestLexer, testPunctuationWhitespace) {
 		const Punctuation::Type punctuation = pair.second;
 		for (const auto ws : whitespaces) {
 			std::string program = std::string(1, c) + std::string(1, ws);
-			l = Lexer(program, "", e);
+			l = Lexer(program, "", &e);
 			tokens = l.lex();
 			EXPECT_EQ(tokens.size(), 2);
 			const std::optional<Operator::Type> op1 = getOperator(std::string(1, c));
@@ -379,7 +379,7 @@ TEST_F(TestLexer, testPunctuationWhitespace) {
 			}
 			EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 			program = std::string(1, ws) + std::string(1, c);
-			l = Lexer(program, "", e);
+			l = Lexer(program, "", &e);
 			tokens = l.lex();
 			EXPECT_EQ(tokens.size(), 2);
 			const std::optional<Operator::Type> op2 = getOperator(std::string(1, c));
@@ -391,7 +391,7 @@ TEST_F(TestLexer, testPunctuationWhitespace) {
 			}
 			EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 			program = std::string(1, ws) + std::string(1, c) + std::string(1, ws);
-			l = Lexer(program, "", e);
+			l = Lexer(program, "", &e);
 			tokens = l.lex();
 			EXPECT_EQ(tokens.size(), 2);
 			const std::optional<Operator::Type> op3 = getOperator(std::string(1, c));
@@ -417,7 +417,7 @@ TEST_F(TestLexer, testMulticharOperators) {
 		if (op.size() == 1) {
 			continue;
 		}
-		l = Lexer(op, "", e);
+		l = Lexer(op, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
 		EXPECT_EQ(dynamic_cast<Operator *>(tokens[0].get())->type, pair.second);
@@ -427,7 +427,7 @@ TEST_F(TestLexer, testMulticharOperators) {
 			for (size_t i = 1; i < op.size(); i++) {
 				program += ws + op.substr(i, 1);
 			}
-			l = Lexer(program, "", e);
+			l = Lexer(program, "", &e);
 			tokens = l.lex();
 			EXPECT_EQ(tokens.size(), op.size() + 1);
 			for (size_t i = 0; i < op.size(); i++) {
@@ -446,7 +446,7 @@ TEST_P(TestLexerKeywords, testKeywords) {
 	// Test 1: substring prefixes
 	for (size_t i = 0; i < keyword_str.size() - 1; i++) {
 		const std::string program = keyword_str.substr(0, i + 1);
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
 		EXPECT_FALSE(dynamic_cast<Keyword *>(tokens[0].get()));
@@ -454,7 +454,7 @@ TEST_P(TestLexerKeywords, testKeywords) {
 	}
 
 	// Test 2: actual keyword
-	l = Lexer(keyword_str, "", e);
+	l = Lexer(keyword_str, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(dynamic_cast<Keyword *>(tokens[0].get())->type, keyword_type);
@@ -463,7 +463,7 @@ TEST_P(TestLexerKeywords, testKeywords) {
 	// Test 3: alphanumeric suffixes
 	for (const auto &suffix : {"x", "0"}) {
 		const std::string program = keyword_str + suffix;
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
 		EXPECT_FALSE(dynamic_cast<Keyword *>(tokens[0].get()));
@@ -473,7 +473,7 @@ TEST_P(TestLexerKeywords, testKeywords) {
 	// Test 4: whitespace suffixes
 	for (const auto suffix : whitespaces) {
 		const std::string program = keyword_str + suffix;
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
 		EXPECT_EQ(dynamic_cast<Keyword *>(tokens[0].get())->type, keyword_type);
@@ -483,7 +483,7 @@ TEST_P(TestLexerKeywords, testKeywords) {
 	// Test 5: whitespace prefixes
 	for (const auto prefix : whitespaces) {
 		const std::string program = prefix + keyword_str;
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
 		EXPECT_EQ(dynamic_cast<Keyword *>(tokens[0].get())->type, keyword_type);
@@ -494,7 +494,7 @@ TEST_P(TestLexerKeywords, testKeywords) {
 	for (const auto &suffix : punctuations) {
 		const char c = suffix.first;
 		const std::string program = keyword_str + c;
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 3);
 		EXPECT_EQ(dynamic_cast<Keyword *>(tokens[0].get())->type, keyword_type);
@@ -506,7 +506,7 @@ TEST_P(TestLexerKeywords, testKeywords) {
 	// Test 7: punctuation prefixes
 	for (const auto &prefix : punctuations) {
 		const std::string program = prefix.first + keyword_str;
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 3);
 		EXPECT_TRUE(dynamic_cast<Punctuation *>(tokens[0].get())
@@ -523,7 +523,7 @@ INSTANTIATE_TEST_SUITE_P(testKeywords, TestLexerKeywords,
 TEST_P(TestLexerSymbols, testSymbols) {
 	const std::string symbol = GetParam();
 	// Test 1: Single symbol
-	l = Lexer(symbol, "", e);
+	l = Lexer(symbol, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(dynamic_cast<Symbol *>(tokens[0].get())->s.contents, symbol);
@@ -532,7 +532,7 @@ TEST_P(TestLexerSymbols, testSymbols) {
 	// Test 2: whitespace suffixes
 	for (const auto suffix : whitespaces) {
 		const std::string program = symbol + suffix;
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
 		EXPECT_EQ(dynamic_cast<Symbol *>(tokens[0].get())->s.contents, symbol);
@@ -542,7 +542,7 @@ TEST_P(TestLexerSymbols, testSymbols) {
 	// Test 3: whitespace prefixes
 	for (const auto prefix : whitespaces) {
 		const std::string program = prefix + symbol;
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
 		EXPECT_EQ(dynamic_cast<Symbol *>(tokens[0].get())->s.contents, symbol);
@@ -552,7 +552,7 @@ TEST_P(TestLexerSymbols, testSymbols) {
 	// Test 4: punctuation suffixes
 	for (const auto &suffix : punctuations) {
 		const std::string program = symbol + suffix.first;
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 3);
 		EXPECT_EQ(dynamic_cast<Symbol *>(tokens[0].get())->s.contents, symbol);
@@ -564,7 +564,7 @@ TEST_P(TestLexerSymbols, testSymbols) {
 	// Test 5: punctuation prefixes
 	for (const auto &prefix : punctuations) {
 		const std::string program = prefix.first + symbol;
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 3);
 		EXPECT_TRUE(dynamic_cast<Punctuation *>(tokens[0].get())
@@ -582,7 +582,7 @@ TEST_P(TestLexerLiterals, testLiterals) {
 	// Test 1: Single literals
 	const std::string literal_str = GetParam().first;
 	const IntegerLiteral expected = GetParam().second;
-	l = Lexer(literal_str, "", e);
+	l = Lexer(literal_str, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(*dynamic_cast<IntegerLiteral *>(tokens[0].get()), expected);
@@ -591,7 +591,7 @@ TEST_P(TestLexerLiterals, testLiterals) {
 	// Test 2: whitespace suffixes
 	for (const auto suffix : whitespaces) {
 		const std::string program = literal_str + suffix;
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
 		EXPECT_EQ(*dynamic_cast<IntegerLiteral *>(tokens[0].get()), expected);
@@ -601,7 +601,7 @@ TEST_P(TestLexerLiterals, testLiterals) {
 	// Test 3: whitespace prefixes
 	for (const auto prefix : whitespaces) {
 		const std::string program = prefix + literal_str;
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
 		EXPECT_EQ(*dynamic_cast<IntegerLiteral *>(tokens[0].get()), expected);
@@ -611,7 +611,7 @@ TEST_P(TestLexerLiterals, testLiterals) {
 	// Test 4: punctuation suffixes
 	for (const auto &suffix : punctuations) {
 		const std::string program = literal_str + suffix.first;
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 3);
 		EXPECT_EQ(*dynamic_cast<IntegerLiteral *>(tokens[0].get()), expected);
@@ -623,7 +623,7 @@ TEST_P(TestLexerLiterals, testLiterals) {
 	// Test 5: punctuation prefixes
 	for (const auto &prefix : punctuations) {
 		const std::string program = prefix.first + literal_str;
-		l = Lexer(program, "", e);
+		l = Lexer(program, "", &e);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 3);
 		EXPECT_TRUE(dynamic_cast<Punctuation *>(tokens[0].get())
@@ -906,7 +906,7 @@ INSTANTIATE_TEST_SUITE_P(testBinaryLiterals, TestLexerLiterals,
 TEST_P(TestLexerInvalidLiterals, testLiteralErrors) {
 	const std::string literal_str = GetParam().first;
 	const auto &expect = GetParam().second;
-	l = Lexer(literal_str, "", e);
+	l = Lexer(literal_str, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
@@ -1001,21 +1001,21 @@ INSTANTIATE_TEST_SUITE_P(testInvalidBinaryLiterals, TestLexerInvalidLiterals,
 
 TEST_F(TestLexer, testNewlines) {
 	std::string program = "x";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 1);
 	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "x\n";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 1);
 	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "x\n\n";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1023,14 +1023,14 @@ TEST_F(TestLexer, testNewlines) {
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "\nx";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 2);
 	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "\n\nx";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 3);
@@ -1038,7 +1038,7 @@ TEST_F(TestLexer, testNewlines) {
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "x\ny";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1047,7 +1047,7 @@ TEST_F(TestLexer, testNewlines) {
 	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\n\ny";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1056,7 +1056,7 @@ TEST_F(TestLexer, testNewlines) {
 	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\ny\nz";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1068,7 +1068,7 @@ TEST_F(TestLexer, testNewlines) {
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 
 	program = "\nx\ny";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 2);
@@ -1080,21 +1080,21 @@ TEST_F(TestLexer, testNewlines) {
 
 TEST_F(TestLexer, testCarriageReturns) {
 	std::string program = "x";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 1);
 	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "x\r";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 1);
 	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "x\r\r";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1102,14 +1102,14 @@ TEST_F(TestLexer, testCarriageReturns) {
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "\rx";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 2);
 	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "\r\rx";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 3);
@@ -1117,7 +1117,7 @@ TEST_F(TestLexer, testCarriageReturns) {
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "x\ry";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1126,7 +1126,7 @@ TEST_F(TestLexer, testCarriageReturns) {
 	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\r\ry";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1135,7 +1135,7 @@ TEST_F(TestLexer, testCarriageReturns) {
 	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\ry\rz";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1147,7 +1147,7 @@ TEST_F(TestLexer, testCarriageReturns) {
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 
 	program = "\rx\ry";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 2);
@@ -1159,21 +1159,21 @@ TEST_F(TestLexer, testCarriageReturns) {
 
 TEST_F(TestLexer, testWindowsLineEndings) {
 	std::string program = "x";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 1);
 	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "x\r\n";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 1);
 	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "x\r\n\r\n";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1181,14 +1181,14 @@ TEST_F(TestLexer, testWindowsLineEndings) {
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "\r\nx";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 2);
 	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "\r\n\r\nx";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 3);
@@ -1196,7 +1196,7 @@ TEST_F(TestLexer, testWindowsLineEndings) {
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "x\r\ny";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1205,7 +1205,7 @@ TEST_F(TestLexer, testWindowsLineEndings) {
 	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\r\n\r\ny";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1214,7 +1214,7 @@ TEST_F(TestLexer, testWindowsLineEndings) {
 	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\r\ny\r\nz";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1226,7 +1226,7 @@ TEST_F(TestLexer, testWindowsLineEndings) {
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 
 	program = "\r\nx\r\ny";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 2);
@@ -1238,28 +1238,28 @@ TEST_F(TestLexer, testWindowsLineEndings) {
 
 TEST_F(TestLexer, testColumnNumbering) {
 	std::string program = "x";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 1);
 	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = " x";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 1);
 	EXPECT_EQ(tokens[0]->s.col, 2);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "  x";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 1);
 	EXPECT_EQ(tokens[0]->s.col, 3);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "   x";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1267,28 +1267,28 @@ TEST_F(TestLexer, testColumnNumbering) {
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "\nx";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 2);
 	EXPECT_EQ(tokens[0]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "\n x";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 2);
 	EXPECT_EQ(tokens[0]->s.col, 2);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "\n  x";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 2);
 	EXPECT_EQ(tokens[0]->s.col, 3);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	program = "\n   x";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.row, 2);
@@ -1296,7 +1296,7 @@ TEST_F(TestLexer, testColumnNumbering) {
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 
 	program = "x\ny";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1305,7 +1305,7 @@ TEST_F(TestLexer, testColumnNumbering) {
 	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = " x\ny";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1314,7 +1314,7 @@ TEST_F(TestLexer, testColumnNumbering) {
 	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\n y";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1323,7 +1323,7 @@ TEST_F(TestLexer, testColumnNumbering) {
 	EXPECT_EQ(tokens[1]->s.col, 2);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = " x\n y";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1332,7 +1332,7 @@ TEST_F(TestLexer, testColumnNumbering) {
 	EXPECT_EQ(tokens[1]->s.col, 2);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x \ny";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 3);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1341,7 +1341,7 @@ TEST_F(TestLexer, testColumnNumbering) {
 	EXPECT_EQ(tokens[1]->s.col, 1);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[2].get()));
 	program = "x\n y\nz";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1353,7 +1353,7 @@ TEST_F(TestLexer, testColumnNumbering) {
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 
 	program = "123 567 90";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1364,7 +1364,7 @@ TEST_F(TestLexer, testColumnNumbering) {
 	EXPECT_EQ(tokens[2]->s.col, 9);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 	program = "12  56  90";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1375,7 +1375,7 @@ TEST_F(TestLexer, testColumnNumbering) {
 	EXPECT_EQ(tokens[2]->s.col, 9);
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 	program = "1    6  9";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 4);
 	EXPECT_EQ(tokens[0]->s.row, 1);
@@ -1387,7 +1387,7 @@ TEST_F(TestLexer, testColumnNumbering) {
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[3].get()));
 
 	program = "1;2,3-4*5!6&7||8::9";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 18);
 	// 1
@@ -1446,7 +1446,7 @@ TEST_F(TestLexer, testColumnNumbering) {
 TEST_F(TestLexer, testTabSizeConfiguration) {
 	// Default tab width (4)
 	const std::string program = "\tx";
-	l = Lexer(program, "", e);
+	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
 	EXPECT_EQ(tokens[0]->s.col, 5);
@@ -1456,14 +1456,14 @@ TEST_F(TestLexer, testTabSizeConfiguration) {
 	for (uint32_t tabSize = 1; tabSize <= 10; tabSize++) {
 		std::string program = "\tx";
 		for (uint32_t i = 0; i < tabSize; i++) {
-			l = Lexer(program, "", e, tabSize);
+			l = Lexer(program, "", &e, tabSize);
 			tokens = l.lex();
 			EXPECT_EQ(tokens.size(), 2);
 			EXPECT_EQ(tokens[0]->s.col, tabSize + 1);
 			EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 			program = " " + program;
 		}
-		l = Lexer(program, "", e, tabSize);
+		l = Lexer(program, "", &e, tabSize);
 		tokens = l.lex();
 		EXPECT_EQ(tokens.size(), 2);
 		EXPECT_EQ(tokens[0]->s.col, 2 * tabSize + 1);

@@ -1,7 +1,7 @@
-fun foo() {
-    bar()
+fun main() {
+    foo()
 }
 
-fun bar(): i32 {
+fun foo(): i32 {
     1
 }

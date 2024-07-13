@@ -1,3 +1,5 @@
+fun main() {}
+
 fun foo(): i32 {
     1i16 + 1i32
 }

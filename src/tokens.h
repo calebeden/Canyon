@@ -109,7 +109,7 @@ struct Operator : public Token {
 		BitwiseShiftRight,
 	};
 	Type type;
-	explicit Operator(Token *t, Type type);
+	explicit Operator(const Token &t, Type type);
 	virtual void print(std::ostream &os) const;
 	virtual ~Operator() = default;
 };

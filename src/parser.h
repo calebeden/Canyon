@@ -11,11 +11,13 @@
 
 class Parser {
 	std::vector<std::unique_ptr<Token>> tokens;
-	ErrorHandler &errorHandler;
+	ErrorHandler *errorHandler;
 	size_t i = 0;
 	bool mustSynchronize = false;
+	std::filesystem::path source;
 public:
-	Parser(std::vector<std::unique_ptr<Token>> tokens, ErrorHandler &errorHandler);
+	Parser(std::filesystem::path source, std::vector<std::unique_ptr<Token>> tokens,
+	      ErrorHandler *errorHandler);
 	std::unique_ptr<Module> parse();
 	~Parser() = default;
 private:

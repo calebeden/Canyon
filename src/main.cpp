@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "ccodegenerator.h"
 #include "errorhandler.h"
 #include "lexer.h"
 #include "parser.h"
@@ -40,20 +41,20 @@ int main(int argc, char **argv) {
 
 	ErrorHandler errorHandler;
 
-	Lexer l = Lexer(fileData, infileName, errorHandler);
+	Lexer l = Lexer(fileData, infileName, &errorHandler);
 	std::vector<std::unique_ptr<Token>> tokens = l.lex();
 	if (errorHandler.handleErrors(std::cerr)) {
 		return EXIT_FAILURE;
 	}
 
-	Parser p = Parser(std::move(tokens), errorHandler);
+	Parser p = Parser(infileName, std::move(tokens), &errorHandler);
 	std::unique_ptr<Module> mod = p.parse();
 	if (errorHandler.handleErrors(std::cerr)) {
 		return EXIT_FAILURE;
 	}
 
-	SemanticAnalyzer analyzer = SemanticAnalyzer(std::move(mod), errorHandler);
-	analyzer.analyze();
+	SemanticAnalyzer analyzer = SemanticAnalyzer(std::move(mod), &errorHandler);
+	mod = analyzer.analyze();
 	if (errorHandler.handleErrors(std::cerr)) {
 		return EXIT_FAILURE;
 	}
@@ -66,7 +67,8 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	outfile << "// Compiled code\nint main() { return 0; }\n";
+	CCodeGenerator codeGenerator = CCodeGenerator(std::move(mod), &outfile);
+	codeGenerator.generate();
 
 	// Close the files
 	outfile.close();

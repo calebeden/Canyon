@@ -1,4 +1,4 @@
-fun foo() {
+fun main() {
     let a: i8 = 1i8;
     a = 1i32;
 }

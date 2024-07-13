@@ -54,7 +54,7 @@ class TestParserAssociativityLeftBinary
 TEST_F(TestParser, testEmpty) {
 	std::vector<std::unique_ptr<Token>> tokens;
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]] std::string_view s, [[maybe_unused]]
 	                                                             Function &f) {
@@ -73,7 +73,7 @@ TEST_F(TestParser, testEmptyFunction) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	int functionCount = 0;
 	mod->forEachFunction([&functionCount](std::string_view name, Function &f) {
@@ -105,7 +105,7 @@ TEST_F(TestParser, testFunctionWithExpression) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	int functionCount = 0;
 	mod->forEachFunction([&functionCount](std::string_view name, Function &f) {
@@ -141,7 +141,7 @@ TEST_F(TestParser, testFunctionWithStatement) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Semicolon));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	int functionCount = 0;
 	mod->forEachFunction([&functionCount](std::string_view name, Function &f) {
@@ -177,7 +177,7 @@ TEST_F(TestParser, testFunctionWithStatementAndExpression) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("y", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	int functionCount = 0;
 	mod->forEachFunction([&functionCount](std::string_view name, Function &f) {
@@ -219,7 +219,7 @@ TEST_F(TestParser, testFunctionWithMultipleStatements) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Semicolon));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	int functionCount = 0;
 	mod->forEachFunction([&functionCount](std::string_view name, Function &f) {
@@ -260,7 +260,7 @@ TEST_F(TestParser, testFunctionWithMultipleStatementsAndExpression) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("w", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	int functionCount = 0;
 	mod->forEachFunction([&functionCount](std::string_view name, Function &f) {
@@ -307,7 +307,7 @@ TEST_F(TestParser, testMultipleFunctions) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("y", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	int functionCount = 0;
 	bool seenFoo = false;
@@ -367,7 +367,7 @@ TEST_F(TestParser, testIntegerLiteral) {
 	      std::make_unique<IntegerLiteral>(dummy, IntegerLiteral::Type::I32, 1));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -394,7 +394,7 @@ TEST_F(TestParser, testSymbol) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -423,7 +423,7 @@ TEST_F(TestParser, testParenthesizedExpression) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseParen));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -453,7 +453,7 @@ TEST_F(TestParser, testFunctionCall) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseParen));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view s,
@@ -478,12 +478,12 @@ TEST_P(TestParserUnaryOperators, testUnary) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
-	tokens.push_back(std::make_unique<Operator>(&dummy, op));
+	tokens.push_back(std::make_unique<Operator>(dummy, op));
 	tokens.push_back(
 	      std::make_unique<IntegerLiteral>(dummy, IntegerLiteral::Type::I32, 1));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([op]([[maybe_unused]]
 	                           std::string_view name,
@@ -516,12 +516,12 @@ TEST_P(TestParserBinaryOperators, testBinary) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(
 	      std::make_unique<IntegerLiteral>(dummy, IntegerLiteral::Type::I32, 1));
-	tokens.push_back(std::make_unique<Operator>(&dummy, op));
+	tokens.push_back(std::make_unique<Operator>(dummy, op));
 	tokens.push_back(
 	      std::make_unique<IntegerLiteral>(dummy, IntegerLiteral::Type::I32, 2));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([op]([[maybe_unused]]
 	                           std::string_view name,
@@ -567,7 +567,7 @@ TEST_F(TestParser, testReturnExpression) {
 	      std::make_unique<IntegerLiteral>(dummy, IntegerLiteral::Type::I32, 1));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -596,7 +596,7 @@ TEST_F(TestParser, testReturnUnit) {
 	tokens.push_back(std::make_unique<Keyword>(s, Keyword::Type::RETURN));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -625,7 +625,7 @@ TEST_F(TestParser, testBlockExpression) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -653,13 +653,13 @@ TEST_F(TestParser, testPrecedenceUnaryFunctionCall) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::LogicalNot));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::LogicalNot));
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenParen));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseParen));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view s,
@@ -688,13 +688,13 @@ TEST_F(TestParser, testPrecedenceFunctionCallMultiplicative) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenParen));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseParen));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Multiplication));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Multiplication));
 	tokens.push_back(std::make_unique<Symbol>(Slice("y", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenParen));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseParen));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -724,15 +724,15 @@ TEST_F(TestParser, testPrecedenceMultiplicativeAdditive) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Multiplication));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Multiplication));
 	tokens.push_back(std::make_unique<Symbol>(Slice("b", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Addition));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Addition));
 	tokens.push_back(std::make_unique<Symbol>(Slice("c", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Division));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Division));
 	tokens.push_back(std::make_unique<Symbol>(Slice("d", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -768,16 +768,15 @@ TEST_F(TestParser, testPrecedenceAdditiveBitshift) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Addition));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Addition));
 	tokens.push_back(std::make_unique<Symbol>(Slice("b", "", 0, 0)));
-	tokens.push_back(
-	      std::make_unique<Operator>(&dummy, Operator::Type::BitwiseShiftLeft));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseShiftLeft));
 	tokens.push_back(std::make_unique<Symbol>(Slice("c", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Subtraction));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Subtraction));
 	tokens.push_back(std::make_unique<Symbol>(Slice("d", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -813,17 +812,16 @@ TEST_F(TestParser, testPrecedenceBitshiftBitwiseAnd) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
-	tokens.push_back(
-	      std::make_unique<Operator>(&dummy, Operator::Type::BitwiseShiftLeft));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseShiftLeft));
 	tokens.push_back(std::make_unique<Symbol>(Slice("b", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::BitwiseAnd));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseAnd));
 	tokens.push_back(std::make_unique<Symbol>(Slice("c", "", 0, 0)));
 	tokens.push_back(
-	      std::make_unique<Operator>(&dummy, Operator::Type::BitwiseShiftRight));
+	      std::make_unique<Operator>(dummy, Operator::Type::BitwiseShiftRight));
 	tokens.push_back(std::make_unique<Symbol>(Slice("d", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -859,15 +857,15 @@ TEST_F(TestParser, testPrecedenceBitwiseAndBitwiseXor) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::BitwiseAnd));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseAnd));
 	tokens.push_back(std::make_unique<Symbol>(Slice("b", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::BitwiseXor));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseXor));
 	tokens.push_back(std::make_unique<Symbol>(Slice("c", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::BitwiseAnd));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseAnd));
 	tokens.push_back(std::make_unique<Symbol>(Slice("d", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -903,15 +901,15 @@ TEST_F(TestParser, testPrecedenceBitwiseXorBitwiseOr) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::BitwiseXor));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseXor));
 	tokens.push_back(std::make_unique<Symbol>(Slice("b", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::BitwiseOr));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseOr));
 	tokens.push_back(std::make_unique<Symbol>(Slice("c", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::BitwiseXor));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseXor));
 	tokens.push_back(std::make_unique<Symbol>(Slice("d", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -947,15 +945,15 @@ TEST_F(TestParser, testPrecedenceBitwiseOrRelational) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::BitwiseOr));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseOr));
 	tokens.push_back(std::make_unique<Symbol>(Slice("b", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::LessThan));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::LessThan));
 	tokens.push_back(std::make_unique<Symbol>(Slice("c", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::BitwiseOr));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseOr));
 	tokens.push_back(std::make_unique<Symbol>(Slice("d", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -991,15 +989,15 @@ TEST_F(TestParser, testPrecedenceRelationalLogicalAnd) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::LessThan));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::LessThan));
 	tokens.push_back(std::make_unique<Symbol>(Slice("b", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::LogicalAnd));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::LogicalAnd));
 	tokens.push_back(std::make_unique<Symbol>(Slice("c", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::GreaterThan));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::GreaterThan));
 	tokens.push_back(std::make_unique<Symbol>(Slice("d", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -1035,15 +1033,15 @@ TEST_F(TestParser, testPrecedenceLogicalAndLogicalOr) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::LogicalAnd));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::LogicalAnd));
 	tokens.push_back(std::make_unique<Symbol>(Slice("b", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::LogicalOr));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::LogicalOr));
 	tokens.push_back(std::make_unique<Symbol>(Slice("c", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::LogicalAnd));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::LogicalAnd));
 	tokens.push_back(std::make_unique<Symbol>(Slice("d", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -1079,15 +1077,15 @@ TEST_F(TestParser, testPrecedenceLogicalOrAssignment) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::LogicalOr));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::LogicalOr));
 	tokens.push_back(std::make_unique<Symbol>(Slice("b", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Assignment));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Assignment));
 	tokens.push_back(std::make_unique<Symbol>(Slice("c", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::LogicalOr));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::LogicalOr));
 	tokens.push_back(std::make_unique<Symbol>(Slice("d", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -1124,11 +1122,11 @@ TEST_F(TestParser, testPrecedenceAssignmentReturn) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Keyword>(s, Keyword::Type::RETURN));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Assignment));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Assignment));
 	tokens.push_back(std::make_unique<Symbol>(Slice("b", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -1159,18 +1157,18 @@ TEST_F(TestParser, testPrecedenceParenthesizedAdditionMultiplication) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenParen));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Addition));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Addition));
 	tokens.push_back(std::make_unique<Symbol>(Slice("b", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseParen));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Multiplication));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Multiplication));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenParen));
 	tokens.push_back(std::make_unique<Symbol>(Slice("c", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Addition));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Addition));
 	tokens.push_back(std::make_unique<Symbol>(Slice("d", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseParen));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -1209,19 +1207,18 @@ TEST_F(TestParser, testPrecedenceParenthesizedBitwiseOrAndBitshift) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenParen));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::BitwiseOr));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseOr));
 	tokens.push_back(std::make_unique<Symbol>(Slice("b", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseParen));
-	tokens.push_back(
-	      std::make_unique<Operator>(&dummy, Operator::Type::BitwiseShiftLeft));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseShiftLeft));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenParen));
 	tokens.push_back(std::make_unique<Symbol>(Slice("c", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::BitwiseAnd));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseAnd));
 	tokens.push_back(std::make_unique<Symbol>(Slice("d", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseParen));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -1260,21 +1257,21 @@ TEST_P(TestParserAssociativityLeftBinary, testAssociativityLeftBinary) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, operators[0]));
+	tokens.push_back(std::make_unique<Operator>(dummy, operators[0]));
 	tokens.push_back(std::make_unique<Symbol>(Slice("b", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, operators[1]));
+	tokens.push_back(std::make_unique<Operator>(dummy, operators[1]));
 	tokens.push_back(std::make_unique<Symbol>(Slice("c", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, operators[2]));
+	tokens.push_back(std::make_unique<Operator>(dummy, operators[2]));
 	tokens.push_back(std::make_unique<Symbol>(Slice("d", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, operators[3]));
+	tokens.push_back(std::make_unique<Operator>(dummy, operators[3]));
 	tokens.push_back(std::make_unique<Symbol>(Slice("e", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, operators[4]));
+	tokens.push_back(std::make_unique<Operator>(dummy, operators[4]));
 	tokens.push_back(std::make_unique<Symbol>(Slice("f", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, operators[5]));
+	tokens.push_back(std::make_unique<Operator>(dummy, operators[5]));
 	tokens.push_back(std::make_unique<Symbol>(Slice("g", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([&operators]([[maybe_unused]]
 	                                  std::string_view name,
@@ -1344,19 +1341,19 @@ TEST_F(TestParser, testAssociativityRightUnary) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Subtraction));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::LogicalNot));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::BitwiseNot));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Addition));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Subtraction));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::LogicalNot));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseNot));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Addition));
 
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::LogicalNot));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::BitwiseNot));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Addition));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Subtraction));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::LogicalNot));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::BitwiseNot));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Addition));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Subtraction));
 	tokens.push_back(std::make_unique<Symbol>(Slice("a", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
@@ -1405,7 +1402,7 @@ TEST_F(TestParserError, testMissingFunKeyword) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected keyword `fun`"));
@@ -1422,7 +1419,7 @@ TEST_F(TestParserError, testMissingFunctionName) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected symbol following `fun`"));
@@ -1439,7 +1436,7 @@ TEST_F(TestParserError, testMissingOpenParenParamList) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0,
@@ -1457,7 +1454,7 @@ TEST_F(TestParserError, testMissingCloseParenParamList) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected ')' in function definition"));
@@ -1474,7 +1471,7 @@ TEST_F(TestParserError, testMissingReturnType) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0,
@@ -1494,12 +1491,12 @@ TEST_F(TestParserError, testMissingVariableNameInLet) {
 	tokens.push_back(std::make_unique<Keyword>(s, Keyword::Type::LET));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Assignment));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Assignment));
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Semicolon));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected symbol following `let`"));
@@ -1518,12 +1515,12 @@ TEST_F(TestParserError, testMissingVariableTypeInLet) {
 	tokens.push_back(std::make_unique<Keyword>(s, Keyword::Type::LET));
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Assignment));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Assignment));
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Semicolon));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0,
@@ -1531,7 +1528,27 @@ TEST_F(TestParserError, testMissingVariableTypeInLet) {
 	e.checkErrors(expected);
 }
 
-TEST_F(TestParserError, testMissingEqualsInLet) {
+TEST_F(TestParserError, testMissingExpressionAndTypeAnnotationInLet) {
+	std::vector<std::unique_ptr<Token>> tokens;
+	tokens.push_back(std::make_unique<Keyword>(s, Keyword::Type::FUN));
+	tokens.push_back(std::make_unique<Symbol>(Slice("foo", "", 0, 0)));
+	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenParen));
+	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseParen));
+	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
+	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
+	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
+	tokens.push_back(std::make_unique<Keyword>(s, Keyword::Type::LET));
+	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
+	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
+	tokens.push_back(std::make_unique<EndOfFile>(s));
+	Parser p = Parser("", std::move(tokens), &e);
+	p.parse();
+	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
+	expected.push(std::make_tuple("", 0, 0, "Expected '=' or ';' in `let` statement"));
+	e.checkErrors(expected);
+}
+
+TEST_F(TestParser, testOptionalLetAssignment) {
 	std::vector<std::unique_ptr<Token>> tokens;
 	tokens.push_back(std::make_unique<Keyword>(s, Keyword::Type::FUN));
 	tokens.push_back(std::make_unique<Symbol>(Slice("foo", "", 0, 0)));
@@ -1544,15 +1561,24 @@ TEST_F(TestParserError, testMissingEqualsInLet) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
-	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Semicolon));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
-	p.parse();
-	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
-	expected.push(std::make_tuple("", 0, 0, "Expected '=' in `let` statement"));
-	e.checkErrors(expected);
+	Parser p = Parser("", std::move(tokens), &e);
+	std::unique_ptr<Module> mod = p.parse();
+	mod->forEachFunction([]([[maybe_unused]]
+	                           std::string_view name,
+	                           Function &f) {
+		BlockExpression &body = f.getBody();
+		body.forEachStatement([](Statement &statement) {
+			auto *let = dynamic_cast<LetStatement *>(&statement);
+			ASSERT_NE(let, nullptr);
+			EXPECT_EQ(let->getExpression(), nullptr);
+			EXPECT_EQ(let->getSymbol().s.contents, "x");
+			EXPECT_NE(let->getTypeAnnotation(), nullptr);
+			EXPECT_EQ(let->getTypeAnnotation()->s.contents, "i32");
+		});
+	});
 }
 
 TEST_F(TestParserError, testMissingExpressionInLet) {
@@ -1568,11 +1594,11 @@ TEST_F(TestParserError, testMissingExpressionInLet) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Assignment));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Assignment));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Semicolon));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected expression"));
@@ -1592,11 +1618,11 @@ TEST_F(TestParserError, testMissingSemicolonInLet) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Assignment));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Assignment));
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0,
@@ -1617,13 +1643,13 @@ TEST_F(TestParser, testOptionalSemicolonInLetBlockExpression) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Assignment));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Assignment));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p1 = Parser(std::move(tokens), e);
+	Parser p1 = Parser("", std::move(tokens), &e);
 	p1.parse();
 
 	tokens.clear();
@@ -1638,14 +1664,14 @@ TEST_F(TestParser, testOptionalSemicolonInLetBlockExpression) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Assignment));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Assignment));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Semicolon));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p2 = Parser(std::move(tokens), e);
+	Parser p2 = Parser("", std::move(tokens), &e);
 	p2.parse();
 }
 
@@ -1659,7 +1685,7 @@ TEST_F(TestParserError, testMissingFunctionOpenBraces) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected '{'"));
@@ -1676,7 +1702,7 @@ TEST_F(TestParserError, testUnclosedFunctionBracesAtEnd) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected '}'"));
@@ -1702,7 +1728,7 @@ TEST_F(TestParserError, testUnclosedFunctionBracesAfterFinalExpression) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected '}'"));
@@ -1722,7 +1748,7 @@ TEST_F(TestParserError, testUnclosedExpressionParentheses) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected ')'"));
@@ -1741,7 +1767,7 @@ TEST_F(TestParserError, testUnclosedExpressionParenthesesAtEnd) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenParen));
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected ')'"));
@@ -1758,11 +1784,11 @@ TEST_F(TestParserError, testMissingLeftBinarySubexpression) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Multiplication));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Multiplication));
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected expression"));
@@ -1779,10 +1805,10 @@ TEST_F(TestParserError, testMissingRightBinarySubexpression) {
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
 	tokens.push_back(std::make_unique<Symbol>(Slice("x", "", 0, 0)));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Multiplication));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Multiplication));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected expression"));
@@ -1798,10 +1824,10 @@ TEST_F(TestParserError, testMissingBothBinarySubexpressions) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::Multiplication));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::Multiplication));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected expression"));
@@ -1817,10 +1843,10 @@ TEST_F(TestParserError, testMissingUnarySubexpression) {
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::Colon));
 	tokens.push_back(std::make_unique<Symbol>(Slice("i32", "", 0, 0)));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::OpenBrace));
-	tokens.push_back(std::make_unique<Operator>(&dummy, Operator::Type::LogicalNot));
+	tokens.push_back(std::make_unique<Operator>(dummy, Operator::Type::LogicalNot));
 	tokens.push_back(std::make_unique<Punctuation>(s, Punctuation::Type::CloseBrace));
 	tokens.push_back(std::make_unique<EndOfFile>(s));
-	Parser p = Parser(std::move(tokens), e);
+	Parser p = Parser("", std::move(tokens), &e);
 	p.parse();
 	std::queue<std::tuple<std::filesystem::path, size_t, size_t, std::string>> expected;
 	expected.push(std::make_tuple("", 0, 0, "Expected expression"));

@@ -17,7 +17,7 @@ class Lexer {
 	std::filesystem::path source;
 	std::queue<Slice> slices;
 	uint32_t tabSize;
-	ErrorHandler &errorHandler;
+	ErrorHandler *errorHandler;
 	size_t line = 1;
 	size_t col = 1;
 public:
@@ -30,7 +30,7 @@ public:
 	 * @param tabSize the width of a tab stop (default = 4)
 	 */
 	Lexer(std::string_view program, std::filesystem::path source,
-	      ErrorHandler &errorHandler, uint32_t tabSize = 4);
+	      ErrorHandler *errorHandler, uint32_t tabSize = 4);
 	Lexer &operator=(const Lexer &l);
 	~Lexer() = default;
 	std::vector<std::unique_ptr<Token>> lex();

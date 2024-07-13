@@ -10,13 +10,13 @@
 
 class SemanticAnalyzer : public ASTVisitor {
 	std::unique_ptr<Module> module;
-	ErrorHandler &errorHandler;
+	ErrorHandler *errorHandler;
 	std::vector<BlockExpression *> scopeStack;
 	bool inUnreachableCode = false;
 	Function *currentFunction = nullptr;
 public:
-	SemanticAnalyzer(std::unique_ptr<Module> module, ErrorHandler &errorHandler);
-	void analyze();
+	SemanticAnalyzer(std::unique_ptr<Module> module, ErrorHandler *errorHandler);
+	std::unique_ptr<Module> analyze();
 	void visit(FunctionCallExpression &node) override;
 	void visit(BinaryExpression &node) override;
 	void visit(UnaryExpression &node) override;

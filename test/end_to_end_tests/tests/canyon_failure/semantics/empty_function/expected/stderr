@@ -1,1 +1,1 @@
-Error at {main}:1:12: Function body block expression type does not match function return type
+Error at {main}:3:12: Function body block expression type does not match function return type

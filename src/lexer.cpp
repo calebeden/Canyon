@@ -14,7 +14,7 @@ static constexpr int OCTAL = 8;
 static constexpr int BINARY = 2;
 
 Lexer::Lexer(std::string_view program, std::filesystem::path source,
-      ErrorHandler &errorHandler, uint32_t tabSize)
+      ErrorHandler *errorHandler, uint32_t tabSize)
     : program(program), source(std::move(source)), tabSize(tabSize),
       errorHandler(errorHandler) {
 	if (tabSize == 0) {
@@ -255,7 +255,7 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 				}
 				case Punctuation::Type::Comma: {
 					evaluated.push_back(
-					      std::make_unique<Operator>(token.get(), Operator::Type::Comma));
+					      std::make_unique<Operator>(*token, Operator::Type::Comma));
 					break;
 				}
 				case Punctuation::Type::Equals: {
@@ -263,11 +263,11 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::Equals) {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::Equality));
 						i++;
 					} else {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::Assignment));
 					}
 					break;
@@ -277,8 +277,8 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::Colon) {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
-						      Operator::Type::Scope));
+						evaluated.push_back(
+						      std::make_unique<Operator>(*token, Operator::Type::Scope));
 						i++;
 					} else {
 						evaluated.push_back(std::move(token));
@@ -286,28 +286,28 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					break;
 				}
 				case Punctuation::Type::Plus: {
-					evaluated.push_back(std::make_unique<Operator>(token.get(),
-					      Operator::Type::Addition));
+					evaluated.push_back(
+					      std::make_unique<Operator>(*token, Operator::Type::Addition));
 					break;
 				}
 				case Punctuation::Type::Hyphen: {
-					evaluated.push_back(std::make_unique<Operator>(token.get(),
+					evaluated.push_back(std::make_unique<Operator>(*token,
 					      Operator::Type::Subtraction));
 					break;
 				}
 				case Punctuation::Type::Asterisk: {
-					evaluated.push_back(std::make_unique<Operator>(token.get(),
+					evaluated.push_back(std::make_unique<Operator>(*token,
 					      Operator::Type::Multiplication));
 					break;
 				}
 				case Punctuation::Type::ForwardSlash: {
-					evaluated.push_back(std::make_unique<Operator>(token.get(),
-					      Operator::Type::Division));
+					evaluated.push_back(
+					      std::make_unique<Operator>(*token, Operator::Type::Division));
 					break;
 				}
 				case Punctuation::Type::Percent: {
-					evaluated.push_back(std::make_unique<Operator>(token.get(),
-					      Operator::Type::Modulus));
+					evaluated.push_back(
+					      std::make_unique<Operator>(*token, Operator::Type::Modulus));
 					break;
 				}
 				case Punctuation::Type::Exclamation: {
@@ -315,11 +315,11 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::Equals) {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::Inequality));
 						i++;
 					} else {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::LogicalNot));
 					}
 					break;
@@ -329,17 +329,17 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::Equals) {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::LessThanOrEqual));
 						i++;
 					} else if (dynamic_cast<Punctuation *>(next)
 					           && dynamic_cast<Punctuation *>(next)->type
 					                    == Punctuation::Type::LessThan) {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::BitwiseShiftLeft));
 						i++;
 					} else {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::LessThan));
 					}
 					break;
@@ -349,17 +349,17 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::Equals) {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::GreaterThanOrEqual));
 						i++;
 					} else if (dynamic_cast<Punctuation *>(next)
 					           && dynamic_cast<Punctuation *>(next)->type
 					                    == Punctuation::Type::GreaterThan) {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::BitwiseShiftRight));
 						i++;
 					} else {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::GreaterThan));
 					}
 					break;
@@ -369,11 +369,11 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::Ampersand) {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::LogicalAnd));
 						i++;
 					} else {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::BitwiseAnd));
 					}
 					break;
@@ -383,23 +383,23 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::VerticalBar) {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::LogicalOr));
 						i++;
 					} else {
-						evaluated.push_back(std::make_unique<Operator>(token.get(),
+						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::BitwiseOr));
 					}
 					break;
 				}
 				case Punctuation::Type::Tilde: {
-					evaluated.push_back(std::make_unique<Operator>(token.get(),
-					      Operator::Type::BitwiseNot));
+					evaluated.push_back(
+					      std::make_unique<Operator>(*token, Operator::Type::BitwiseNot));
 					break;
 				}
 				case Punctuation::Type::Caret: {
-					evaluated.push_back(std::make_unique<Operator>(token.get(),
-					      Operator::Type::BitwiseXor));
+					evaluated.push_back(
+					      std::make_unique<Operator>(*token, Operator::Type::BitwiseXor));
 					break;
 				}
 			}
@@ -409,7 +409,7 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 				std::unique_ptr<Token> literal
 				      = evaluateLiteral(dynamic_cast<SymbolOrLiteral *>(token.get()));
 				if (literal == nullptr) {
-					errorHandler.error(*token, "Invalid integer literal");
+					errorHandler->error(*token, "Invalid integer literal");
 					evaluated.push_back(std::move(token));
 				} else {
 					evaluated.push_back(std::move(literal));

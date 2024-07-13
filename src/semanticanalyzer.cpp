@@ -19,25 +19,26 @@ static void addSameSignIntegerTypes(Module *module,
       std::span<const Operator::Type> unaryOperators);
 
 SemanticAnalyzer::SemanticAnalyzer(std::unique_ptr<Module> module,
-      ErrorHandler &errorHandler)
+      ErrorHandler *errorHandler)
     : module(std::move(module)), errorHandler(errorHandler) {
 }
 
-void SemanticAnalyzer::analyze() {
+std::unique_ptr<Module> SemanticAnalyzer::analyze() {
 	visit(*module);
+	return std::move(module);
 }
 
 void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 	Expression &functionCall = node.getFunction();
 	auto *symbol = dynamic_cast<SymbolExpression *>(&functionCall);
 	if (symbol == nullptr) {
-		errorHandler.error(functionCall.getSlice(),
+		errorHandler->error(functionCall.getSlice(),
 		      "Function call target is not a symbol");
 		return;
 	}
 	Function *function = module->getFunction(symbol->getSymbol().s.contents);
 	if (function == nullptr) {
-		errorHandler.error(symbol->getSymbol().s,
+		errorHandler->error(symbol->getSymbol().s,
 		      "Function " + std::string(symbol->getSymbol().s.contents) + " not found");
 		return;
 	}
@@ -49,18 +50,19 @@ void SemanticAnalyzer::visit(BinaryExpression &node) {
 	Expression &right = node.getRight();
 	left.accept(*this);
 	if (inUnreachableCode) {
-		errorHandler.error(node.getOperator().s, "Unreachable code");
+		errorHandler->error(node.getOperator().s, "Unreachable code");
 		return;
 	}
 	right.accept(*this);
 	if (inUnreachableCode) {
-		errorHandler.error(node.getOperator().s, "Unreachable code");
+		errorHandler->error(node.getOperator().s, "Unreachable code");
 		return;
 	}
 	int typeID = module->getBinaryOperator(node.getOperator().type, left.getTypeID(),
 	      right.getTypeID());
 	if (typeID == -1) {
-		errorHandler.error(node.getOperator().s, "Binary operator not defined for types");
+		errorHandler->error(node.getOperator().s,
+		      "Binary operator not defined for types");
 	}
 	node.setTypeID(typeID);
 }
@@ -69,19 +71,19 @@ void SemanticAnalyzer::visit(UnaryExpression &node) {
 	Expression &operand = node.getExpression();
 	operand.accept(*this);
 	if (inUnreachableCode) {
-		errorHandler.error(node.getOperator().s, "Unreachable code");
+		errorHandler->error(node.getOperator().s, "Unreachable code");
 		return;
 	}
 	int typeID = module->getUnaryOperator(node.getOperator().type, operand.getTypeID());
 	if (typeID == -1) {
-		errorHandler.error(node.getOperator().s, "Unary operator not defined for type");
+		errorHandler->error(node.getOperator().s, "Unary operator not defined for type");
 	}
 	node.setTypeID(typeID);
 }
 
 void SemanticAnalyzer::visit(LiteralExpression &node) {
 	IntegerLiteral &literal = node.getLiteral();
-	node.setTypeID(module->getType(IntegerLiteral::typeToStringView(literal.type)));
+	node.setTypeID(module->getType(IntegerLiteral::typeToStringView(literal.type)).id);
 }
 
 void SemanticAnalyzer::visit(SymbolExpression &node) {
@@ -92,7 +94,7 @@ void SemanticAnalyzer::visit(SymbolExpression &node) {
 			return;
 		}
 	}
-	errorHandler.error(node.getSymbol(),
+	errorHandler->error(node.getSymbol(),
 	      "Symbol " + std::string(node.getSymbol().s.contents) + " not found");
 }
 
@@ -100,7 +102,7 @@ void SemanticAnalyzer::visit(BlockExpression &node) {
 	scopeStack.push_back(&node);
 	node.forEachStatement([this](Statement &statement) {
 		if (inUnreachableCode) {
-			errorHandler.error(statement.getSlice(), "Unreachable code");
+			errorHandler->error(statement.getSlice(), "Unreachable code");
 			return;
 		}
 		statement.accept(*this);
@@ -108,15 +110,15 @@ void SemanticAnalyzer::visit(BlockExpression &node) {
 	Expression *finalExpression = node.getFinalExpression();
 	if (inUnreachableCode) {
 		if (finalExpression != nullptr) {
-			errorHandler.error(finalExpression->getSlice(), "Unreachable code");
+			errorHandler->error(finalExpression->getSlice(), "Unreachable code");
 		}
-		node.setTypeID(module->getType("!"));
+		node.setTypeID(module->getType("!").id);
 	} else {
 		if (finalExpression != nullptr) {
 			finalExpression->accept(*this);
 			node.setTypeID(finalExpression->getTypeID());
 		} else {
-			node.setTypeID(module->getType("()"));
+			node.setTypeID(module->getType("()").id);
 		}
 	}
 	scopeStack.pop_back();
@@ -127,18 +129,18 @@ void SemanticAnalyzer::visit(ReturnExpression &node) {
 	if (expr != nullptr) {
 		expr->accept(*this);
 		if (inUnreachableCode) {
-			errorHandler.error(node.getSlice(), "Unreachable code");
+			errorHandler->error(node.getSlice(), "Unreachable code");
 			return;
 		}
 		if (currentFunction->getTypeID() != expr->getTypeID()) {
-			errorHandler.error(expr->getSlice(),
+			errorHandler->error(expr->getSlice(),
 			      "Return type does not match function return type");
 		}
-	} else if (currentFunction->getTypeID() != module->getType("()")) {
-		errorHandler.error(node.getSlice(),
+	} else if (currentFunction->getTypeID() != module->getType("()").id) {
+		errorHandler->error(node.getSlice(),
 		      "Return type does not match function return type");
 	}
-	node.setTypeID(module->getType("!"));
+	node.setTypeID(module->getType("!").id);
 	inUnreachableCode = true;
 }
 
@@ -150,7 +152,7 @@ void SemanticAnalyzer::visit(ParenthesizedExpression &node) {
 
 void SemanticAnalyzer::visit(ExpressionStatement &node) {
 	if (inUnreachableCode) {
-		errorHandler.error(node.getSlice(), "Unreachable code");
+		errorHandler->error(node.getSlice(), "Unreachable code");
 		return;
 	}
 	node.getExpression().accept(*this);
@@ -158,26 +160,36 @@ void SemanticAnalyzer::visit(ExpressionStatement &node) {
 
 void SemanticAnalyzer::visit(LetStatement &node) {
 	if (inUnreachableCode) {
-		errorHandler.error(node.getSlice(), "Unreachable code");
+		errorHandler->error(node.getSlice(), "Unreachable code");
 		return;
 	}
 	if (scopeStack.back()->getSymbolType(node.getSymbol().s.contents) != -1) {
-		errorHandler.error(node.getSymbol(),
+		errorHandler->error(node.getSymbol(),
 		      "Redefinition of variable " + std::string(node.getSymbol().s.contents));
 		return;
 	}
-	int typeID = module->getType(node.getTypeAnnotation().s.contents);
-	Expression &value = node.getExpression();
-	value.accept(*this);
+	Symbol *typeAnnotation = node.getTypeAnnotation();
+	if (!typeAnnotation) {
+		errorHandler->error(node.getEqualSign(), "Expected type annotation");
+		return;
+	}
+	unsigned long typeID = module->getType(typeAnnotation->s.contents).id;
+	Expression *value = node.getExpression();
+	if (!value) {
+		errorHandler->error(node.getSlice(), "Expression required for let statement");
+		return;
+	}
+	value->accept(*this);
 	if (inUnreachableCode) {
-		errorHandler.error(node.getEqualSign().s, "Unreachable code");
+		errorHandler->error(node.getEqualSign().s, "Unreachable code");
 		return;
 	}
 	scopeStack.back()->setSymbolType(node.getSymbol().s.contents, typeID);
-	if (typeID != value.getTypeID() && value.getTypeID() != -1) {
-		errorHandler.error(node.getExpression().getSlice(),
+	if (typeID != value->getTypeID() && value->getTypeID() != -1UL) {
+		errorHandler->error(node.getExpression()->getSlice(),
 		      "Type mismatch in let statement");
 	}
+	node.setSymbolTypeID(typeID);
 }
 
 void SemanticAnalyzer::visit(Function &node) {
@@ -191,21 +203,21 @@ void SemanticAnalyzer::visit(Function &node) {
 	Symbol *typeAnnotation = node.getReturnTypeAnnotation();
 	int annotationTypeID = -1;
 	if (typeAnnotation != nullptr) {
-		annotationTypeID = module->getType(typeAnnotation->s.contents);
+		annotationTypeID = module->getType(typeAnnotation->s.contents).id;
 	} else {
-		annotationTypeID = module->getType("()");
+		annotationTypeID = module->getType("()").id;
 	}
 	if (!module->isTypeConvertible(blockTypeID, annotationTypeID)) {
 		Expression *finalExpression = node.getBody().getFinalExpression();
 		if (finalExpression != nullptr) {
-			errorHandler.error(finalExpression->getSlice(),
+			errorHandler->error(finalExpression->getSlice(),
 			      "Function body block expression type does not match function "
 			      "return type");
 		} else if (typeAnnotation != nullptr) {
-			errorHandler.error(typeAnnotation->s, "Function body block expression type "
-			                                      "does not match function return type");
+			errorHandler->error(typeAnnotation->s, "Function body block expression type "
+			                                       "does not match function return type");
 		} else {
-			errorHandler.error(node.getBody().getSlice(),
+			errorHandler->error(node.getBody().getSlice(),
 			      "Function body block expression type does not match function "
 			      "return type");
 		}
@@ -220,17 +232,26 @@ void SemanticAnalyzer::visit(Module &node) {
 	                           Function &function) {
 		Symbol *type = function.getReturnTypeAnnotation();
 		if (type == nullptr) {
-			function.setTypeID(module->getType("()"));
+			function.setTypeID(module->getType("()").id);
 		} else {
-			function.setTypeID(module->getType(type->s.contents));
+			function.setTypeID(module->getType(type->s.contents).id);
 		}
 	});
-	node.forEachFunction([this]([[maybe_unused]]
-	                            std::string_view name,
-	                           Function &function) {
+	bool hasMain = false;
+	node.forEachFunction([this, &hasMain](std::string_view name, Function &function) {
 		currentFunction = &function;
 		function.accept(*this);
+		if (name == "main") {
+			hasMain = true;
+			if (function.getTypeID() != module->getType("()").id) {
+				errorHandler->error(*function.getReturnTypeAnnotation(),
+				      "main must return unit type");
+			}
+		}
 	});
+	if (!hasMain) {
+		errorHandler->error(module->getSource(), "No main function");
+	}
 }
 
 static void addDefaultOperators(Module *module) {
@@ -284,9 +305,9 @@ static void addSameSignIntegerTypes(Module *module,
       const std::span<const std::string_view> types,
       const std::span<const Operator::Type> binaryOperators,
       const std::span<const Operator::Type> unaryOperators) {
-	static const int unitTypeID = module->getType("()");
+	static const int unitTypeID = module->getType("()").id;
 	for (auto it = types.begin(); it != types.end(); it++) {
-		int typeID = module->getType(*it);
+		int typeID = module->getType(*it).id;
 		for (const auto &op : unaryOperators) {
 			module->addUnaryOperator(op, typeID, typeID);
 		}
