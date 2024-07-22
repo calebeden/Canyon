@@ -217,7 +217,7 @@ void CCodeAdapter::visit(Module &node) {
 }
 
 void CCodeAdapter::visitExpression(Expression &node) {
-	auto blockExpression = dynamic_cast<BlockExpression *>(&node);
+	auto *blockExpression = dynamic_cast<BlockExpression *>(&node);
 	if (blockExpression != nullptr
 	      && blockExpression->getTypeID() != inputModule->getType("()").id
 	      && blockExpression->getTypeID() != inputModule->getType("!").id) {

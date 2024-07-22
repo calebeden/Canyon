@@ -8,7 +8,7 @@
 
 Parser::Parser(std::filesystem::path source, std::vector<std::unique_ptr<Token>> tokens,
       ErrorHandler *errorHandler)
-    : tokens(std::move(tokens)), errorHandler(errorHandler), source(source) {
+    : tokens(std::move(tokens)), errorHandler(errorHandler), source(std::move(source)) {
 }
 
 std::unique_ptr<Module> Parser::parse() {

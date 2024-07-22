@@ -173,7 +173,7 @@ void SemanticAnalyzer::visit(LetStatement &node) {
 		errorHandler->error(node.getEqualSign(), "Expected type annotation");
 		return;
 	}
-	unsigned long typeID = module->getType(typeAnnotation->s.contents).id;
+	int typeID = module->getType(typeAnnotation->s.contents).id;
 	Expression *value = node.getExpression();
 	if (!value) {
 		errorHandler->error(node.getSlice(), "Expression required for let statement");
@@ -185,7 +185,7 @@ void SemanticAnalyzer::visit(LetStatement &node) {
 		return;
 	}
 	scopeStack.back()->setSymbolType(node.getSymbol().s.contents, typeID);
-	if (typeID != value->getTypeID() && value->getTypeID() != -1UL) {
+	if (typeID != value->getTypeID() && value->getTypeID() != -1) {
 		errorHandler->error(node.getExpression()->getSlice(),
 		      "Type mismatch in let statement");
 	}

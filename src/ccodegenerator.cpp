@@ -11,7 +11,7 @@
 
 CCodeGenerator::CCodeGenerator(std::unique_ptr<Module> module, std::ostream *os)
     : module(std::move(module)), os(os) {
-	cTypes[-1UL] = "UNKNOWN_TYPE";
+	cTypes[-1] = "UNKNOWN_TYPE";
 	cTypes[this->module->getType("()").id] = "void";
 	cTypes[this->module->getType("i8").id] = "int8_t";
 	cTypes[this->module->getType("i16").id] = "int16_t";
@@ -129,7 +129,8 @@ void CCodeGenerator::visit(LetStatement &node) {
 	}
 }
 
-void CCodeGenerator::visit([[maybe_unused]] Function &node) { // TODO?
+void CCodeGenerator::visit([[maybe_unused]] Function &node) {
+	// Currently being handled in the Module visitor
 }
 
 void CCodeGenerator::visit(Module &node) {

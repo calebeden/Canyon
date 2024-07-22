@@ -12,7 +12,7 @@ class CCodeGenerator : public ASTVisitor {
 private:
 	std::unique_ptr<Module> module;
 	std::ostream *os;
-	std::unordered_map<unsigned long, std::string> cTypes;
+	std::unordered_map<int, std::string> cTypes;
 	int tabLevel = 0;
 public:
 	CCodeGenerator(std::unique_ptr<Module> module, std::ostream *os);

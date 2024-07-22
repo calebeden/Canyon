@@ -3,16 +3,17 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <utility>
 #include <vector>
 
 Expression::Expression(const Slice &s) : s(s) {
 }
 
-unsigned long Expression::getTypeID() const {
+int Expression::getTypeID() const {
 	return typeID;
 }
 
-void Expression::setTypeID(unsigned long typeID) {
+void Expression::setTypeID(int typeID) {
 	this->typeID = typeID;
 }
 
@@ -234,11 +235,11 @@ Operator &LetStatement::getEqualSign() {
 	return *equalSign;
 }
 
-void LetStatement::setSymbolTypeID(unsigned long typeID) {
+void LetStatement::setSymbolTypeID(int typeID) {
 	symbolTypeID = typeID;
 }
 
-unsigned long LetStatement::getSymbolTypeID() {
+int LetStatement::getSymbolTypeID() const {
 	return symbolTypeID;
 }
 
@@ -263,11 +264,11 @@ BlockExpression &Function::getBody() {
 	return *body;
 }
 
-unsigned long Function::getTypeID() const {
+int Function::getTypeID() const {
 	return typeID;
 }
 
-void Function::setTypeID(unsigned long typeID) {
+void Function::setTypeID(int typeID) {
 	this->typeID = typeID;
 }
 
@@ -275,11 +276,11 @@ void Function::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-Type::Type(unsigned long id, unsigned long parentID, std::string_view name)
+Type::Type(int id, int parentID, std::string_view name)
     : id(id), parentID(parentID), name(name) {
 }
 
-Module::Module(std::filesystem::path source) : source(source) {
+Module::Module(std::filesystem::path source) : source(std::move(source)) {
 	insertType("()");
 	insertType("!");
 	insertType("i8");
@@ -310,32 +311,32 @@ void Module::forEachFunction(
 	}
 }
 
-Type Module::getType(std::string_view type) {
-	if (typeTableByName.find(type) == typeTableByName.end()) {
-		return Type(-1UL, -1UL, "");
+Type Module::getType(std::string_view typeName) {
+	if (typeTableByName.find(typeName) == typeTableByName.end()) {
+		return Type(-1, -1, "");
 	}
-	return typeTableByName.at(type);
+	return typeTableByName.at(typeName);
 }
 
-Type Module::getType(unsigned long id) {
+Type Module::getType(int id) {
 	if (typeTableByID.find(id) == typeTableByID.end()) {
-		return Type(-1UL, -1UL, "");
+		return Type(-1, -1, "");
 	}
 	return typeTableByID.at(id);
 }
 
-void Module::insertType(std::string_view type) {
-	if (typeTableByName.find(type) == typeTableByName.end()) {
-		typeTableByName.insert({type, Type(typeTableByName.size(), -1UL, type)});
+void Module::insertType(std::string_view typeName) {
+	if (typeTableByName.find(typeName) == typeTableByName.end()) {
+		typeTableByName.insert({typeName, Type(typeTableByName.size(), -1, typeName)});
 		typeTableByID.insert(
-		      {typeTableByID.size(), Type(typeTableByID.size(), -1UL, type)});
+		      {typeTableByID.size(), Type(typeTableByID.size(), -1, typeName)});
 	} else {
 		std::cerr << "Type already exists";
 		exit(EXIT_FAILURE);
 	}
 }
 
-bool Module::isTypeConvertible(unsigned long from, unsigned long to) {
+bool Module::isTypeConvertible(int from, int to) {
 	if (from == to) {
 		return true;
 	}
@@ -345,15 +346,14 @@ bool Module::isTypeConvertible(unsigned long from, unsigned long to) {
 	return false;
 }
 
-void Module::addUnaryOperator(Operator::Type op, unsigned long operandType,
-      unsigned long resultType) {
+void Module::addUnaryOperator(Operator::Type op, int operandType, int resultType) {
 	if (unaryOperators.find(op) == unaryOperators.end()) {
 		unaryOperators[op] = {};
 	}
 	unaryOperators[op].push_back({operandType, resultType});
 }
 
-unsigned long Module::getUnaryOperator(Operator::Type op, unsigned long operandType) {
+int Module::getUnaryOperator(Operator::Type op, int operandType) {
 	if (unaryOperators.find(op) == unaryOperators.end()) {
 		return -1;
 	}
@@ -365,16 +365,15 @@ unsigned long Module::getUnaryOperator(Operator::Type op, unsigned long operandT
 	return -1;
 }
 
-void Module::addBinaryOperator(Operator::Type op, unsigned long leftType,
-      unsigned long rightType, unsigned long resultType) {
+void Module::addBinaryOperator(Operator::Type op, int leftType, int rightType,
+      int resultType) {
 	if (binaryOperators.find(op) == binaryOperators.end()) {
 		binaryOperators[op] = {};
 	}
 	binaryOperators[op].push_back({leftType, rightType, resultType});
 }
 
-unsigned long Module::getBinaryOperator(Operator::Type op, unsigned long leftType,
-      unsigned long rightType) {
+int Module::getBinaryOperator(Operator::Type op, int leftType, int rightType) {
 	if (binaryOperators.find(op) == binaryOperators.end()) {
 		return -1;
 	}
