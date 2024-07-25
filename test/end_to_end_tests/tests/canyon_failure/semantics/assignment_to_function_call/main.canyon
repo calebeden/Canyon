@@ -1,0 +1,5 @@
+fun main() {
+    foo() = 2;
+}
+
+fun foo() {}

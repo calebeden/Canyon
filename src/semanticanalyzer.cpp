@@ -58,6 +58,15 @@ void SemanticAnalyzer::visit(BinaryExpression &node) {
 		errorHandler->error(node.getOperator().s, "Unreachable code");
 		return;
 	}
+	if (node.getOperator().type == Operator::Type::Assignment
+	      && (dynamic_cast<SymbolExpression *>(&left) == nullptr)) {
+		errorHandler->error(left.getSlice(),
+		      "Left side of assignment must be a variable");
+		return;
+	}
+	if (left.getTypeID() == -1 || right.getTypeID() == -1) {
+		return;
+	}
 	int typeID = module->getBinaryOperator(node.getOperator().type, left.getTypeID(),
 	      right.getTypeID());
 	if (typeID == -1) {
