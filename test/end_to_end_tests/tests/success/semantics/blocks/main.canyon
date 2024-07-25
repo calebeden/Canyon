@@ -3,9 +3,9 @@ fun main() {
         let y: i32 = {
             let z: i32 = {
                 1
-            }
+            };
             z
-        }
+        };
         y
-    }
+    };
 }

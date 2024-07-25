@@ -75,7 +75,7 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> Parser::parseFunct
 		type = dynamic_cast<Symbol *>(tokens[i].get());
 		if (type == nullptr) {
 			errorHandler->error(*tokens[i],
-			      "Expected type symbol following ':' in function definition");
+			      "Expected function return type following ':' in function definition");
 			return {nullptr, nullptr};
 		}
 		type = dynamic_cast<Symbol *>(tokens[i++].release());
@@ -109,7 +109,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
 			type = dynamic_cast<Symbol *>(tokens[i].get());
 			if (type == nullptr) {
 				errorHandler->error(*tokens[i],
-				      "Expected type symbol following ':' in `let` statement");
+				      "Expected type following ':' in `let` statement");
 				mustSynchronize = true;
 				return nullptr;
 			}
@@ -126,7 +126,8 @@ std::unique_ptr<Statement> Parser::parseStatement() {
 		}
 		auto *op = dynamic_cast<Operator *>(tokens[i].get());
 		if (op == nullptr || op->type != Operator::Type::Assignment) {
-			errorHandler->error(*tokens[i], "Expected '=' or ';' in `let` statement");
+			errorHandler->error(*tokens[i],
+			      "Expected assignment expression in `let` statement");
 			mustSynchronize = true;
 			return nullptr;
 		}
@@ -151,15 +152,12 @@ std::unique_ptr<Statement> Parser::parseStatement() {
 		}
 		punc = dynamic_cast<Punctuation *>(tokens[i].get());
 		if (punc == nullptr || punc->type != Punctuation::Type::Semicolon) {
-			if (!dynamic_cast<BlockExpression *>(expr.get())) {
-				errorHandler->error(*tokens[i],
-				      "Expected ';' following expression in `let` statement");
-				mustSynchronize = true;
-				return nullptr;
-			}
-		} else {
-			i++;
+			errorHandler->error(*tokens[i],
+			      "Expected ';' following expression in `let` statement");
+			mustSynchronize = true;
+			return nullptr;
 		}
+		i++;
 		return std::make_unique<LetStatement>(*keyword, std::unique_ptr<Symbol>(symbol),
 		      std::unique_ptr<Symbol>(type), std::unique_ptr<Operator>(op),
 		      std::move(expr), punc);
