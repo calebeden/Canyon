@@ -112,7 +112,8 @@ void CCodeAdapter::visit(BlockExpression &node) {
 		visitExpression(*oldFinalExpression);
 		std::unique_ptr<Expression> newFinalExpression = std::unique_ptr<Expression>(
 		      dynamic_cast<Expression *>(returnValue.release()));
-		if (node.getTypeID() != inputModule->getType("()").id) {
+		if (node.getTypeID() != inputModule->getType("()").id
+		      && node.getTypeID() != inputModule->getType("!").id) {
 			std::string_view tempVariableName = blockTemporaryVariables.top();
 			Punctuation equalSign = Punctuation(
 			      Slice("=", inputModule->getSource(), 0, 0), Punctuation::Type::Equals);
