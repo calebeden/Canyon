@@ -118,8 +118,6 @@ struct SymbolOrLiteral : public Token {
 	explicit SymbolOrLiteral(const Slice &s);
 	explicit SymbolOrLiteral(const SymbolOrLiteral &s) = default;
 	virtual void print(std::ostream &os) const;
-	void compile(std::ostream &outfile) const;
-	static void compile(std::ostream &outfile, const std::string_view s);
 	virtual ~SymbolOrLiteral() = default;
 };
 
@@ -128,8 +126,6 @@ struct Symbol : public Token {
 	explicit Symbol(const SymbolOrLiteral *const s);
 	explicit Symbol(const Symbol &s);
 	virtual void print(std::ostream &os) const;
-	void compile(std::ostream &outfile) const;
-	static void compile(std::ostream &outfile, const std::string_view s);
 	virtual ~Symbol() = default;
 };
 

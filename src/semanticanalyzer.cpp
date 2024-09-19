@@ -18,14 +18,12 @@ static void addSameSignIntegerTypes(Module *module,
       std::span<const Operator::Type> binaryOperators,
       std::span<const Operator::Type> unaryOperators);
 
-SemanticAnalyzer::SemanticAnalyzer(std::unique_ptr<Module> module,
-      ErrorHandler *errorHandler)
-    : module(std::move(module)), errorHandler(errorHandler) {
+SemanticAnalyzer::SemanticAnalyzer(Module *module, ErrorHandler *errorHandler)
+    : module(module), errorHandler(errorHandler) {
 }
 
-std::unique_ptr<Module> SemanticAnalyzer::analyze() {
+void SemanticAnalyzer::analyze() {
 	visit(*module);
-	return std::move(module);
 }
 
 void SemanticAnalyzer::visit(FunctionCallExpression &node) {

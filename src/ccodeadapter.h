@@ -11,7 +11,7 @@
 
 class CCodeAdapter : ASTVisitor {
 private:
-	std::unique_ptr<Module> inputModule;
+	Module *inputModule;
 	std::unique_ptr<Module> outputModule;
 	std::unique_ptr<ASTComponent> returnValue = nullptr;
 	int blockCount = 0;
@@ -19,8 +19,7 @@ private:
 	std::vector<BlockExpression *> scopeStack;
 	std::list<std::string> *generatedStrings;
 public:
-	CCodeAdapter(std::unique_ptr<Module> module,
-	      std::list<std::string> *generatedStrings);
+	CCodeAdapter(Module *module, std::list<std::string> *generatedStrings);
 	std::unique_ptr<Module> transform();
 	void visit(FunctionCallExpression &node) override;
 	void visit(BinaryExpression &node) override;

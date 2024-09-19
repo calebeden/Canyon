@@ -8,10 +8,8 @@
 #include <utility>
 #include <vector>
 
-CCodeAdapter::CCodeAdapter(std::unique_ptr<Module> module,
-      std::list<std::string> *generatedStrings)
-    : inputModule(std::move(module)),
-      outputModule(std::make_unique<Module>(*inputModule)),
+CCodeAdapter::CCodeAdapter(Module *module, std::list<std::string> *generatedStrings)
+    : inputModule(module), outputModule(std::make_unique<Module>(*inputModule)),
       generatedStrings(generatedStrings) {
 }
 

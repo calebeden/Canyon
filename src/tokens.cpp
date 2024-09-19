@@ -249,14 +249,6 @@ void SymbolOrLiteral::print(std::ostream &os) const {
 	os << s;
 }
 
-void SymbolOrLiteral::compile(std::ostream &outfile) const {
-	outfile << s;
-}
-
-void SymbolOrLiteral::compile(std::ostream &outfile, const std::string_view s) {
-	outfile << s;
-}
-
 Symbol::Symbol(const Slice &s) : Token(s) {
 }
 
@@ -268,14 +260,6 @@ Symbol::Symbol(const Symbol &s) : Token(s.s) {
 
 void Symbol::print(std::ostream &os) const {
 	os << s;
-}
-
-void Symbol::compile(std::ostream &outfile) const {
-	outfile << s;
-}
-
-void Symbol::compile(std::ostream &outfile, const std::string_view s) {
-	outfile << s;
 }
 
 IntegerLiteral::IntegerLiteral(const Token &t, Type type, uint64_t value)

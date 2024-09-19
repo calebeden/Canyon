@@ -53,8 +53,8 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	SemanticAnalyzer analyzer = SemanticAnalyzer(std::move(mod), &errorHandler);
-	mod = analyzer.analyze();
+	SemanticAnalyzer analyzer = SemanticAnalyzer(mod.get(), &errorHandler);
+	analyzer.analyze();
 	if (errorHandler.handleErrors(std::cerr)) {
 		return EXIT_FAILURE;
 	}
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	CCodeGenerator codeGenerator = CCodeGenerator(std::move(mod), &outfile);
+	CCodeGenerator codeGenerator = CCodeGenerator(mod.get(), &outfile);
 	codeGenerator.generate();
 
 	// Close the files

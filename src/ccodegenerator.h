@@ -10,12 +10,12 @@
 
 class CCodeGenerator : public ASTVisitor {
 private:
-	std::unique_ptr<Module> module;
+	Module *module;
 	std::ostream *os;
 	std::unordered_map<int, std::string> cTypes;
 	int tabLevel = 0;
 public:
-	CCodeGenerator(std::unique_ptr<Module> module, std::ostream *os);
+	CCodeGenerator(Module *module, std::ostream *os);
 	void generate();
 	void visit(FunctionCallExpression &node) override;
 	void visit(BinaryExpression &node) override;

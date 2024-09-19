@@ -9,8 +9,8 @@
 #include <string_view>
 #include <unordered_map>
 
-CCodeGenerator::CCodeGenerator(std::unique_ptr<Module> module, std::ostream *os)
-    : module(std::move(module)), os(os) {
+CCodeGenerator::CCodeGenerator(Module *module, std::ostream *os)
+    : module(module), os(os) {
 	cTypes[-1] = "UNKNOWN_TYPE";
 	cTypes[this->module->getType("()").id] = "void";
 	cTypes[this->module->getType("i8").id] = "int8_t";
@@ -26,9 +26,9 @@ CCodeGenerator::CCodeGenerator(std::unique_ptr<Module> module, std::ostream *os)
 void CCodeGenerator::generate() {
 	std::list<std::string> generatedStrings;
 	generateIncludes();
-	CCodeAdapter adapter = CCodeAdapter(std::move(module), &generatedStrings);
-	module = adapter.transform();
-	visit(*module);
+	CCodeAdapter adapter = CCodeAdapter(module, &generatedStrings);
+	std::unique_ptr<Module> adapted = adapter.transform();
+	visit(*adapted);
 }
 
 void CCodeGenerator::generateIncludes() {
@@ -36,12 +36,12 @@ void CCodeGenerator::generateIncludes() {
 	       "\n";
 }
 
-void CCodeGenerator::visit([[maybe_unused]] FunctionCallExpression &node) {
+void CCodeGenerator::visit(FunctionCallExpression &node) {
 	node.getFunction().accept(*this);
 	*os << "()";
 }
 
-void CCodeGenerator::visit([[maybe_unused]] BinaryExpression &node) {
+void CCodeGenerator::visit(BinaryExpression &node) {
 	*os << '(';
 	node.getLeft().accept(*this);
 	*os << ") " << node.getOperator().s << " (";
@@ -49,7 +49,7 @@ void CCodeGenerator::visit([[maybe_unused]] BinaryExpression &node) {
 	*os << ')';
 }
 
-void CCodeGenerator::visit([[maybe_unused]] UnaryExpression &node) {
+void CCodeGenerator::visit(UnaryExpression &node) {
 	*os << node.getOperator().s;
 	*os << '(';
 	node.getExpression().accept(*this);
