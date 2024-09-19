@@ -1,0 +1,5 @@
+fun main() {}
+
+fun foo(): i32 {
+    -(return 1);
+}

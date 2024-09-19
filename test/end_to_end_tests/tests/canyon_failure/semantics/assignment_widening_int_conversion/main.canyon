@@ -1,0 +1,4 @@
+fun main() {
+    let a: i32 = 1;
+    a = 1i8;
+}

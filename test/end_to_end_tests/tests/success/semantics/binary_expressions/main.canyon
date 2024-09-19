@@ -1,0 +1,131 @@
+fun main() {}
+
+fun plus() {
+    let a: i32 = 1 + 1;
+    let b: i8 = 1i8 + 1i8;
+    let c: i16 = 1i16 + 1i16;
+    let d: i32 = 1i32 + 1i32;
+    let e: i64 = 1i64 + 1i64;
+
+    let f: u8 = 1u8 + 1u8;
+    let g: u16 = 1u16 + 1u16;
+    let h: u32 = 1u32 + 1u32;
+    let i: u64 = 1u64 + 1u64;
+}
+
+fun minus() {
+    let a: i32 = 1 - 1;
+    let b: i8 = 1i8 - 1i8;
+    let c: i16 = 1i16 - 1i16;
+    let d: i32 = 1i32 - 1i32;
+    let e: i64 = 1i64 - 1i64;
+
+    let f: u8 = 1u8 - 1u8;
+    let g: u16 = 1u16 - 1u16;
+    let h: u32 = 1u32 - 1u32;
+    let i: u64 = 1u64 - 1u64;
+}
+
+fun times() {
+    let a: i32 = 1 * 1;
+    let b: i8 = 1i8 * 1i8;
+    let c: i16 = 1i16 * 1i16;
+    let d: i32 = 1i32 * 1i32;
+    let e: i64 = 1i64 * 1i64;
+
+    let f: u8 = 1u8 * 1u8;
+    let g: u16 = 1u16 * 1u16;
+    let h: u32 = 1u32 * 1u32;
+    let i: u64 = 1u64 * 1u64;
+}
+
+fun divide() {
+    let a: i32 = 1 / 1;
+    let b: i8 = 1i8 / 1i8;
+    let c: i16 = 1i16 / 1i16;
+    let d: i32 = 1i32 / 1i32;
+    let e: i64 = 1i64 / 1i64;
+
+    let f: u8 = 1u8 / 1u8;
+    let g: u16 = 1u16 / 1u16;
+    let h: u32 = 1u32 / 1u32;
+    let i: u64 = 1u64 / 1u64;
+}
+
+fun modulus() {
+    let a: i32 = 1 % 1;
+    let b: i8 = 1i8 % 1i8;
+    let c: i16 = 1i16 % 1i16;
+    let d: i32 = 1i32 % 1i32;
+    let e: i64 = 1i64 % 1i64;
+
+    let f: u8 = 1u8 % 1u8;
+    let g: u16 = 1u16 % 1u16;
+    let h: u32 = 1u32 % 1u32;
+    let i: u64 = 1u64 % 1u64;
+}
+
+fun bitwiseAnd() {
+    let a: i32 = 1 & 1;
+    let b: i8 = 1i8 & 1i8;
+    let c: i16 = 1i16 & 1i16;
+    let d: i32 = 1i32 & 1i32;
+    let e: i64 = 1i64 & 1i64;
+
+    let f: u8 = 1u8 & 1u8;
+    let g: u16 = 1u16 & 1u16;
+    let h: u32 = 1u32 & 1u32;
+    let i: u64 = 1u64 & 1u64;
+}
+
+fun bitwiseOr() {
+    let a: i32 = 1 | 1;
+    let b: i8 = 1i8 | 1i8;
+    let c: i16 = 1i16 | 1i16;
+    let d: i32 = 1i32 | 1i32;
+    let e: i64 = 1i64 | 1i64;
+
+    let f: u8 = 1u8 | 1u8;
+    let g: u16 = 1u16 | 1u16;
+    let h: u32 = 1u32 | 1u32;
+    let i: u64 = 1u64 | 1u64;
+}
+
+fun bitwiseXor() {
+    let a: i32 = 1 ^ 1;
+    let b: i8 = 1i8 ^ 1i8;
+    let c: i16 = 1i16 ^ 1i16;
+    let d: i32 = 1i32 ^ 1i32;
+    let e: i64 = 1i64 ^ 1i64;
+
+    let f: u8 = 1u8 ^ 1u8;
+    let g: u16 = 1u16 ^ 1u16;
+    let h: u32 = 1u32 ^ 1u32;
+    let i: u64 = 1u64 ^ 1u64;
+}
+
+fun bitshiftLeft() {
+    let a: i32 = 1 << 1;
+    let b: i8 = 1i8 << 1i8;
+    let c: i16 = 1i16 << 1i16;
+    let d: i32 = 1i32 << 1i32;
+    let e: i64 = 1i64 << 1i64;
+
+    let f: u8 = 1u8 << 1u8;
+    let g: u16 = 1u16 << 1u16;
+    let h: u32 = 1u32 << 1u32;
+    let i: u64 = 1u64 << 1u64;
+}
+
+fun bitshiftRight() {
+    let a: i32 = 1 >> 1;
+    let b: i8 = 1i8 >> 1i8;
+    let c: i16 = 1i16 >> 1i16;
+    let d: i32 = 1i32 >> 1i32;
+    let e: i64 = 1i64 >> 1i64;
+
+    let f: u8 = 1u8 >> 1u8;
+    let g: u16 = 1u16 >> 1u16;
+    let h: u32 = 1u32 >> 1u32;
+    let i: u64 = 1u64 >> 1u64;
+}

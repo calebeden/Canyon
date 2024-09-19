@@ -1,0 +1,34 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            // "preLaunchTask": "C/C++: gcc-11 build active file",
+            "program": "${workspaceFolder}/build/canyon",
+            "args": [
+                "main.canyon",
+                "main.c"
+            ],
+            // "args": ["test/end_to_end_tests/tests/success/sample/main.canyon", "main.c"],
+            // "args": ["test/end_to_end_tests/tests/success/test_main/main.canyon", "main.c"],
+            // "args": ["test/end_to_end_tests/tests/canyon_failure/only_primitive/main.canyon", "main.c"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+        },
+    ]
+}

@@ -1,0 +1,7 @@
+fun main() {
+    foo()
+}
+
+fun foo(): i32 {
+    1
+}

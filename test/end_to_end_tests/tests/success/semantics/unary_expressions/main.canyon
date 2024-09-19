@@ -1,0 +1,21 @@
+fun main() {}
+
+fun foo() {
+    let a: i32 = -1;
+    let b: i8 = -1i8;
+    let c: i16 = -1i16;
+    let d: i32 = -1i32;
+    let e: i64 = -1i64;
+    
+    let f: i32 = +1;
+    let g: i8 = +1i8;
+    let h: i16 = +1i16;
+    let i: i32 = +1i32;
+    let j: i64 = +1i64;
+
+    let k: i32 = ~1;
+    let l: i8 = ~1i8;
+    let m: i16 = ~1i16;
+    let n: i32 = ~1i32;
+    let o: i64 = ~1i64;
+}

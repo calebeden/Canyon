@@ -1,0 +1,6 @@
+fun main() {}
+
+fun foo(): i8 {
+    return 1i8;
+    1
+}

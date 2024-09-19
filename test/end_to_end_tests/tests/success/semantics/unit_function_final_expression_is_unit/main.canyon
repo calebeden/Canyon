@@ -1,0 +1,8 @@
+fun main() {}
+
+fun foo() {
+    bar()
+}
+
+fun bar() {
+}

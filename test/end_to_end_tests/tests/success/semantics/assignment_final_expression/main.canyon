@@ -1,0 +1,6 @@
+fun main() {}
+
+fun foo() {
+    let a: i32 = 1;
+    a = 2
+}
