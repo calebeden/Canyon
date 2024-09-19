@@ -9,6 +9,10 @@
 #include <utility>
 #include <vector>
 
+/**
+ * @brief Parses a series of Tokens into an AST
+ * 
+ */
 class Parser {
 	std::vector<std::unique_ptr<Token>> tokens;
 	ErrorHandler *errorHandler;

@@ -9,6 +9,10 @@
 #include <string_view>
 #include <vector>
 
+/**
+ * @brief Transforms an AST into one that is more suitable for generating C code
+ *
+ */
 class CCodeAdapter : ASTVisitor {
 private:
 	Module *inputModule;

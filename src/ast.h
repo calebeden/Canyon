@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <vector>
 
+/// Classes representing the parsed Abstract Syntax Tree (AST) of Canyon source code
+
 class ASTVisitor;
 
 class ASTComponent {

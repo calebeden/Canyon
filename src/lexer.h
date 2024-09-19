@@ -11,6 +11,10 @@
 #include <string_view>
 #include <vector>
 
+/**
+ * @brief Converts Canyon source code into a series of Tokens
+ * 
+ */
 class Lexer {
 	std::string_view program;
 	size_t current = 0;

@@ -15,6 +15,10 @@
 #	define test_virtual
 #endif
 
+/**
+ * @brief Collects and reports errors that occur while compiling Canyon code
+ * 
+ */
 class ErrorHandler {
 protected:
 	struct Error {

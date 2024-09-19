@@ -8,6 +8,10 @@
 #include <string>
 #include <unordered_map>
 
+/**
+ * @brief Generates C code from a Canyon AST
+ * 
+ */
 class CCodeGenerator : public ASTVisitor {
 private:
 	Module *module;

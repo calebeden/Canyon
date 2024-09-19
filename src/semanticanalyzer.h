@@ -8,6 +8,10 @@
 #include <memory>
 #include <vector>
 
+/**
+ * @brief Validates whether an AST conforms to Canyon language semantics
+ * 
+ */
 class SemanticAnalyzer : public ASTVisitor {
 	Module *module;
 	ErrorHandler *errorHandler;

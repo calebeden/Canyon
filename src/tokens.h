@@ -6,6 +6,9 @@
 #include <iostream>
 #include <string_view>
 
+/// Various classes used to represent lexed source code, as well as general tools to
+/// manage source code in memory
+
 struct Slice {
 	std::string_view contents;
 	std::filesystem::path source;
