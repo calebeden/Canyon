@@ -20,6 +20,7 @@ static void addSameSignIntegerArithmeticTypes(Module *module,
 static void addSameSignIntegerComparisonTypes(Module *module,
       const std::span<const std::string_view> types,
       const std::span<const Operator::Type> comparisonOperators);
+static void addDefaultBoolOperators(Module *module);
 
 SemanticAnalyzer::SemanticAnalyzer(Module *module, ErrorHandler *errorHandler)
     : module(module), errorHandler(errorHandler) {
@@ -270,6 +271,7 @@ void SemanticAnalyzer::visit(Module &node) {
 
 static void addDefaultOperators(Module *module) {
 	addDefaultIntegerOperators(module);
+	addDefaultBoolOperators(module);
 }
 
 static void addDefaultIntegerOperators(Module *module) {
@@ -346,4 +348,13 @@ static void addSameSignIntegerComparisonTypes(Module *module,
 			module->addBinaryOperator(op, typeID, typeID, boolTypeID);
 		}
 	}
+}
+
+static void addDefaultBoolOperators(Module *module) {
+	static const int boolTypeID = module->getType("bool").id;
+	module->addUnaryOperator(Operator::Type::LogicalNot, boolTypeID, boolTypeID);
+	module->addBinaryOperator(Operator::Type::LogicalAnd, boolTypeID, boolTypeID, boolTypeID);
+	module->addBinaryOperator(Operator::Type::LogicalOr, boolTypeID, boolTypeID, boolTypeID);
+	module->addBinaryOperator(Operator::Type::Equality, boolTypeID, boolTypeID, boolTypeID);
+	module->addBinaryOperator(Operator::Type::Inequality, boolTypeID, boolTypeID, boolTypeID);
 }
