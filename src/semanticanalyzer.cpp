@@ -361,4 +361,7 @@ static void addDefaultBoolOperators(Module *module) {
 	      boolTypeID);
 	module->addBinaryOperator(Operator::Type::Inequality, boolTypeID, boolTypeID,
 	      boolTypeID);
+	static const int unitTypeID = module->getType("()").id;
+	module->addBinaryOperator(Operator::Type::Assignment, boolTypeID, boolTypeID,
+	      unitTypeID);
 }
