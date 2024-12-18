@@ -1,0 +1,7 @@
+fun main() {
+    let and: bool = true && false;
+    let or: bool = true || false;
+    let not: bool = !true;
+    let eq: bool = true == false;
+    let neq: bool = true != false;
+}
