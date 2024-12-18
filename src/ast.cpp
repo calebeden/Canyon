@@ -304,6 +304,7 @@ Module::Module(std::filesystem::path source) : source(std::move(source)) {
 	insertType("u16");
 	insertType("u32");
 	insertType("u64");
+	insertType("bool");
 }
 
 Module::Module(const Module &module)

@@ -21,6 +21,7 @@ CCodeGenerator::CCodeGenerator(Module *module, std::ostream *os)
 	cTypes[this->module->getType("u16").id] = "uint16_t";
 	cTypes[this->module->getType("u32").id] = "uint32_t";
 	cTypes[this->module->getType("u64").id] = "uint64_t";
+	cTypes[this->module->getType("bool").id] = "bool";
 }
 
 void CCodeGenerator::generate() {
@@ -33,6 +34,7 @@ void CCodeGenerator::generate() {
 
 void CCodeGenerator::generateIncludes() {
 	*os << "#include <stdint.h>\n"
+	       "#include <stdbool.h>\n"
 	       "\n";
 }
 
