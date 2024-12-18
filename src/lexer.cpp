@@ -263,6 +263,7 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::Equals) {
+						token->s.contents = "==";
 						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::Equality));
 						i++;
@@ -277,6 +278,7 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::Colon) {
+						token->s.contents = "::";
 						evaluated.push_back(
 						      std::make_unique<Operator>(*token, Operator::Type::Scope));
 						i++;
@@ -315,6 +317,7 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::Equals) {
+						token->s.contents = "!=";
 						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::Inequality));
 						i++;
@@ -329,12 +332,14 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::Equals) {
+						token->s.contents = "<=";
 						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::LessThanOrEqual));
 						i++;
 					} else if (dynamic_cast<Punctuation *>(next)
 					           && dynamic_cast<Punctuation *>(next)->type
 					                    == Punctuation::Type::LessThan) {
+						token->s.contents = "<<";
 						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::BitwiseShiftLeft));
 						i++;
@@ -349,12 +354,14 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::Equals) {
+						token->s.contents = ">=";
 						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::GreaterThanOrEqual));
 						i++;
 					} else if (dynamic_cast<Punctuation *>(next)
 					           && dynamic_cast<Punctuation *>(next)->type
 					                    == Punctuation::Type::GreaterThan) {
+						token->s.contents = ">>";
 						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::BitwiseShiftRight));
 						i++;
@@ -369,6 +376,7 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::Ampersand) {
+						token->s.contents = "&&";
 						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::LogicalAnd));
 						i++;
@@ -383,6 +391,7 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 					if (dynamic_cast<Punctuation *>(next)
 					      && dynamic_cast<Punctuation *>(next)->type
 					               == Punctuation::Type::VerticalBar) {
+						token->s.contents = "||";
 						evaluated.push_back(std::make_unique<Operator>(*token,
 						      Operator::Type::LogicalOr));
 						i++;
