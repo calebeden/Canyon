@@ -406,14 +406,22 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 		} else if (dynamic_cast<SymbolOrLiteral *>(token.get())) {
 			if (std::isdigit(dynamic_cast<SymbolOrLiteral *>(token.get())->s.contents[0])
 			      != 0) {
-				std::unique_ptr<Token> literal
-				      = evaluateLiteral(dynamic_cast<SymbolOrLiteral *>(token.get()));
+				std::unique_ptr<Token> literal = evaluateIntegerLiteral(
+				      dynamic_cast<SymbolOrLiteral *>(token.get()));
 				if (literal == nullptr) {
 					errorHandler->error(*token, "Invalid integer literal");
 					evaluated.push_back(std::move(token));
 				} else {
 					evaluated.push_back(std::move(literal));
 				}
+			} else if (dynamic_cast<SymbolOrLiteral *>(token.get())->s.contents
+			           == "true") {
+				evaluated.push_back(std::make_unique<BoolLiteral>(
+				      *dynamic_cast<SymbolOrLiteral *>(token.get()), true));
+			} else if (dynamic_cast<SymbolOrLiteral *>(token.get())->s.contents
+			           == "false") {
+				evaluated.push_back(std::make_unique<BoolLiteral>(
+				      *dynamic_cast<SymbolOrLiteral *>(token.get()), false));
 			} else {
 				evaluated.push_back(std::make_unique<Symbol>(
 				      dynamic_cast<SymbolOrLiteral *>(token.get())));
@@ -447,7 +455,7 @@ bool Lexer::isDigitInBase(char c, int base) {
 	return false;
 }
 
-std::unique_ptr<IntegerLiteral> Lexer::evaluateLiteral(SymbolOrLiteral *literal) {
+std::unique_ptr<IntegerLiteral> Lexer::evaluateIntegerLiteral(SymbolOrLiteral *literal) {
 	int base = DECIMAL;
 	size_t start = 0;
 	size_t pos = 0;

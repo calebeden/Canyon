@@ -153,6 +153,15 @@ struct IntegerLiteral : public Token {
 
 bool operator==(const IntegerLiteral &lhs, const IntegerLiteral &rhs);
 
+struct BoolLiteral : public Token {
+	bool value;
+	explicit BoolLiteral(const Token &t, bool value);
+	virtual void print(std::ostream &os) const;
+	virtual ~BoolLiteral() = default;
+};
+
+bool operator==(const BoolLiteral &lhs, const BoolLiteral &rhs);
+
 struct Whitespace : public Token {
 	explicit Whitespace(const Slice &s);
 	virtual void print(std::ostream &os) const;
