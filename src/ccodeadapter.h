@@ -28,7 +28,8 @@ public:
 	void visit(FunctionCallExpression &node) override;
 	void visit(BinaryExpression &node) override;
 	void visit(UnaryExpression &node) override;
-	void visit(LiteralExpression &node) override;
+	void visit(IntegerLiteralExpression &node) override;
+	void visit(BoolLiteralExpression &node) override;
 	void visit(SymbolExpression &node) override;
 	void visit(BlockExpression &node) override;
 	void visit(ReturnExpression &node) override;

@@ -56,7 +56,7 @@ void CCodeGenerator::visit(UnaryExpression &node) {
 	*os << ')';
 }
 
-void CCodeGenerator::visit(LiteralExpression &node) {
+void CCodeGenerator::visit(IntegerLiteralExpression &node) {
 	IntegerLiteral &literal = node.getLiteral();
 	switch (literal.type) {
 		case IntegerLiteral::Type::I8:
@@ -76,6 +76,10 @@ void CCodeGenerator::visit(LiteralExpression &node) {
 			*os << literal.value << "ULL";
 			break;
 	}
+}
+
+void CCodeGenerator::visit(BoolLiteralExpression &node) {
+	*os << (node.getLiteral().value ? "true" : "false");
 }
 
 void CCodeGenerator::visit(SymbolExpression &node) {

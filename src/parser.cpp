@@ -531,11 +531,18 @@ std::unique_ptr<Expression> Parser::parseFunctionCallExpression() {
 }
 
 std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
-	auto *literal = dynamic_cast<IntegerLiteral *>(tokens[i].get());
-	if (literal != nullptr) {
-		literal = dynamic_cast<IntegerLiteral *>(tokens[i++].release());
-		return std::make_unique<LiteralExpression>(
-		      std::unique_ptr<IntegerLiteral>(literal));
+	auto *integerLiteral = dynamic_cast<IntegerLiteral *>(tokens[i].get());
+	if (integerLiteral != nullptr) {
+		integerLiteral = dynamic_cast<IntegerLiteral *>(tokens[i++].release());
+		return std::make_unique<IntegerLiteralExpression>(
+		      std::unique_ptr<IntegerLiteral>(integerLiteral));
+	}
+
+	auto *boolLiteral = dynamic_cast<BoolLiteral *>(tokens[i].get());
+	if (boolLiteral != nullptr) {
+		boolLiteral = dynamic_cast<BoolLiteral *>(tokens[i++].release());
+		return std::make_unique<BoolLiteralExpression>(
+		      std::unique_ptr<BoolLiteral>(boolLiteral));
 	}
 
 	auto *symbol = dynamic_cast<Symbol *>(tokens[i].get());

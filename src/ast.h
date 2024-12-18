@@ -79,14 +79,24 @@ public:
 	virtual ~UnaryExpression() = default;
 };
 
-class LiteralExpression : public Expression {
+class IntegerLiteralExpression : public Expression {
 private:
 	std::unique_ptr<IntegerLiteral> literal;
 public:
-	LiteralExpression(std::unique_ptr<IntegerLiteral> literal);
+	IntegerLiteralExpression(std::unique_ptr<IntegerLiteral> literal);
 	IntegerLiteral &getLiteral();
 	void accept(ASTVisitor &visitor) override;
-	virtual ~LiteralExpression() = default;
+	virtual ~IntegerLiteralExpression() = default;
+};
+
+class BoolLiteralExpression : public Expression {
+private:
+	std::unique_ptr<BoolLiteral> literal;
+public:
+	BoolLiteralExpression(std::unique_ptr<BoolLiteral> literal);
+	BoolLiteral &getLiteral();
+	void accept(ASTVisitor &visitor) override;
+	virtual ~BoolLiteralExpression() = default;
 };
 
 class SymbolExpression : public Expression {
@@ -235,7 +245,8 @@ public:
 	virtual void visit(FunctionCallExpression &node) = 0;
 	virtual void visit(BinaryExpression &node) = 0;
 	virtual void visit(UnaryExpression &node) = 0;
-	virtual void visit(LiteralExpression &node) = 0;
+	virtual void visit(IntegerLiteralExpression &node) = 0;
+	virtual void visit(BoolLiteralExpression &node) = 0;
 	virtual void visit(SymbolExpression &node) = 0;
 	virtual void visit(BlockExpression &node) = 0;
 	virtual void visit(ReturnExpression &node) = 0;
@@ -253,7 +264,8 @@ public:
 	void visit(FunctionCallExpression &node) override;
 	void visit(BinaryExpression &node) override;
 	void visit(UnaryExpression &node) override;
-	void visit(LiteralExpression &node) override;
+	void visit(IntegerLiteralExpression &node) override;
+	void visit(BoolLiteralExpression &node) override;
 	void visit(SymbolExpression &node) override;
 	void visit(BlockExpression &node) override;
 	void visit(ReturnExpression &node) override;

@@ -80,15 +80,28 @@ void UnaryExpression::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-LiteralExpression::LiteralExpression(std::unique_ptr<IntegerLiteral> literal)
+IntegerLiteralExpression::IntegerLiteralExpression(
+      std::unique_ptr<IntegerLiteral> literal)
     : Expression(literal->s), literal(std::move(literal)) {
 }
 
-IntegerLiteral &LiteralExpression::getLiteral() {
+IntegerLiteral &IntegerLiteralExpression::getLiteral() {
 	return *literal;
 }
 
-void LiteralExpression::accept(ASTVisitor &visitor) {
+void IntegerLiteralExpression::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+
+BoolLiteralExpression::BoolLiteralExpression(std::unique_ptr<BoolLiteral> literal)
+    : Expression(literal->s), literal(std::move(literal)) {
+}
+
+BoolLiteral &BoolLiteralExpression::getLiteral() {
+	return *literal;
+}
+
+void BoolLiteralExpression::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
@@ -424,7 +437,11 @@ void ASTPrinter::visit(UnaryExpression &node) {
 	std::cerr << ')';
 }
 
-void ASTPrinter::visit(LiteralExpression &node) {
+void ASTPrinter::visit(IntegerLiteralExpression &node) {
+	node.getLiteral().print(std::cerr);
+}
+
+void ASTPrinter::visit(BoolLiteralExpression &node) {
 	node.getLiteral().print(std::cerr);
 }
 

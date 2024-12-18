@@ -13,10 +13,13 @@
 
 static void addDefaultOperators(Module *module);
 static void addDefaultIntegerOperators(Module *module);
-static void addSameSignIntegerTypes(Module *module,
+static void addSameSignIntegerArithmeticTypes(Module *module,
       std::span<const std::string_view> types,
       std::span<const Operator::Type> binaryOperators,
       std::span<const Operator::Type> unaryOperators);
+static void addSameSignIntegerComparisonTypes(Module *module,
+      const std::span<const std::string_view> types,
+      const std::span<const Operator::Type> comparisonOperators);
 
 SemanticAnalyzer::SemanticAnalyzer(Module *module, ErrorHandler *errorHandler)
     : module(module), errorHandler(errorHandler) {
@@ -88,9 +91,13 @@ void SemanticAnalyzer::visit(UnaryExpression &node) {
 	node.setTypeID(typeID);
 }
 
-void SemanticAnalyzer::visit(LiteralExpression &node) {
+void SemanticAnalyzer::visit(IntegerLiteralExpression &node) {
 	IntegerLiteral &literal = node.getLiteral();
 	node.setTypeID(module->getType(IntegerLiteral::typeToStringView(literal.type)).id);
+}
+
+void SemanticAnalyzer::visit(BoolLiteralExpression &node) {
+	node.setTypeID(module->getType("bool").id);
 }
 
 void SemanticAnalyzer::visit(SymbolExpression &node) {
@@ -282,6 +289,8 @@ static void addDefaultIntegerOperators(Module *module) {
 	      Operator::Type::BitwiseXor,
 	      Operator::Type::BitwiseShiftLeft,
 	      Operator::Type::BitwiseShiftRight,
+	};
+	const std::array comparisonOperators = {
 	      Operator::Type::Equality,
 	      Operator::Type::Inequality,
 	      Operator::Type::LessThan,
@@ -302,13 +311,15 @@ static void addDefaultIntegerOperators(Module *module) {
 	      "u64",
 	};
 
-	addSameSignIntegerTypes(module, signedIntegerTypes, binaryIntegerOperators,
+	addSameSignIntegerArithmeticTypes(module, signedIntegerTypes, binaryIntegerOperators,
 	      unaryIntegerOperators);
-	addSameSignIntegerTypes(module, unsignedIntegerTypes, binaryIntegerOperators,
-	      unaryIntegerOperators);
+	addSameSignIntegerArithmeticTypes(module, unsignedIntegerTypes,
+	      binaryIntegerOperators, unaryIntegerOperators);
+	addSameSignIntegerComparisonTypes(module, signedIntegerTypes, comparisonOperators);
+	addSameSignIntegerComparisonTypes(module, unsignedIntegerTypes, comparisonOperators);
 }
 
-static void addSameSignIntegerTypes(Module *module,
+static void addSameSignIntegerArithmeticTypes(Module *module,
       const std::span<const std::string_view> types,
       const std::span<const Operator::Type> binaryOperators,
       const std::span<const Operator::Type> unaryOperators) {
@@ -322,5 +333,17 @@ static void addSameSignIntegerTypes(Module *module,
 			module->addBinaryOperator(op, typeID, typeID, typeID);
 		}
 		module->addBinaryOperator(Operator::Type::Assignment, typeID, typeID, unitTypeID);
+	}
+}
+
+static void addSameSignIntegerComparisonTypes(Module *module,
+      const std::span<const std::string_view> types,
+      const std::span<const Operator::Type> comparisonOperators) {
+	static const int boolTypeID = module->getType("bool").id;
+	for (auto it = types.begin(); it != types.end(); it++) {
+		int typeID = module->getType(*it).id;
+		for (const auto &op : comparisonOperators) {
+			module->addBinaryOperator(op, typeID, typeID, boolTypeID);
+		}
 	}
 }
