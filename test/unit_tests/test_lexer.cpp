@@ -1471,3 +1471,21 @@ TEST_F(TestLexer, testTabSizeConfiguration) {
 		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 	}
 }
+
+TEST_F(TestLexer, testTrueLiteral) {
+	std::string program = "true";
+	l = Lexer(program, "", &e);
+	tokens = l.lex();
+	EXPECT_EQ(tokens.size(), 2);
+	EXPECT_EQ(*dynamic_cast<BoolLiteral *>(tokens[0].get()), BoolLiteral(dummy, true));
+	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
+}
+
+TEST_F(TestLexer, testFalseLiteral) {
+	std::string program = "false";
+	l = Lexer(program, "", &e);
+	tokens = l.lex();
+	EXPECT_EQ(tokens.size(), 2);
+	EXPECT_EQ(*dynamic_cast<BoolLiteral *>(tokens[0].get()), BoolLiteral(dummy, false));
+	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
+}
