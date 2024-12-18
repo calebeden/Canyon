@@ -353,8 +353,12 @@ static void addSameSignIntegerComparisonTypes(Module *module,
 static void addDefaultBoolOperators(Module *module) {
 	static const int boolTypeID = module->getType("bool").id;
 	module->addUnaryOperator(Operator::Type::LogicalNot, boolTypeID, boolTypeID);
-	module->addBinaryOperator(Operator::Type::LogicalAnd, boolTypeID, boolTypeID, boolTypeID);
-	module->addBinaryOperator(Operator::Type::LogicalOr, boolTypeID, boolTypeID, boolTypeID);
-	module->addBinaryOperator(Operator::Type::Equality, boolTypeID, boolTypeID, boolTypeID);
-	module->addBinaryOperator(Operator::Type::Inequality, boolTypeID, boolTypeID, boolTypeID);
+	module->addBinaryOperator(Operator::Type::LogicalAnd, boolTypeID, boolTypeID,
+	      boolTypeID);
+	module->addBinaryOperator(Operator::Type::LogicalOr, boolTypeID, boolTypeID,
+	      boolTypeID);
+	module->addBinaryOperator(Operator::Type::Equality, boolTypeID, boolTypeID,
+	      boolTypeID);
+	module->addBinaryOperator(Operator::Type::Inequality, boolTypeID, boolTypeID,
+	      boolTypeID);
 }
