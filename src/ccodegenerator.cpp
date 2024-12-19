@@ -116,6 +116,18 @@ void CCodeGenerator::visit(ParenthesizedExpression &node) {
 	node.getExpression().accept(*this);
 }
 
+void CCodeGenerator::visit(IfElseExpression &node) {
+	*os << "if (";
+	node.getCondition().accept(*this);
+	*os << ") ";
+	node.getThenBlock().accept(*this);
+	Expression *elseBlock = node.getElseBlock();
+	if (elseBlock != nullptr) {
+		*os << " else ";
+		elseBlock->accept(*this);
+	}
+}
+
 void CCodeGenerator::visit(ExpressionStatement &node) {
 	node.getExpression().accept(*this);
 	if (!dynamic_cast<BlockExpression *>(&node.getExpression())) {

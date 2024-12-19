@@ -34,6 +34,7 @@ public:
 	void visit(BlockExpression &node) override;
 	void visit(ReturnExpression &node) override;
 	void visit(ParenthesizedExpression &node) override;
+	void visit(IfElseExpression &node) override;
 	void visit(ExpressionStatement &node) override;
 	void visit(LetStatement &node) override;
 	void visit(Function &node) override;

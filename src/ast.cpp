@@ -199,6 +199,45 @@ void ParenthesizedExpression::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
+IfElseExpression::IfElseExpression(const Keyword &ifKeyword,
+      std::unique_ptr<Expression> condition, std::unique_ptr<BlockExpression> thenBlock,
+      [[maybe_unused]] const Keyword &elseKeyword,
+      std::unique_ptr<BlockExpression> elseBlock)
+    : Expression(Slice::merge(ifKeyword.s, elseBlock->getSlice())),
+      condition(std::move(condition)), thenBlock(std::move(thenBlock)),
+      elseBlock(std::move(elseBlock)) {
+}
+
+IfElseExpression::IfElseExpression(const Keyword &ifKeyword,
+      std::unique_ptr<Expression> condition, std::unique_ptr<BlockExpression> thenBlock)
+    : Expression(Slice::merge(ifKeyword.s, thenBlock->getSlice())),
+      condition(std::move(condition)), thenBlock(std::move(thenBlock)),
+      elseBlock(nullptr) {
+}
+
+IfElseExpression::IfElseExpression(std::unique_ptr<Expression> condition,
+      std::unique_ptr<BlockExpression> thenBlock,
+      std::unique_ptr<BlockExpression> elseBlock)
+    : Expression(Slice("", "", 0, 0)), condition(std::move(condition)),
+      thenBlock(std::move(thenBlock)), elseBlock(std::move(elseBlock)) {
+}
+
+Expression &IfElseExpression::getCondition() {
+	return *condition;
+}
+
+BlockExpression &IfElseExpression::getThenBlock() {
+	return *thenBlock;
+}
+
+BlockExpression *IfElseExpression::getElseBlock() {
+	return elseBlock.get();
+}
+
+void IfElseExpression::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+
 ExpressionStatement::ExpressionStatement(std::unique_ptr<Expression> expression,
       const Punctuation &semicolon)
     : Statement(Slice::merge(expression->getSlice(), semicolon.s)),
@@ -360,6 +399,19 @@ bool Module::isTypeConvertible(int from, int to) {
 	return false;
 }
 
+Type Module::getCommonTypeAncestor(int type1, int type2) {
+	if (type1 == type2) {
+		return getType(type1);
+	}
+	if (type1 == getType("!").id) {
+		return getType(type2);
+	}
+	if (type2 == getType("!").id) {
+		return getType(type1);
+	}
+	return getType("!");
+}
+
 void Module::addUnaryOperator(Operator::Type op, int operandType, int resultType) {
 	if (unaryOperators.find(op) == unaryOperators.end()) {
 		unaryOperators[op] = {};
@@ -480,6 +532,18 @@ void ASTPrinter::visit(ReturnExpression &node) {
 
 void ASTPrinter::visit(ParenthesizedExpression &node) {
 	node.getExpression().accept(*this);
+}
+
+void ASTPrinter::visit(IfElseExpression &node) {
+	std::cerr << "if ";
+	node.getCondition().accept(*this);
+	std::cerr << ' ';
+	node.getThenBlock().accept(*this);
+	Expression *elseBlock = node.getElseBlock();
+	if (elseBlock != nullptr) {
+		std::cerr << " else ";
+		elseBlock->accept(*this);
+	}
 }
 
 void ASTPrinter::visit(ExpressionStatement &node) {

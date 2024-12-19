@@ -173,6 +173,79 @@ void CCodeAdapter::visit(ParenthesizedExpression &node) {
 	returnValue = std::move(newParenthesizedExpression);
 }
 
+void CCodeAdapter::visit(IfElseExpression &node) {
+	if (node.getTypeID() != inputModule->getType("()").id
+	      && node.getTypeID() != inputModule->getType("!").id) {
+		generatedStrings->push_back("CANYON_BLOCK_" + std::to_string(blockCount++));
+		std::string_view tempVariableName = generatedStrings->back();
+		std::unique_ptr<LetStatement> declaration = std::make_unique<LetStatement>(
+		      std::make_unique<Symbol>(
+		            Slice(tempVariableName, inputModule->getSource(), 0, 0)),
+		      nullptr);
+		scopeStack.back()->setSymbolType(tempVariableName, node.getTypeID());
+		declaration->setSymbolTypeID(node.getTypeID());
+		scopeStack.back()->pushStatement(std::move(declaration));
+		blockTemporaryVariables.push(tempVariableName);
+
+		Expression &oldCondition = node.getCondition();
+		oldCondition.accept(*this);
+		std::unique_ptr<Expression> newCondition = std::unique_ptr<Expression>(
+		      dynamic_cast<Expression *>(returnValue.release()));
+		Expression &oldThenBlock = node.getThenBlock();
+		blockTemporaryVariables.push(tempVariableName);
+		oldThenBlock.accept(*this);
+		std::unique_ptr<BlockExpression> newThenBlock = std::unique_ptr<BlockExpression>(
+		      dynamic_cast<BlockExpression *>(returnValue.release()));
+		Expression *oldElseBlock = node.getElseBlock();
+		std::unique_ptr<IfElseExpression> newIfElseExpression;
+		if (oldElseBlock != nullptr) {
+			blockTemporaryVariables.push(tempVariableName);
+			oldElseBlock->accept(*this);
+			std::unique_ptr<BlockExpression> newElseBlock
+			      = std::unique_ptr<BlockExpression>(
+			            dynamic_cast<BlockExpression *>(returnValue.release()));
+			newIfElseExpression
+			      = std::make_unique<IfElseExpression>(std::move(newCondition),
+			            std::move(newThenBlock), std::move(newElseBlock));
+		} else {
+			newIfElseExpression = std::make_unique<IfElseExpression>(
+			      std::move(newCondition), std::move(newThenBlock), nullptr);
+		}
+		newIfElseExpression->setTypeID(node.getTypeID());
+
+		std::unique_ptr<ExpressionStatement> ifElseExpressionStatement
+		      = std::make_unique<ExpressionStatement>(std::move(newIfElseExpression));
+		scopeStack.back()->pushStatement(std::move(ifElseExpressionStatement));
+		returnValue = std::make_unique<SymbolExpression>(std::make_unique<Symbol>(
+		      Slice(tempVariableName, inputModule->getSource(), 0, 0)));
+	} else {
+		Expression &oldCondition = node.getCondition();
+		Expression &oldThenBlock = node.getThenBlock();
+		Expression *oldElseBlock = node.getElseBlock();
+		visitExpression(oldCondition);
+		std::unique_ptr<Expression> newCondition = std::unique_ptr<Expression>(
+		      dynamic_cast<Expression *>(returnValue.release()));
+		visitExpression(oldThenBlock);
+		std::unique_ptr<BlockExpression> newThenBlock = std::unique_ptr<BlockExpression>(
+		      dynamic_cast<BlockExpression *>(returnValue.release()));
+		std::unique_ptr<IfElseExpression> newIfElseExpression;
+		if (oldElseBlock != nullptr) {
+			visitExpression(*oldElseBlock);
+			std::unique_ptr<BlockExpression> newElseBlock
+			      = std::unique_ptr<BlockExpression>(
+			            dynamic_cast<BlockExpression *>(returnValue.release()));
+			newIfElseExpression
+			      = std::make_unique<IfElseExpression>(std::move(newCondition),
+			            std::move(newThenBlock), std::move(newElseBlock));
+		} else {
+			newIfElseExpression = std::make_unique<IfElseExpression>(
+			      std::move(newCondition), std::move(newThenBlock), nullptr);
+		}
+		newIfElseExpression->setTypeID(node.getTypeID());
+		returnValue = std::move(newIfElseExpression);
+	}
+}
+
 void CCodeAdapter::visit(ExpressionStatement &node) {
 	Expression &oldExpression = node.getExpression();
 	visitExpression(oldExpression);
@@ -226,6 +299,7 @@ void CCodeAdapter::visit(Module &node) {
 }
 
 void CCodeAdapter::visitExpression(Expression &node) {
+	// TODO(#11) move this logic into visit BlockExpression
 	auto *blockExpression = dynamic_cast<BlockExpression *>(&node);
 	if (blockExpression != nullptr
 	      && blockExpression->getTypeID() != inputModule->getType("()").id

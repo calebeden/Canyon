@@ -47,6 +47,14 @@ void Keyword::print(std::ostream &os) const {
 			os << "fun";
 			break;
 		}
+		case Type::IF: {
+			os << "if";
+			break;
+		}
+		case Type::ELSE: {
+			os << "else";
+			break;
+		}
 	}
 }
 
