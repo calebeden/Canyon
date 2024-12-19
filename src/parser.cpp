@@ -579,8 +579,8 @@ std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
 		}
 		auto *keyword2 = dynamic_cast<Keyword *>(tokens[i].get());
 		if (keyword2 == nullptr || keyword2->type != Keyword::Type::ELSE) {
-			errorHandler->error(*tokens[i], "Expected 'else'");
-			return nullptr;
+			return std::make_unique<IfElseExpression>(*keyword, std::move(condition),
+			      std::move(thenBlock));
 		}
 		i++;
 		auto *p2 = dynamic_cast<Punctuation *>(tokens[i].get());

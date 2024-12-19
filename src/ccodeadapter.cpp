@@ -187,23 +187,30 @@ void CCodeAdapter::visit(IfElseExpression &node) {
 		scopeStack.back()->pushStatement(std::move(declaration));
 		blockTemporaryVariables.push(tempVariableName);
 
-
 		Expression &oldCondition = node.getCondition();
-		Expression &oldThenBlock = node.getThenBlock();
-		blockTemporaryVariables.push(tempVariableName);
-		Expression &oldElseBlock = node.getElseBlock();
 		oldCondition.accept(*this);
 		std::unique_ptr<Expression> newCondition = std::unique_ptr<Expression>(
 		      dynamic_cast<Expression *>(returnValue.release()));
+		Expression &oldThenBlock = node.getThenBlock();
+		blockTemporaryVariables.push(tempVariableName);
 		oldThenBlock.accept(*this);
-		std::unique_ptr<BlockExpression> newIfBlock = std::unique_ptr<BlockExpression>(
+		std::unique_ptr<BlockExpression> newThenBlock = std::unique_ptr<BlockExpression>(
 		      dynamic_cast<BlockExpression *>(returnValue.release()));
-		oldElseBlock.accept(*this);
-		std::unique_ptr<BlockExpression> newElseBlock = std::unique_ptr<BlockExpression>(
-		      dynamic_cast<BlockExpression *>(returnValue.release()));
-		std::unique_ptr<IfElseExpression> newIfElseExpression
-		      = std::make_unique<IfElseExpression>(std::move(newCondition),
-		            std::move(newIfBlock), std::move(newElseBlock));
+		Expression *oldElseBlock = node.getElseBlock();
+		std::unique_ptr<IfElseExpression> newIfElseExpression;
+		if (oldElseBlock != nullptr) {
+			blockTemporaryVariables.push(tempVariableName);
+			oldElseBlock->accept(*this);
+			std::unique_ptr<BlockExpression> newElseBlock
+			      = std::unique_ptr<BlockExpression>(
+			            dynamic_cast<BlockExpression *>(returnValue.release()));
+			newIfElseExpression
+			      = std::make_unique<IfElseExpression>(std::move(newCondition),
+			            std::move(newThenBlock), std::move(newElseBlock));
+		} else {
+			newIfElseExpression = std::make_unique<IfElseExpression>(
+			      std::move(newCondition), std::move(newThenBlock), nullptr);
+		}
 		newIfElseExpression->setTypeID(node.getTypeID());
 
 		std::unique_ptr<ExpressionStatement> ifElseExpressionStatement
@@ -214,19 +221,26 @@ void CCodeAdapter::visit(IfElseExpression &node) {
 	} else {
 		Expression &oldCondition = node.getCondition();
 		Expression &oldThenBlock = node.getThenBlock();
-		Expression &oldElseBlock = node.getElseBlock();
+		Expression *oldElseBlock = node.getElseBlock();
 		visitExpression(oldCondition);
 		std::unique_ptr<Expression> newCondition = std::unique_ptr<Expression>(
 		      dynamic_cast<Expression *>(returnValue.release()));
 		visitExpression(oldThenBlock);
-		std::unique_ptr<BlockExpression> newIfBlock = std::unique_ptr<BlockExpression>(
+		std::unique_ptr<BlockExpression> newThenBlock = std::unique_ptr<BlockExpression>(
 		      dynamic_cast<BlockExpression *>(returnValue.release()));
-		visitExpression(oldElseBlock);
-		std::unique_ptr<BlockExpression> newElseBlock = std::unique_ptr<BlockExpression>(
-		      dynamic_cast<BlockExpression *>(returnValue.release()));
-		std::unique_ptr<IfElseExpression> newIfElseExpression
-		      = std::make_unique<IfElseExpression>(std::move(newCondition),
-		            std::move(newIfBlock), std::move(newElseBlock));
+		std::unique_ptr<IfElseExpression> newIfElseExpression;
+		if (oldElseBlock != nullptr) {
+			visitExpression(*oldElseBlock);
+			std::unique_ptr<BlockExpression> newElseBlock
+			      = std::unique_ptr<BlockExpression>(
+			            dynamic_cast<BlockExpression *>(returnValue.release()));
+			newIfElseExpression
+			      = std::make_unique<IfElseExpression>(std::move(newCondition),
+			            std::move(newThenBlock), std::move(newElseBlock));
+		} else {
+			newIfElseExpression = std::make_unique<IfElseExpression>(
+			      std::move(newCondition), std::move(newThenBlock), nullptr);
+		}
 		newIfElseExpression->setTypeID(node.getTypeID());
 		returnValue = std::move(newIfElseExpression);
 	}

@@ -177,16 +177,22 @@ void SemanticAnalyzer::visit(IfElseExpression &node) {
 	}
 	BlockExpression &thenBlock = node.getThenBlock();
 	thenBlock.accept(*this);
-	BlockExpression &elseBlock = node.getElseBlock();
-	elseBlock.accept(*this);
 	int thenTypeID = thenBlock.getTypeID();
-	int elseTypeID = elseBlock.getTypeID();
+	BlockExpression *elseBlock = node.getElseBlock();
+	int elseTypeID;
+	if (elseBlock == nullptr) {
+		elseTypeID = module->getType("()").id;
+	} else {
+		elseBlock->accept(*this);
+		elseTypeID = elseBlock->getTypeID();
+	}
 	if (thenTypeID == -1 || elseTypeID == -1) {
 		return;
 	}
 	int typeID = module->getCommonTypeAncestor(thenTypeID, elseTypeID).id;
 	if (typeID == -1) {
-		errorHandler->error(node.getSlice(), "If and else block types are not convertible");
+		errorHandler->error(node.getSlice(),
+		      "If and else block types are not convertible");
 	}
 	node.setTypeID(typeID);
 }

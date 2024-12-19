@@ -208,6 +208,13 @@ IfElseExpression::IfElseExpression(const Keyword &ifKeyword,
       elseBlock(std::move(elseBlock)) {
 }
 
+IfElseExpression::IfElseExpression(const Keyword &ifKeyword,
+      std::unique_ptr<Expression> condition, std::unique_ptr<BlockExpression> thenBlock)
+    : Expression(Slice::merge(ifKeyword.s, thenBlock->getSlice())),
+      condition(std::move(condition)), thenBlock(std::move(thenBlock)),
+      elseBlock(nullptr) {
+}
+
 IfElseExpression::IfElseExpression(std::unique_ptr<Expression> condition,
       std::unique_ptr<BlockExpression> thenBlock,
       std::unique_ptr<BlockExpression> elseBlock)
@@ -223,8 +230,8 @@ BlockExpression &IfElseExpression::getThenBlock() {
 	return *thenBlock;
 }
 
-BlockExpression &IfElseExpression::getElseBlock() {
-	return *elseBlock;
+BlockExpression *IfElseExpression::getElseBlock() {
+	return elseBlock.get();
 }
 
 void IfElseExpression::accept(ASTVisitor &visitor) {
@@ -532,8 +539,11 @@ void ASTPrinter::visit(IfElseExpression &node) {
 	node.getCondition().accept(*this);
 	std::cerr << ' ';
 	node.getThenBlock().accept(*this);
-	std::cerr << " else ";
-	node.getElseBlock().accept(*this);
+	Expression *elseBlock = node.getElseBlock();
+	if (elseBlock != nullptr) {
+		std::cerr << " else ";
+		elseBlock->accept(*this);
+	}
 }
 
 void ASTPrinter::visit(ExpressionStatement &node) {

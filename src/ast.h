@@ -160,12 +160,14 @@ public:
 	IfElseExpression(const Keyword &ifKeyword, std::unique_ptr<Expression> condition,
 	      std::unique_ptr<BlockExpression> thenBlock, const Keyword &elseKeyword,
 	      std::unique_ptr<BlockExpression> elseBlock);
+	IfElseExpression(const Keyword &ifKeyword, std::unique_ptr<Expression> condition,
+	      std::unique_ptr<BlockExpression> thenBlock);
 	IfElseExpression(std::unique_ptr<Expression> condition,
 	      std::unique_ptr<BlockExpression> thenBlock,
 	      std::unique_ptr<BlockExpression> elseBlock);
 	Expression &getCondition();
 	BlockExpression &getThenBlock();
-	BlockExpression &getElseBlock();
+	BlockExpression *getElseBlock();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~IfElseExpression() = default;
 };
