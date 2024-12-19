@@ -48,7 +48,7 @@ private:
 	std::vector<std::unique_ptr<Token>> evaluate(
 	      std::vector<std::unique_ptr<Token>> tokens);
 	static bool isDigitInBase(char c, int base);
-	static std::unique_ptr<IntegerLiteral> evaluateLiteral(SymbolOrLiteral *literal);
+	static std::unique_ptr<IntegerLiteral> evaluateIntegerLiteral(SymbolOrLiteral *literal);
 	/**
 	 * @brief Splits the input source file into Slices based on whitespace and other token
 	 * separator rules

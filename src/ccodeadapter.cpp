@@ -70,12 +70,22 @@ void CCodeAdapter::visit(UnaryExpression &node) {
 	returnValue = std::move(newUnaryExpression);
 }
 
-void CCodeAdapter::visit(LiteralExpression &node) {
+void CCodeAdapter::visit(IntegerLiteralExpression &node) {
 	IntegerLiteral &previousLiteral = node.getLiteral();
 	std::unique_ptr<IntegerLiteral> newLiteral = std::make_unique<IntegerLiteral>(
 	      previousLiteral, previousLiteral.type, previousLiteral.value);
-	std::unique_ptr<LiteralExpression> newLiteralExpression
-	      = std::make_unique<LiteralExpression>(std::move(newLiteral));
+	std::unique_ptr<IntegerLiteralExpression> newLiteralExpression
+	      = std::make_unique<IntegerLiteralExpression>(std::move(newLiteral));
+	newLiteralExpression->setTypeID(node.getTypeID());
+	returnValue = std::move(newLiteralExpression);
+}
+
+void CCodeAdapter::visit(BoolLiteralExpression &node) {
+	BoolLiteral &previousLiteral = node.getLiteral();
+	std::unique_ptr<BoolLiteral> newLiteral
+	      = std::make_unique<BoolLiteral>(previousLiteral, previousLiteral.value);
+	std::unique_ptr<BoolLiteralExpression> newLiteralExpression
+	      = std::make_unique<BoolLiteralExpression>(std::move(newLiteral));
 	newLiteralExpression->setTypeID(node.getTypeID());
 	returnValue = std::move(newLiteralExpression);
 }

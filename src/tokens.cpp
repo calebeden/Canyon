@@ -307,6 +307,17 @@ bool operator==(const IntegerLiteral &lhs, const IntegerLiteral &rhs) {
 	return (lhs.type == rhs.type) && (lhs.value == rhs.value);
 }
 
+BoolLiteral::BoolLiteral(const Token &t, bool value) : Token(t.s), value(value) {
+}
+
+void BoolLiteral::print(std::ostream &os) const {
+	os << (value ? "true" : "false");
+}
+
+bool operator==(const BoolLiteral &lhs, const BoolLiteral &rhs) {
+	return lhs.value == rhs.value;
+}
+
 Whitespace::Whitespace(const Slice &s) : Token(s) {
 }
 

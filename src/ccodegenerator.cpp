@@ -21,6 +21,7 @@ CCodeGenerator::CCodeGenerator(Module *module, std::ostream *os)
 	cTypes[this->module->getType("u16").id] = "uint16_t";
 	cTypes[this->module->getType("u32").id] = "uint32_t";
 	cTypes[this->module->getType("u64").id] = "uint64_t";
+	cTypes[this->module->getType("bool").id] = "bool";
 }
 
 void CCodeGenerator::generate() {
@@ -33,6 +34,7 @@ void CCodeGenerator::generate() {
 
 void CCodeGenerator::generateIncludes() {
 	*os << "#include <stdint.h>\n"
+	       "#include <stdbool.h>\n"
 	       "\n";
 }
 
@@ -56,7 +58,7 @@ void CCodeGenerator::visit(UnaryExpression &node) {
 	*os << ')';
 }
 
-void CCodeGenerator::visit(LiteralExpression &node) {
+void CCodeGenerator::visit(IntegerLiteralExpression &node) {
 	IntegerLiteral &literal = node.getLiteral();
 	switch (literal.type) {
 		case IntegerLiteral::Type::I8:
@@ -76,6 +78,10 @@ void CCodeGenerator::visit(LiteralExpression &node) {
 			*os << literal.value << "ULL";
 			break;
 	}
+}
+
+void CCodeGenerator::visit(BoolLiteralExpression &node) {
+	*os << (node.getLiteral().value ? "true" : "false");
 }
 
 void CCodeGenerator::visit(SymbolExpression &node) {
