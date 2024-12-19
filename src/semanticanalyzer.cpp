@@ -179,7 +179,7 @@ void SemanticAnalyzer::visit(IfElseExpression &node) {
 	thenBlock.accept(*this);
 	int thenTypeID = thenBlock.getTypeID();
 	BlockExpression *elseBlock = node.getElseBlock();
-	int elseTypeID;
+	int elseTypeID = -1;
 	if (elseBlock == nullptr) {
 		elseTypeID = module->getType("()").id;
 	} else {
