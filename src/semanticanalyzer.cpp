@@ -183,6 +183,7 @@ void SemanticAnalyzer::visit(IfElseExpression &node) {
 	if (elseExpression == nullptr) {
 		elseTypeID = module->getType("()").id;
 	} else {
+		inUnreachableCode = false;
 		elseExpression->accept(*this);
 		elseTypeID = elseExpression->getTypeID();
 	}
