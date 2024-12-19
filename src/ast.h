@@ -155,19 +155,19 @@ class IfElseExpression : public Expression {
 private:
 	std::unique_ptr<Expression> condition;
 	std::unique_ptr<BlockExpression> thenBlock;
-	std::unique_ptr<BlockExpression> elseBlock;
+	std::unique_ptr<Expression> elseExpression;
 public:
 	IfElseExpression(const Keyword &ifKeyword, std::unique_ptr<Expression> condition,
 	      std::unique_ptr<BlockExpression> thenBlock, const Keyword &elseKeyword,
-	      std::unique_ptr<BlockExpression> elseBlock);
+	      std::unique_ptr<Expression> elseExpression);
 	IfElseExpression(const Keyword &ifKeyword, std::unique_ptr<Expression> condition,
 	      std::unique_ptr<BlockExpression> thenBlock);
 	IfElseExpression(std::unique_ptr<Expression> condition,
 	      std::unique_ptr<BlockExpression> thenBlock,
-	      std::unique_ptr<BlockExpression> elseBlock);
+	      std::unique_ptr<Expression> elseExpression);
 	Expression &getCondition();
 	BlockExpression &getThenBlock();
-	BlockExpression *getElseBlock();
+	Expression *getElseExpression();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~IfElseExpression() = default;
 };

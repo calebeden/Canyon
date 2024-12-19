@@ -290,17 +290,26 @@ std::unique_ptr<IfElseExpression> Parser::parseIfElse() {
 		      std::move(thenBlock));
 	}
 	i++;
+	auto *keyword3 = dynamic_cast<Keyword *>(tokens[i].get());
+	if (keyword3 != nullptr && keyword3->type == Keyword::Type::IF) {
+		auto ifelse = parseIfElse();
+		if (ifelse == nullptr) {
+			return nullptr;
+		}
+		return std::make_unique<IfElseExpression>(*keyword, std::move(condition),
+		      std::move(thenBlock), *keyword2, std::move(ifelse));
+	}
 	auto *p2 = dynamic_cast<Punctuation *>(tokens[i].get());
 	if (p2 == nullptr || p2->type != Punctuation::Type::OpenBrace) {
 		errorHandler->error(*tokens[i], "Expected '{'");
 		return nullptr;
 	}
-	auto elseBlock = parseBlock();
-	if (elseBlock == nullptr) {
+	auto elseExpression = parseBlock();
+	if (elseExpression == nullptr) {
 		return nullptr;
 	}
 	return std::make_unique<IfElseExpression>(*keyword, std::move(condition),
-	      std::move(thenBlock), *keyword2, std::move(elseBlock));
+	      std::move(thenBlock), *keyword2, std::move(elseExpression));
 }
 
 std::unique_ptr<Expression> Parser::parseReturnBreakExpression() {

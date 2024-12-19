@@ -121,10 +121,10 @@ void CCodeGenerator::visit(IfElseExpression &node) {
 	node.getCondition().accept(*this);
 	*os << ") ";
 	node.getThenBlock().accept(*this);
-	Expression *elseBlock = node.getElseBlock();
-	if (elseBlock != nullptr) {
+	Expression *elseExpression = node.getElseExpression();
+	if (elseExpression != nullptr) {
 		*os << " else ";
-		elseBlock->accept(*this);
+		elseExpression->accept(*this);
 	}
 }
 

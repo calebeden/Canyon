@@ -196,17 +196,17 @@ void CCodeAdapter::visit(IfElseExpression &node) {
 		oldThenBlock.accept(*this);
 		std::unique_ptr<BlockExpression> newThenBlock = std::unique_ptr<BlockExpression>(
 		      dynamic_cast<BlockExpression *>(returnValue.release()));
-		Expression *oldElseBlock = node.getElseBlock();
+		Expression *oldElseExpression = node.getElseExpression();
 		std::unique_ptr<IfElseExpression> newIfElseExpression;
-		if (oldElseBlock != nullptr) {
+		if (oldElseExpression != nullptr) {
 			blockTemporaryVariables.push(tempVariableName);
-			oldElseBlock->accept(*this);
-			std::unique_ptr<BlockExpression> newElseBlock
+			oldElseExpression->accept(*this);
+			std::unique_ptr<BlockExpression> newElseExpression
 			      = std::unique_ptr<BlockExpression>(
 			            dynamic_cast<BlockExpression *>(returnValue.release()));
 			newIfElseExpression
 			      = std::make_unique<IfElseExpression>(std::move(newCondition),
-			            std::move(newThenBlock), std::move(newElseBlock));
+			            std::move(newThenBlock), std::move(newElseExpression));
 		} else {
 			newIfElseExpression = std::make_unique<IfElseExpression>(
 			      std::move(newCondition), std::move(newThenBlock), nullptr);
@@ -221,7 +221,7 @@ void CCodeAdapter::visit(IfElseExpression &node) {
 	} else {
 		Expression &oldCondition = node.getCondition();
 		Expression &oldThenBlock = node.getThenBlock();
-		Expression *oldElseBlock = node.getElseBlock();
+		Expression *oldElseExpression = node.getElseExpression();
 		visitExpression(oldCondition);
 		std::unique_ptr<Expression> newCondition = std::unique_ptr<Expression>(
 		      dynamic_cast<Expression *>(returnValue.release()));
@@ -229,14 +229,13 @@ void CCodeAdapter::visit(IfElseExpression &node) {
 		std::unique_ptr<BlockExpression> newThenBlock = std::unique_ptr<BlockExpression>(
 		      dynamic_cast<BlockExpression *>(returnValue.release()));
 		std::unique_ptr<IfElseExpression> newIfElseExpression;
-		if (oldElseBlock != nullptr) {
-			visitExpression(*oldElseBlock);
-			std::unique_ptr<BlockExpression> newElseBlock
-			      = std::unique_ptr<BlockExpression>(
-			            dynamic_cast<BlockExpression *>(returnValue.release()));
+		if (oldElseExpression != nullptr) {
+			visitExpression(*oldElseExpression);
+			std::unique_ptr<Expression> newElseExpression = std::unique_ptr<Expression>(
+			      dynamic_cast<Expression *>(returnValue.release()));
 			newIfElseExpression
 			      = std::make_unique<IfElseExpression>(std::move(newCondition),
-			            std::move(newThenBlock), std::move(newElseBlock));
+			            std::move(newThenBlock), std::move(newElseExpression));
 		} else {
 			newIfElseExpression = std::make_unique<IfElseExpression>(
 			      std::move(newCondition), std::move(newThenBlock), nullptr);

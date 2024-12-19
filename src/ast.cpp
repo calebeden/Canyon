@@ -202,24 +202,24 @@ void ParenthesizedExpression::accept(ASTVisitor &visitor) {
 IfElseExpression::IfElseExpression(const Keyword &ifKeyword,
       std::unique_ptr<Expression> condition, std::unique_ptr<BlockExpression> thenBlock,
       [[maybe_unused]] const Keyword &elseKeyword,
-      std::unique_ptr<BlockExpression> elseBlock)
-    : Expression(Slice::merge(ifKeyword.s, elseBlock->getSlice())),
+      std::unique_ptr<Expression> elseExpression)
+    : Expression(Slice::merge(ifKeyword.s, elseExpression->getSlice())),
       condition(std::move(condition)), thenBlock(std::move(thenBlock)),
-      elseBlock(std::move(elseBlock)) {
+      elseExpression(std::move(elseExpression)) {
 }
 
 IfElseExpression::IfElseExpression(const Keyword &ifKeyword,
       std::unique_ptr<Expression> condition, std::unique_ptr<BlockExpression> thenBlock)
     : Expression(Slice::merge(ifKeyword.s, thenBlock->getSlice())),
       condition(std::move(condition)), thenBlock(std::move(thenBlock)),
-      elseBlock(nullptr) {
+      elseExpression(nullptr) {
 }
 
 IfElseExpression::IfElseExpression(std::unique_ptr<Expression> condition,
       std::unique_ptr<BlockExpression> thenBlock,
-      std::unique_ptr<BlockExpression> elseBlock)
+      std::unique_ptr<Expression> elseExpression)
     : Expression(Slice("", "", 0, 0)), condition(std::move(condition)),
-      thenBlock(std::move(thenBlock)), elseBlock(std::move(elseBlock)) {
+      thenBlock(std::move(thenBlock)), elseExpression(std::move(elseExpression)) {
 }
 
 Expression &IfElseExpression::getCondition() {
@@ -230,8 +230,8 @@ BlockExpression &IfElseExpression::getThenBlock() {
 	return *thenBlock;
 }
 
-BlockExpression *IfElseExpression::getElseBlock() {
-	return elseBlock.get();
+Expression *IfElseExpression::getElseExpression() {
+	return elseExpression.get();
 }
 
 void IfElseExpression::accept(ASTVisitor &visitor) {
@@ -539,10 +539,10 @@ void ASTPrinter::visit(IfElseExpression &node) {
 	node.getCondition().accept(*this);
 	std::cerr << ' ';
 	node.getThenBlock().accept(*this);
-	Expression *elseBlock = node.getElseBlock();
-	if (elseBlock != nullptr) {
+	Expression *elseExpression = node.getElseExpression();
+	if (elseExpression != nullptr) {
 		std::cerr << " else ";
-		elseBlock->accept(*this);
+		elseExpression->accept(*this);
 	}
 }
 

@@ -178,13 +178,13 @@ void SemanticAnalyzer::visit(IfElseExpression &node) {
 	BlockExpression &thenBlock = node.getThenBlock();
 	thenBlock.accept(*this);
 	int thenTypeID = thenBlock.getTypeID();
-	BlockExpression *elseBlock = node.getElseBlock();
+	Expression *elseExpression = node.getElseExpression();
 	int elseTypeID = -1;
-	if (elseBlock == nullptr) {
+	if (elseExpression == nullptr) {
 		elseTypeID = module->getType("()").id;
 	} else {
-		elseBlock->accept(*this);
-		elseTypeID = elseBlock->getTypeID();
+		elseExpression->accept(*this);
+		elseTypeID = elseExpression->getTypeID();
 	}
 	if (thenTypeID == -1 || elseTypeID == -1) {
 		return;
