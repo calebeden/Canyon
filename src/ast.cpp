@@ -208,6 +208,13 @@ IfElseExpression::IfElseExpression(const Keyword &ifKeyword,
       elseBlock(std::move(elseBlock)) {
 }
 
+IfElseExpression::IfElseExpression(std::unique_ptr<Expression> condition,
+      std::unique_ptr<BlockExpression> thenBlock,
+      std::unique_ptr<BlockExpression> elseBlock)
+    : Expression(Slice("", "", 0, 0)), condition(std::move(condition)),
+      thenBlock(std::move(thenBlock)), elseBlock(std::move(elseBlock)) {
+}
+
 Expression &IfElseExpression::getCondition() {
 	return *condition;
 }

@@ -173,8 +173,24 @@ void CCodeAdapter::visit(ParenthesizedExpression &node) {
 	returnValue = std::move(newParenthesizedExpression);
 }
 
-void CCodeAdapter::visit([[maybe_unused]] IfElseExpression &node) {
-	// TODO
+void CCodeAdapter::visit(IfElseExpression &node) {
+	Expression &oldCondition = node.getCondition();
+	Expression &oldThenBlock = node.getThenBlock();
+	Expression &oldElseBlock = node.getElseBlock();
+	visitExpression(oldCondition);
+	std::unique_ptr<Expression> newCondition = std::unique_ptr<Expression>(
+	      dynamic_cast<Expression *>(returnValue.release()));
+	visitExpression(oldThenBlock);
+	std::unique_ptr<BlockExpression> newIfBlock = std::unique_ptr<BlockExpression>(
+	      dynamic_cast<BlockExpression *>(returnValue.release()));
+	visitExpression(oldElseBlock);
+	std::unique_ptr<BlockExpression> newElseBlock = std::unique_ptr<BlockExpression>(
+	      dynamic_cast<BlockExpression *>(returnValue.release()));
+	std::unique_ptr<IfElseExpression> newIfElseExpression
+	      = std::make_unique<IfElseExpression>(std::move(newCondition),
+	            std::move(newIfBlock), std::move(newElseBlock));
+	newIfElseExpression->setTypeID(node.getTypeID());
+	returnValue = std::move(newIfElseExpression);
 }
 
 void CCodeAdapter::visit(ExpressionStatement &node) {

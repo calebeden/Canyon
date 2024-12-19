@@ -116,8 +116,13 @@ void CCodeGenerator::visit(ParenthesizedExpression &node) {
 	node.getExpression().accept(*this);
 }
 
-void CCodeGenerator::visit([[maybe_unused]] IfElseExpression &node) {
-	// TODO
+void CCodeGenerator::visit(IfElseExpression &node) {
+	*os << "if (";
+	node.getCondition().accept(*this);
+	*os << ") ";
+	node.getThenBlock().accept(*this);
+	*os << " else ";
+	node.getElseBlock().accept(*this);
 }
 
 void CCodeGenerator::visit(ExpressionStatement &node) {
