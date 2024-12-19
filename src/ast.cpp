@@ -409,7 +409,7 @@ Type Module::getCommonTypeAncestor(int type1, int type2) {
 	if (type2 == getType("!").id) {
 		return getType(type1);
 	}
-	return getType("!");
+	return Type(-1, -1, "");
 }
 
 void Module::addUnaryOperator(Operator::Type op, int operandType, int resultType) {
