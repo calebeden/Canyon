@@ -235,6 +235,7 @@ std::unique_ptr<BlockExpression> Parser::parseBlock() {
 		}
 		auto *p3 = dynamic_cast<Punctuation *>(tokens[i].get());
 		auto *block = dynamic_cast<BlockExpression *>(expr.get());
+		auto *ifelse = dynamic_cast<IfElseExpression *>(expr.get());
 		if (p3 != nullptr && p3->type == Punctuation::Type::Semicolon) {
 			i++;
 			statements.push_back(
@@ -253,6 +254,12 @@ std::unique_ptr<BlockExpression> Parser::parseBlock() {
 			statements.push_back(
 			      std::make_unique<ExpressionStatement>(std::unique_ptr<BlockExpression>(
 			            dynamic_cast<BlockExpression *>(expr.release()))));
+		} else if (ifelse != nullptr) {
+			// An if/else expression can be a statement without semicolon if not at the
+			// end of the enclosing scope
+			statements.push_back(
+			      std::make_unique<ExpressionStatement>(std::unique_ptr<IfElseExpression>(
+			            dynamic_cast<IfElseExpression *>(expr.release()))));
 		} else {
 			errorHandler->error(*tokens[i], "Expected '}'");
 			return nullptr;
