@@ -199,6 +199,31 @@ void ParenthesizedExpression::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
+IfElseExpression::IfElseExpression(const Keyword &ifKeyword,
+      std::unique_ptr<Expression> condition, std::unique_ptr<BlockExpression> thenBlock,
+      [[maybe_unused]] const Keyword &elseKeyword,
+      std::unique_ptr<BlockExpression> elseBlock)
+    : Expression(Slice::merge(ifKeyword.s, elseBlock->getSlice())),
+      condition(std::move(condition)), thenBlock(std::move(thenBlock)),
+      elseBlock(std::move(elseBlock)) {
+}
+
+Expression &IfElseExpression::getCondition() {
+	return *condition;
+}
+
+BlockExpression &IfElseExpression::getThenBlock() {
+	return *thenBlock;
+}
+
+BlockExpression &IfElseExpression::getElseBlock() {
+	return *elseBlock;
+}
+
+void IfElseExpression::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+
 ExpressionStatement::ExpressionStatement(std::unique_ptr<Expression> expression,
       const Punctuation &semicolon)
     : Statement(Slice::merge(expression->getSlice(), semicolon.s)),
@@ -480,6 +505,15 @@ void ASTPrinter::visit(ReturnExpression &node) {
 
 void ASTPrinter::visit(ParenthesizedExpression &node) {
 	node.getExpression().accept(*this);
+}
+
+void ASTPrinter::visit(IfElseExpression &node) {
+	std::cerr << "if ";
+	node.getCondition().accept(*this);
+	std::cerr << ' ';
+	node.getThenBlock().accept(*this);
+	std::cerr << " else ";
+	node.getElseBlock().accept(*this);
 }
 
 void ASTPrinter::visit(ExpressionStatement &node) {

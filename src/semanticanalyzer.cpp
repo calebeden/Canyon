@@ -165,6 +165,10 @@ void SemanticAnalyzer::visit(ParenthesizedExpression &node) {
 	node.setTypeID(expr.getTypeID());
 }
 
+void SemanticAnalyzer::visit([[maybe_unused]] IfElseExpression &node) {
+	// TODO
+}
+
 void SemanticAnalyzer::visit(ExpressionStatement &node) {
 	if (inUnreachableCode) {
 		errorHandler->error(node.getSlice(), "Unreachable code");

@@ -173,6 +173,10 @@ void CCodeAdapter::visit(ParenthesizedExpression &node) {
 	returnValue = std::move(newParenthesizedExpression);
 }
 
+void CCodeAdapter::visit([[maybe_unused]] IfElseExpression &node) {
+	// TODO
+}
+
 void CCodeAdapter::visit(ExpressionStatement &node) {
 	Expression &oldExpression = node.getExpression();
 	visitExpression(oldExpression);

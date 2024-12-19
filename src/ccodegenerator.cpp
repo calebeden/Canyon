@@ -116,6 +116,10 @@ void CCodeGenerator::visit(ParenthesizedExpression &node) {
 	node.getExpression().accept(*this);
 }
 
+void CCodeGenerator::visit([[maybe_unused]] IfElseExpression &node) {
+	// TODO
+}
+
 void CCodeGenerator::visit(ExpressionStatement &node) {
 	node.getExpression().accept(*this);
 	if (!dynamic_cast<BlockExpression *>(&node.getExpression())) {

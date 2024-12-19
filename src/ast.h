@@ -151,6 +151,22 @@ public:
 	virtual ~ParenthesizedExpression() = default;
 };
 
+class IfElseExpression : public Expression {
+private:
+	std::unique_ptr<Expression> condition;
+	std::unique_ptr<BlockExpression> thenBlock;
+	std::unique_ptr<BlockExpression> elseBlock;
+public:
+	IfElseExpression(const Keyword &ifKeyword, std::unique_ptr<Expression> condition,
+	      std::unique_ptr<BlockExpression> thenBlock, const Keyword &elseKeyword,
+	      std::unique_ptr<BlockExpression> elseBlock);
+	Expression &getCondition();
+	BlockExpression &getThenBlock();
+	BlockExpression &getElseBlock();
+	void accept(ASTVisitor &visitor) override;
+	virtual ~IfElseExpression() = default;
+};
+
 class ExpressionStatement : public Statement {
 private:
 	std::unique_ptr<Expression> expression;
@@ -251,6 +267,7 @@ public:
 	virtual void visit(BlockExpression &node) = 0;
 	virtual void visit(ReturnExpression &node) = 0;
 	virtual void visit(ParenthesizedExpression &node) = 0;
+	virtual void visit(IfElseExpression &node) = 0;
 	virtual void visit(ExpressionStatement &node) = 0;
 	virtual void visit(LetStatement &node) = 0;
 	virtual void visit(Function &node) = 0;
@@ -270,6 +287,7 @@ public:
 	void visit(BlockExpression &node) override;
 	void visit(ReturnExpression &node) override;
 	void visit(ParenthesizedExpression &node) override;
+	void visit(IfElseExpression &node) override;
 	void visit(ExpressionStatement &node) override;
 	void visit(LetStatement &node) override;
 	void visit(Function &node) override;
