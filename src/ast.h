@@ -245,6 +245,7 @@ public:
 	Type getType(int id);
 	void insertType(std::string_view typeName);
 	bool isTypeConvertible(int from, int to);
+	Type getCommonTypeAncestor(int type1, int type2);
 	void addUnaryOperator(Operator::Type op, int operandType, int resultType);
 	int getUnaryOperator(Operator::Type op, int operandType);
 	void addBinaryOperator(Operator::Type op, int leftType, int rightType,

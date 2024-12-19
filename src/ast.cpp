@@ -385,6 +385,19 @@ bool Module::isTypeConvertible(int from, int to) {
 	return false;
 }
 
+Type Module::getCommonTypeAncestor(int type1, int type2) {
+	if (type1 == type2) {
+		return getType(type1);
+	}
+	if (type1 == getType("!").id) {
+		return getType(type2);
+	}
+	if (type2 == getType("!").id) {
+		return getType(type1);
+	}
+	return getType("!");
+}
+
 void Module::addUnaryOperator(Operator::Type op, int operandType, int resultType) {
 	if (unaryOperators.find(op) == unaryOperators.end()) {
 		unaryOperators[op] = {};
