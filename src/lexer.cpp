@@ -160,6 +160,12 @@ std::unique_ptr<Keyword> Lexer::createKeyword(const Slice &s) {
 	if (s.contents == "fun") {
 		return std::make_unique<Keyword>(s, Keyword::Type::FUN);
 	}
+	if (s.contents == "if") {
+		return std::make_unique<Keyword>(s, Keyword::Type::IF);
+	}
+	if (s.contents == "else") {
+		return std::make_unique<Keyword>(s, Keyword::Type::ELSE);
+	}
 	return nullptr;
 }
 
