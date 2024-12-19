@@ -18,8 +18,8 @@ static void addSameSignIntegerArithmeticTypes(Module *module,
       std::span<const Operator::Type> binaryOperators,
       std::span<const Operator::Type> unaryOperators);
 static void addSameSignIntegerComparisonTypes(Module *module,
-      const std::span<const std::string_view> types,
-      const std::span<const Operator::Type> comparisonOperators);
+      std::span<const std::string_view> types,
+      std::span<const Operator::Type> comparisonOperators);
 static void addDefaultBoolOperators(Module *module);
 
 SemanticAnalyzer::SemanticAnalyzer(Module *module, ErrorHandler *errorHandler)
