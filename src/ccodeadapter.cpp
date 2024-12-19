@@ -142,6 +142,7 @@ void CCodeAdapter::visit(BlockExpression &node) {
 		}
 	}
 	newBlockExpression->setTypeID(oldBlock.getTypeID());
+	newBlockExpression->getSlice().source = oldBlock.getSlice().source;
 	scopeStack.pop_back();
 	returnValue = std::move(newBlockExpression);
 }
@@ -176,7 +177,7 @@ void CCodeAdapter::visit(ParenthesizedExpression &node) {
 void CCodeAdapter::visit(IfElseExpression &node) {
 	if (node.getTypeID() != inputModule->getType("()").id
 	      && node.getTypeID() != inputModule->getType("!").id) {
-		generatedStrings->push_back("CANYON_BLOCK_" + std::to_string(blockCount++));
+		generatedStrings->push_back("CANYON_IFELSE_" + std::to_string(blockCount++));
 		std::string_view tempVariableName = generatedStrings->back();
 		std::unique_ptr<LetStatement> declaration = std::make_unique<LetStatement>(
 		      std::make_unique<Symbol>(
@@ -191,26 +192,58 @@ void CCodeAdapter::visit(IfElseExpression &node) {
 		oldCondition.accept(*this);
 		std::unique_ptr<Expression> newCondition = std::unique_ptr<Expression>(
 		      dynamic_cast<Expression *>(returnValue.release()));
-		Expression &oldThenBlock = node.getThenBlock();
-		blockTemporaryVariables.push(tempVariableName);
-		oldThenBlock.accept(*this);
-		std::unique_ptr<BlockExpression> newThenBlock = std::unique_ptr<BlockExpression>(
-		      dynamic_cast<BlockExpression *>(returnValue.release()));
-		Expression *oldElseExpression = node.getElseExpression();
+
+		Expression &oldThenExpression = node.getThenBlock();
+		std::unique_ptr<BlockExpression> newThenBlock
+		      = std::make_unique<BlockExpression>();
+		scopeStack.push_back(newThenBlock.get());
+		visitExpression(oldThenExpression);
+		scopeStack.pop_back();
+		std::unique_ptr<Expression> newFinalExpression = std::unique_ptr<Expression>(
+		      dynamic_cast<Expression *>(returnValue.release()));
+		Punctuation equalSign = Punctuation(Slice("=", inputModule->getSource(), 0, 0),
+		      Punctuation::Type::Equals);
+		std::unique_ptr<Operator> assignmentOperator
+		      = std::make_unique<Operator>(equalSign, Operator::Type::Assignment);
+		std::unique_ptr<BinaryExpression> assignment
+		      = std::make_unique<BinaryExpression>(std::move(assignmentOperator),
+		            std::make_unique<SymbolExpression>(std::make_unique<Symbol>(
+		                  Slice(tempVariableName, inputModule->getSource(), 0, 0))),
+		            std::move(newFinalExpression));
+		std::unique_ptr<ExpressionStatement> newAssignment
+		      = std::make_unique<ExpressionStatement>(std::move(assignment));
+		newThenBlock->pushStatement(std::move(newAssignment));
+
 		std::unique_ptr<IfElseExpression> newIfElseExpression;
+		Expression *oldElseExpression = node.getElseExpression();
 		if (oldElseExpression != nullptr) {
-			blockTemporaryVariables.push(tempVariableName);
-			oldElseExpression->accept(*this);
-			std::unique_ptr<BlockExpression> newElseExpression
-			      = std::unique_ptr<BlockExpression>(
-			            dynamic_cast<BlockExpression *>(returnValue.release()));
+			std::unique_ptr<BlockExpression> newElseBlock
+			      = std::make_unique<BlockExpression>();
+			scopeStack.push_back(newElseBlock.get());
+			visitExpression(*oldElseExpression);
+			scopeStack.pop_back();
+			std::unique_ptr<Expression> newFinalExpression = std::unique_ptr<Expression>(
+			      dynamic_cast<Expression *>(returnValue.release()));
+			Punctuation equalSign = Punctuation(
+			      Slice("=", inputModule->getSource(), 0, 0), Punctuation::Type::Equals);
+			std::unique_ptr<Operator> assignmentOperator
+			      = std::make_unique<Operator>(equalSign, Operator::Type::Assignment);
+			std::unique_ptr<BinaryExpression> assignment
+			      = std::make_unique<BinaryExpression>(std::move(assignmentOperator),
+			            std::make_unique<SymbolExpression>(std::make_unique<Symbol>(
+			                  Slice(tempVariableName, inputModule->getSource(), 0, 0))),
+			            std::move(newFinalExpression));
+			std::unique_ptr<ExpressionStatement> newAssignment
+			      = std::make_unique<ExpressionStatement>(std::move(assignment));
+			newElseBlock->pushStatement(std::move(newAssignment));
 			newIfElseExpression
 			      = std::make_unique<IfElseExpression>(std::move(newCondition),
-			            std::move(newThenBlock), std::move(newElseExpression));
+			            std::move(newThenBlock), std::move(newElseBlock));
 		} else {
 			newIfElseExpression = std::make_unique<IfElseExpression>(
 			      std::move(newCondition), std::move(newThenBlock), nullptr);
 		}
+		blockTemporaryVariables.pop();
 		newIfElseExpression->setTypeID(node.getTypeID());
 
 		std::unique_ptr<ExpressionStatement> ifElseExpressionStatement
