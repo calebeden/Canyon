@@ -29,6 +29,7 @@ private:
 	std::unique_ptr<Statement> parseStatement();
 	std::unique_ptr<Expression> parseExpression();
 	std::unique_ptr<BlockExpression> parseBlock();
+	std::unique_ptr<IfElseExpression> parseIfElse();
 	std::unique_ptr<Expression> parseReturnBreakExpression();
 	std::unique_ptr<Expression> parseAssignmentExpression();
 	std::unique_ptr<Expression> parseLogicalOrExpression();
