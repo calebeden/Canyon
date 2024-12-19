@@ -1,0 +1,7 @@
+fun main() {
+    let x: i32 = if true {
+        1i32
+    } else if false {
+        1u32
+    };
+}
