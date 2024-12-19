@@ -123,7 +123,8 @@ void CCodeGenerator::visit(IfElseExpression &node) {
 	node.getThenBlock().accept(*this);
 	Expression *elseExpression = node.getElseExpression();
 	if (elseExpression != nullptr) {
-		*os << " else ";
+		*os << std::string(tabLevel, '\t');
+		*os << "else ";
 		elseExpression->accept(*this);
 	}
 }
