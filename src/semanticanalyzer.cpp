@@ -177,14 +177,15 @@ void SemanticAnalyzer::visit(IfElseExpression &node) {
 	}
 	BlockExpression &thenBlock = node.getThenBlock();
 	thenBlock.accept(*this);
+	inUnreachableCode = false;
 	int thenTypeID = thenBlock.getTypeID();
 	Expression *elseExpression = node.getElseExpression();
 	int elseTypeID = -1;
 	if (elseExpression == nullptr) {
 		elseTypeID = module->getType("()").id;
 	} else {
-		inUnreachableCode = false;
 		elseExpression->accept(*this);
+		inUnreachableCode = false;
 		elseTypeID = elseExpression->getTypeID();
 	}
 	if (thenTypeID == -1 || elseTypeID == -1) {
@@ -194,6 +195,9 @@ void SemanticAnalyzer::visit(IfElseExpression &node) {
 	if (typeID == -1) {
 		errorHandler->error(node.getSlice(),
 		      "If and else block types are not convertible");
+	}
+	if (typeID == module->getType("!").id) {
+		inUnreachableCode = true;
 	}
 	node.setTypeID(typeID);
 }
