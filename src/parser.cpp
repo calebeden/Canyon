@@ -605,7 +605,8 @@ std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
 		}
 		i++;
 		return std::make_unique<ParenthesizedExpression>(*p1, std::move(expr), *p2);
-	} else if (p1 != nullptr && (p1->type == Punctuation::Type::OpenBrace)) {
+	}
+	if (p1 != nullptr && (p1->type == Punctuation::Type::OpenBrace)) {
 		return parseBlock();
 	}
 
