@@ -171,7 +171,8 @@ ReturnExpression::ReturnExpression(const Keyword &returnKeyword,
 }
 
 ReturnExpression::ReturnExpression(std::unique_ptr<Expression> expression)
-    : Expression(Slice("", "", 0, 0)), expression(std::move(expression)) {
+    : Expression(Slice("", expression->getSlice().source, 0, 0)),
+      expression(std::move(expression)) {
 }
 
 Expression *ReturnExpression::getExpression() {
@@ -218,8 +219,9 @@ IfElseExpression::IfElseExpression(const Keyword &ifKeyword,
 IfElseExpression::IfElseExpression(std::unique_ptr<Expression> condition,
       std::unique_ptr<BlockExpression> thenBlock,
       std::unique_ptr<Expression> elseExpression)
-    : Expression(Slice("", "", 0, 0)), condition(std::move(condition)),
-      thenBlock(std::move(thenBlock)), elseExpression(std::move(elseExpression)) {
+    : Expression(Slice("", condition->getSlice().source, 0, 0)),
+      condition(std::move(condition)), thenBlock(std::move(thenBlock)),
+      elseExpression(std::move(elseExpression)) {
 }
 
 Expression &IfElseExpression::getCondition() {
@@ -267,8 +269,8 @@ LetStatement::LetStatement(const Keyword &let, std::unique_ptr<Symbol> symbol,
 
 LetStatement::LetStatement(std::unique_ptr<Symbol> symbol,
       std::unique_ptr<Expression> expression)
-    : Statement(Slice("", "", 0, 0)), symbol(std::move(symbol)), typeAnnotation(nullptr),
-      equalSign(nullptr), expression(std::move(expression)) {
+    : Statement(Slice("", symbol->s.source, 0, 0)), symbol(std::move(symbol)),
+      typeAnnotation(nullptr), equalSign(nullptr), expression(std::move(expression)) {
 }
 
 Symbol &LetStatement::getSymbol() {
