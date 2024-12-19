@@ -299,7 +299,7 @@ void CCodeAdapter::visit(Module &node) {
 }
 
 void CCodeAdapter::visitExpression(Expression &node) {
-	// TODO move this logic into visit BlockExpression
+	// TODO(#11) move this logic into visit BlockExpression
 	auto *blockExpression = dynamic_cast<BlockExpression *>(&node);
 	if (blockExpression != nullptr
 	      && blockExpression->getTypeID() != inputModule->getType("()").id
