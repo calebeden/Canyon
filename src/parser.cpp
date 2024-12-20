@@ -235,6 +235,7 @@ std::unique_ptr<BlockExpression> Parser::parseBlock() {
 		}
 		auto *p3 = dynamic_cast<Punctuation *>(tokens[i].get());
 		auto *block = dynamic_cast<BlockExpression *>(expr.get());
+		auto *ifelse = dynamic_cast<IfElseExpression *>(expr.get());
 		if (p3 != nullptr && p3->type == Punctuation::Type::Semicolon) {
 			i++;
 			statements.push_back(
@@ -253,11 +254,62 @@ std::unique_ptr<BlockExpression> Parser::parseBlock() {
 			statements.push_back(
 			      std::make_unique<ExpressionStatement>(std::unique_ptr<BlockExpression>(
 			            dynamic_cast<BlockExpression *>(expr.release()))));
+		} else if (ifelse != nullptr) {
+			// An if/else expression can be a statement without semicolon if not at the
+			// end of the enclosing scope
+			statements.push_back(
+			      std::make_unique<ExpressionStatement>(std::unique_ptr<IfElseExpression>(
+			            dynamic_cast<IfElseExpression *>(expr.release()))));
 		} else {
 			errorHandler->error(*tokens[i], "Expected '}'");
 			return nullptr;
 		}
 	}
+}
+
+std::unique_ptr<IfElseExpression> Parser::parseIfElse() {
+	auto *keyword = dynamic_cast<Keyword *>(tokens[i].get());
+	if (keyword == nullptr || keyword->type != Keyword::Type::IF) {
+		errorHandler->error(*tokens[i], "Expected keyword `if`");
+		return nullptr;
+	}
+	i++;
+	auto condition = parseExpression();
+	auto *p1 = dynamic_cast<Punctuation *>(tokens[i].get());
+	if (p1 == nullptr || p1->type != Punctuation::Type::OpenBrace) {
+		errorHandler->error(*tokens[i], "Expected '{'");
+		return nullptr;
+	}
+	auto thenBlock = parseBlock();
+	if (thenBlock == nullptr) {
+		return nullptr;
+	}
+	auto *keyword2 = dynamic_cast<Keyword *>(tokens[i].get());
+	if (keyword2 == nullptr || keyword2->type != Keyword::Type::ELSE) {
+		return std::make_unique<IfElseExpression>(*keyword, std::move(condition),
+		      std::move(thenBlock));
+	}
+	i++;
+	auto *keyword3 = dynamic_cast<Keyword *>(tokens[i].get());
+	if (keyword3 != nullptr && keyword3->type == Keyword::Type::IF) {
+		auto ifelse = parseIfElse();
+		if (ifelse == nullptr) {
+			return nullptr;
+		}
+		return std::make_unique<IfElseExpression>(*keyword, std::move(condition),
+		      std::move(thenBlock), *keyword2, std::move(ifelse));
+	}
+	auto *p2 = dynamic_cast<Punctuation *>(tokens[i].get());
+	if (p2 == nullptr || p2->type != Punctuation::Type::OpenBrace) {
+		errorHandler->error(*tokens[i], "Expected '{'");
+		return nullptr;
+	}
+	auto elseExpression = parseBlock();
+	if (elseExpression == nullptr) {
+		return nullptr;
+	}
+	return std::make_unique<IfElseExpression>(*keyword, std::move(condition),
+	      std::move(thenBlock), *keyword2, std::move(elseExpression));
 }
 
 std::unique_ptr<Expression> Parser::parseReturnBreakExpression() {
@@ -562,6 +614,14 @@ std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
 		}
 		i++;
 		return std::make_unique<ParenthesizedExpression>(*p1, std::move(expr), *p2);
+	}
+	if (p1 != nullptr && (p1->type == Punctuation::Type::OpenBrace)) {
+		return parseBlock();
+	}
+
+	auto *keyword = dynamic_cast<Keyword *>(tokens[i].get());
+	if (keyword != nullptr && keyword->type == Keyword::Type::IF) {
+		return parseIfElse();
 	}
 
 	errorHandler->error(*tokens[i], "Expected expression");

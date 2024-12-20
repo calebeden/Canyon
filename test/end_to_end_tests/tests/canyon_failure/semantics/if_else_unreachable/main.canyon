@@ -1,0 +1,8 @@
+fun main() {
+    if true {
+        return;
+    } else {
+        return;
+    }
+    let unreachable: i32 = 1;
+}

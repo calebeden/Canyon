@@ -1,0 +1,10 @@
+fun main() {
+    let x: i32 = 1;
+    x = if true {
+        2
+    } else if false {
+        3
+    } else {
+        4
+    };
+}

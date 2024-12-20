@@ -47,6 +47,8 @@ struct Keyword : public Token {
 		RETURN,
 		LET,
 		FUN,
+		IF,
+		ELSE,
 	};
 
 	Type type;

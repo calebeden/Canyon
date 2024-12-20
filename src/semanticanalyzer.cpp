@@ -165,6 +165,43 @@ void SemanticAnalyzer::visit(ParenthesizedExpression &node) {
 	node.setTypeID(expr.getTypeID());
 }
 
+void SemanticAnalyzer::visit(IfElseExpression &node) {
+	Expression &condition = node.getCondition();
+	condition.accept(*this);
+	if (inUnreachableCode) {
+		errorHandler->error(node.getThenBlock().getSlice(), "Unreachable code");
+		return;
+	}
+	if (condition.getTypeID() != module->getType("bool").id) {
+		errorHandler->error(condition.getSlice(), "Condition is not of type bool");
+	}
+	BlockExpression &thenBlock = node.getThenBlock();
+	thenBlock.accept(*this);
+	inUnreachableCode = false;
+	int thenTypeID = thenBlock.getTypeID();
+	Expression *elseExpression = node.getElseExpression();
+	int elseTypeID = -1;
+	if (elseExpression == nullptr) {
+		elseTypeID = module->getType("()").id;
+	} else {
+		elseExpression->accept(*this);
+		inUnreachableCode = false;
+		elseTypeID = elseExpression->getTypeID();
+	}
+	if (thenTypeID == -1 || elseTypeID == -1) {
+		return;
+	}
+	int typeID = module->getCommonTypeAncestor(thenTypeID, elseTypeID).id;
+	if (typeID == -1) {
+		errorHandler->error(node.getSlice(),
+		      "If and else block types are not convertible");
+	}
+	if (typeID == module->getType("!").id) {
+		inUnreachableCode = true;
+	}
+	node.setTypeID(typeID);
+}
+
 void SemanticAnalyzer::visit(ExpressionStatement &node) {
 	if (inUnreachableCode) {
 		errorHandler->error(node.getSlice(), "Unreachable code");
