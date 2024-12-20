@@ -222,6 +222,30 @@ IfElseExpression::IfElseExpression(std::unique_ptr<Expression> condition,
       thenBlock(std::move(thenBlock)), elseExpression(std::move(elseExpression)) {
 }
 
+WhileExpression::WhileExpression(const Keyword &whileKeyword,
+      std::unique_ptr<Expression> condition, std::unique_ptr<BlockExpression> body)
+    : Expression(Slice::merge(whileKeyword.s, body->getSlice())),
+      condition(std::move(condition)), body(std::move(body)) {
+}
+
+WhileExpression::WhileExpression(std::unique_ptr<Expression> condition,
+      std::unique_ptr<BlockExpression> body)
+    : Expression(Slice("", condition->getSlice().source, 0, 0)),
+      condition(std::move(condition)), body(std::move(body)) {
+}
+
+Expression &WhileExpression::getCondition() {
+	return *condition;
+}
+
+BlockExpression &WhileExpression::getBody() {
+	return *body;
+}
+
+void WhileExpression::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+
 Expression &IfElseExpression::getCondition() {
 	return *condition;
 }
@@ -544,6 +568,13 @@ void ASTPrinter::visit(IfElseExpression &node) {
 		std::cerr << " else ";
 		elseExpression->accept(*this);
 	}
+}
+
+void ASTPrinter::visit(WhileExpression &node) {
+	std::cerr << "while ";
+	node.getCondition().accept(*this);
+	std::cerr << ' ';
+	node.getBody().accept(*this);
 }
 
 void ASTPrinter::visit(ExpressionStatement &node) {

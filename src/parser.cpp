@@ -234,8 +234,6 @@ std::unique_ptr<BlockExpression> Parser::parseBlock() {
 			continue;
 		}
 		auto *p3 = dynamic_cast<Punctuation *>(tokens[i].get());
-		auto *block = dynamic_cast<BlockExpression *>(expr.get());
-		auto *ifelse = dynamic_cast<IfElseExpression *>(expr.get());
 		if (p3 != nullptr && p3->type == Punctuation::Type::Semicolon) {
 			i++;
 			statements.push_back(
@@ -248,18 +246,24 @@ std::unique_ptr<BlockExpression> Parser::parseBlock() {
 			}
 			return std::make_unique<BlockExpression>(*p1, std::move(statements), nullptr,
 			      *p3);
-		} else if (block != nullptr) {
+		} else if (dynamic_cast<BlockExpression *>(expr.get()) != nullptr) {
 			// A block expression can be a statement without semicolon if not at the end
 			// of the enclosing scope
 			statements.push_back(
 			      std::make_unique<ExpressionStatement>(std::unique_ptr<BlockExpression>(
 			            dynamic_cast<BlockExpression *>(expr.release()))));
-		} else if (ifelse != nullptr) {
+		} else if (dynamic_cast<IfElseExpression *>(expr.get()) != nullptr) {
 			// An if/else expression can be a statement without semicolon if not at the
 			// end of the enclosing scope
 			statements.push_back(
 			      std::make_unique<ExpressionStatement>(std::unique_ptr<IfElseExpression>(
 			            dynamic_cast<IfElseExpression *>(expr.release()))));
+		} else if (dynamic_cast<WhileExpression *>(expr.get()) != nullptr) {
+			// A while expression can be a statement without semicolon if not at the end
+			// of the enclosing scope
+			statements.push_back(
+			      std::make_unique<ExpressionStatement>(std::unique_ptr<WhileExpression>(
+			            dynamic_cast<WhileExpression *>(expr.release()))));
 		} else {
 			errorHandler->error(*tokens[i], "Expected '}'");
 			return nullptr;
@@ -310,6 +314,27 @@ std::unique_ptr<IfElseExpression> Parser::parseIfElse() {
 	}
 	return std::make_unique<IfElseExpression>(*keyword, std::move(condition),
 	      std::move(thenBlock), *keyword2, std::move(elseExpression));
+}
+
+std::unique_ptr<WhileExpression> Parser::parseWhile() {
+	auto *keyword = dynamic_cast<Keyword *>(tokens[i].get());
+	if (keyword == nullptr || keyword->type != Keyword::Type::WHILE) {
+		errorHandler->error(*tokens[i], "Expected keyword `while`");
+		return nullptr;
+	}
+	i++;
+	auto condition = parseExpression();
+	auto *p1 = dynamic_cast<Punctuation *>(tokens[i].get());
+	if (p1 == nullptr || p1->type != Punctuation::Type::OpenBrace) {
+		errorHandler->error(*tokens[i], "Expected '{'");
+		return nullptr;
+	}
+	auto block = parseBlock();
+	if (block == nullptr) {
+		return nullptr;
+	}
+	return std::make_unique<WhileExpression>(*keyword, std::move(condition),
+	      std::move(block));
 }
 
 std::unique_ptr<Expression> Parser::parseReturnBreakExpression() {
@@ -622,6 +647,9 @@ std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
 	auto *keyword = dynamic_cast<Keyword *>(tokens[i].get());
 	if (keyword != nullptr && keyword->type == Keyword::Type::IF) {
 		return parseIfElse();
+	}
+	if (keyword != nullptr && keyword->type == Keyword::Type::WHILE) {
+		return parseWhile();
 	}
 
 	errorHandler->error(*tokens[i], "Expected expression");

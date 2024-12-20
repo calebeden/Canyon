@@ -1,0 +1,6 @@
+fun main() {
+    while true {
+        return;
+    }
+    let unreachable: i32 = 1;
+}

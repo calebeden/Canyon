@@ -10,7 +10,7 @@
 
 /**
  * @brief Generates C code from a Canyon AST
- * 
+ *
  */
 class CCodeGenerator : public ASTVisitor {
 private:
@@ -31,6 +31,7 @@ public:
 	void visit(ReturnExpression &node) override;
 	void visit(ParenthesizedExpression &node) override;
 	void visit(IfElseExpression &node) override;
+	void visit(WhileExpression &node) override;
 	void visit(ExpressionStatement &node) override;
 	void visit(LetStatement &node) override;
 	void visit(Function &node) override;

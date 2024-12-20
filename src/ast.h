@@ -172,6 +172,21 @@ public:
 	virtual ~IfElseExpression() = default;
 };
 
+class WhileExpression : public Expression {
+private:
+	std::unique_ptr<Expression> condition;
+	std::unique_ptr<BlockExpression> body;
+public:
+	WhileExpression(const Keyword &whileKeyword, std::unique_ptr<Expression> condition,
+	      std::unique_ptr<BlockExpression> body);
+	WhileExpression(std::unique_ptr<Expression> condition,
+	      std::unique_ptr<BlockExpression> body);
+	Expression &getCondition();
+	BlockExpression &getBody();
+	void accept(ASTVisitor &visitor) override;
+	virtual ~WhileExpression() = default;
+};
+
 class ExpressionStatement : public Statement {
 private:
 	std::unique_ptr<Expression> expression;
@@ -274,6 +289,7 @@ public:
 	virtual void visit(ReturnExpression &node) = 0;
 	virtual void visit(ParenthesizedExpression &node) = 0;
 	virtual void visit(IfElseExpression &node) = 0;
+	virtual void visit(WhileExpression &node) = 0;
 	virtual void visit(ExpressionStatement &node) = 0;
 	virtual void visit(LetStatement &node) = 0;
 	virtual void visit(Function &node) = 0;
@@ -294,6 +310,7 @@ public:
 	void visit(ReturnExpression &node) override;
 	void visit(ParenthesizedExpression &node) override;
 	void visit(IfElseExpression &node) override;
+	void visit(WhileExpression &node) override;
 	void visit(ExpressionStatement &node) override;
 	void visit(LetStatement &node) override;
 	void visit(Function &node) override;
