@@ -44,6 +44,48 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 		      "Function " + std::string(symbol->getSymbol().s.contents) + " not found");
 		return;
 	}
+	std::vector<std::pair<Symbol &, int>> parameters;
+	function->forEachParameter(
+	      [&parameters, &function](Symbol &parameter, [[maybe_unused]]
+	                                                  Symbol &type) {
+		      int typeId = function->getBody().getSymbolType(parameter.s.contents);
+		      parameters.push_back({parameter, typeId});
+	      });
+
+	size_t i = 0;
+	bool unreachableArgument = false;
+	bool unreachableHandled = false;
+	node.forEachArgument([this, &parameters, &i, &unreachableArgument,
+	                           &unreachableHandled](Expression &argument) {
+		if (i == parameters.size()) {
+			errorHandler->error(argument.getSlice(), "Incorrect number of arguments");
+			return;
+		}
+		if (i > parameters.size()) {
+			return;
+		}
+		if (unreachableArgument) {
+			if (!unreachableHandled) {
+				errorHandler->error(argument.getSlice(), "Unreachable argument");
+				unreachableHandled = true;
+			}
+			return;
+		}
+		argument.accept(*this);
+		if (argument.getTypeID() == -1) {
+			unreachableArgument = true;
+			return;
+		}
+		if (!module->isTypeConvertible(argument.getTypeID(), parameters[i].second)) {
+			errorHandler->error(argument.getSlice(),
+			      "Argument type is not convertible to parameter type");
+		}
+		i++;
+	});
+	if (i != parameters.size()) {
+		errorHandler->error(node.getSlice(), "Incorrect number of arguments");
+	}
+
 	node.setTypeID(function->getTypeID());
 }
 

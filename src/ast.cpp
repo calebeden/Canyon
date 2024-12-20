@@ -43,6 +43,13 @@ Expression &FunctionCallExpression::getFunction() {
 	return *function;
 }
 
+void FunctionCallExpression::forEachArgument(
+      const std::function<void(Expression &)> &argumentHandler) {
+	for (auto &argument : arguments) {
+		argumentHandler(*argument);
+	}
+}
+
 void FunctionCallExpression::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }

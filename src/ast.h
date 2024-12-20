@@ -50,6 +50,7 @@ public:
 	      std::vector<std::unique_ptr<Expression>> arguments, const Punctuation &close);
 	FunctionCallExpression(std::unique_ptr<Expression> function);
 	Expression &getFunction();
+	void forEachArgument(const std::function<void(Expression &)> &argumentHandler);
 	void accept(ASTVisitor &visitor) override;
 	virtual ~FunctionCallExpression() = default;
 };
