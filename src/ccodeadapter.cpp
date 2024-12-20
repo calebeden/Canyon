@@ -92,7 +92,19 @@ void CCodeAdapter::visit(BoolLiteralExpression &node) {
 
 void CCodeAdapter::visit(SymbolExpression &node) {
 	Symbol &oldSymbol = node.getSymbol();
-	generatedStrings->push_back("CANYON_LOCAL_" + std::string(oldSymbol.s.contents));
+	SymbolSource source;
+	for (auto it = scopeStack.rbegin(); it != scopeStack.rend(); it++) {
+		source = (*it)->getSymbolSource(oldSymbol.s.contents);
+		if (source != SymbolSource::Unknown) {
+			break;
+		}
+	}
+	if (source == SymbolSource::FunctionParameter) {
+		generatedStrings->push_back(
+		      "CANYON_PARAMETER_" + std::string(oldSymbol.s.contents));
+	} else {
+		generatedStrings->push_back("CANYON_LOCAL_" + std::string(oldSymbol.s.contents));
+	}
 	std::string_view newName = generatedStrings->back();
 	std::unique_ptr<Symbol> newSymbol
 	      = std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0));
@@ -108,6 +120,11 @@ void CCodeAdapter::visit(BlockExpression &node) {
 	std::unique_ptr<BlockExpression> newBlockExpression
 	      = std::make_unique<BlockExpression>();
 	scopeStack.push_back(newBlockExpression.get());
+
+	oldBlock.forEachSymbol([this, &newBlockExpression](std::string_view symbol,
+	                             int typeID, SymbolSource source) {
+		newBlockExpression->pushSymbol(symbol, typeID, source);
+	});
 
 	oldBlock.forEachStatement([this, &newBlockExpression](Statement &statement) {
 		statement.accept(*this);
@@ -183,7 +200,8 @@ void CCodeAdapter::visit(IfElseExpression &node) {
 		      std::make_unique<Symbol>(
 		            Slice(tempVariableName, inputModule->getSource(), 0, 0)),
 		      nullptr);
-		scopeStack.back()->setSymbolType(tempVariableName, node.getTypeID());
+		scopeStack.back()->pushSymbol(tempVariableName, node.getTypeID(),
+		      SymbolSource::GENERATED_IfElse);
 		declaration->setSymbolTypeID(node.getTypeID());
 		scopeStack.back()->pushStatement(std::move(declaration));
 		blockTemporaryVariables.push(tempVariableName);
@@ -287,7 +305,8 @@ void CCodeAdapter::visit(WhileExpression &node) {
 		      std::make_unique<Symbol>(
 		            Slice(tempVariableName, inputModule->getSource(), 0, 0)),
 		      nullptr);
-		scopeStack.back()->setSymbolType(tempVariableName, node.getTypeID());
+		scopeStack.back()->pushSymbol(tempVariableName, node.getTypeID(),
+		      SymbolSource::GENERATED_While);
 		declaration->setSymbolTypeID(node.getTypeID());
 		scopeStack.back()->pushStatement(std::move(declaration));
 		blockTemporaryVariables.push(tempVariableName);
@@ -422,7 +441,8 @@ void CCodeAdapter::visitExpression(Expression &node) {
 		      std::make_unique<Symbol>(
 		            Slice(tempVariableName, inputModule->getSource(), 0, 0)),
 		      nullptr);
-		scopeStack.back()->setSymbolType(tempVariableName, node.getTypeID());
+		scopeStack.back()->pushSymbol(tempVariableName, node.getTypeID(),
+		      SymbolSource::GENERATED_Block);
 		declaration->setSymbolTypeID(node.getTypeID());
 		scopeStack.back()->pushStatement(std::move(declaration));
 		blockTemporaryVariables.push(tempVariableName);

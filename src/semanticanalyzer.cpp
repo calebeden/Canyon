@@ -251,7 +251,8 @@ void SemanticAnalyzer::visit(LetStatement &node) {
 		errorHandler->error(node.getEqualSign().s, "Unreachable code");
 		return;
 	}
-	scopeStack.back()->setSymbolType(node.getSymbol().s.contents, typeID);
+	scopeStack.back()->pushSymbol(node.getSymbol().s.contents, typeID,
+	      SymbolSource::LetStatement);
 	if (typeID != value->getTypeID() && value->getTypeID() != -1) {
 		errorHandler->error(node.getExpression()->getSlice(),
 		      "Type mismatch in let statement");
@@ -299,7 +300,8 @@ void SemanticAnalyzer::visit(Module &node) {
 	                           Function &function) {
 		function.forEachParameter([this, &function](Symbol &parameter, Symbol &type) {
 			int typeID = module->getType(type.s.contents).id;
-			function.getBody().setSymbolType(parameter.s.contents, typeID);
+			function.getBody().pushSymbol(parameter.s.contents, typeID,
+			      SymbolSource::FunctionParameter);
 		});
 
 		Symbol *type = function.getReturnTypeAnnotation();

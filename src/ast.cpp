@@ -142,15 +142,30 @@ int BlockExpression::getSymbolType(std::string_view symbol) {
 	if (symbols.find(symbol) == symbols.end()) {
 		return -1;
 	}
-	return symbols[symbol];
+	return std::get<0>(symbols[symbol]);
 }
 
-void BlockExpression::setSymbolType(std::string_view symbol, int typeID) {
+SymbolSource BlockExpression::getSymbolSource(std::string_view symbol) {
 	if (symbols.find(symbol) == symbols.end()) {
-		symbols[symbol] = typeID;
+		return SymbolSource::Unknown;
+	}
+	return std::get<1>(symbols[symbol]);
+}
+
+void BlockExpression::pushSymbol(std::string_view symbol, int typeID,
+      SymbolSource source) {
+	if (symbols.find(symbol) == symbols.end()) {
+		symbols[symbol] = {typeID, source};
 	} else {
 		std::cerr << "Symbol already exists";
 		exit(EXIT_FAILURE);
+	}
+}
+
+void BlockExpression::forEachSymbol(
+      const std::function<void(std::string_view, int, SymbolSource)> &symbolHandler) {
+	for (auto &[symbol, info] : symbols) {
+		symbolHandler(symbol, std::get<0>(info), std::get<1>(info));
 	}
 }
 
