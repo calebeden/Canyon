@@ -1,0 +1,6 @@
+fun main() {
+    let x: i32 = 1;
+    x = while true {
+        2
+    };
+}
