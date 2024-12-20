@@ -642,7 +642,6 @@ std::unique_ptr<Expression> Parser::parseFunctionCallExpression() {
 		while (p2 == nullptr || p2->type != Punctuation::Type::CloseParen) {
 			std::unique_ptr<Expression> arg = parseExpression();
 			if (arg == nullptr) {
-				errorHandler->error(*tokens[i], "Expected expression");
 				return nullptr;
 			}
 			arguments.push_back(std::move(arg));
@@ -658,6 +657,7 @@ std::unique_ptr<Expression> Parser::parseFunctionCallExpression() {
 				errorHandler->error(*tokens[i], "Expected ',' or ')'");
 				return nullptr;
 			}
+			i++;
 		}
 		i++;
 		return std::make_unique<FunctionCallExpression>(std::move(expr), *p1,
