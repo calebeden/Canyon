@@ -202,8 +202,19 @@ void SemanticAnalyzer::visit(IfElseExpression &node) {
 	node.setTypeID(typeID);
 }
 
-void SemanticAnalyzer::visit([[maybe_unused]] WhileExpression &node) {
-	// TODO
+void SemanticAnalyzer::visit(WhileExpression &node) {
+	Expression &condition = node.getCondition();
+	condition.accept(*this);
+	if (inUnreachableCode) {
+		errorHandler->error(node.getBlock().getSlice(), "Unreachable code");
+		return;
+	}
+	if (condition.getTypeID() != module->getType("bool").id) {
+		errorHandler->error(condition.getSlice(), "Condition is not of type bool");
+	}
+	BlockExpression &block = node.getBlock();
+	block.accept(*this);
+	node.setTypeID(block.getTypeID());
 }
 
 void SemanticAnalyzer::visit(ExpressionStatement &node) {
