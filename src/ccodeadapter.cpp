@@ -317,6 +317,16 @@ void CCodeAdapter::visit(WhileExpression &node) {
 		      = std::make_unique<ExpressionStatement>(std::move(assignment));
 		newBlock->pushStatement(std::move(newAssignment));
 		blockTemporaryVariables.pop();
+		std::unique_ptr<WhileExpression> newWhileExpression
+		      = std::make_unique<WhileExpression>(std::move(newCondition),
+		            std::move(newBlock));
+		newWhileExpression->setTypeID(node.getTypeID());
+
+		std::unique_ptr<ExpressionStatement> whileExpressionStatement
+		      = std::make_unique<ExpressionStatement>(std::move(newWhileExpression));
+		scopeStack.back()->pushStatement(std::move(whileExpressionStatement));
+		returnValue = std::make_unique<SymbolExpression>(std::make_unique<Symbol>(
+		      Slice(tempVariableName, inputModule->getSource(), 0, 0)));
 	} else {
 		Expression &oldCondition = node.getCondition();
 		Expression &oldBlock = node.getBody();
