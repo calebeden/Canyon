@@ -323,9 +323,11 @@ void LetStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-Function::Function(std::unique_ptr<Symbol> returnTypeAnnotation,
-      std::unique_ptr<BlockExpression> body)
-    : returnTypeAnnotation(std::move(returnTypeAnnotation)), body(std::move(body)) {
+Function::Function(
+      std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters,
+      std::unique_ptr<Symbol> returnTypeAnnotation, std::unique_ptr<BlockExpression> body)
+    : parameters(std::move(parameters)),
+      returnTypeAnnotation(std::move(returnTypeAnnotation)), body(std::move(body)) {
 }
 
 Function::Function(std::unique_ptr<BlockExpression> body)

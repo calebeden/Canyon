@@ -223,11 +223,14 @@ public:
 
 class Function : public ASTComponent {
 private:
+	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters;
 	std::unique_ptr<Symbol> returnTypeAnnotation;
 	std::unique_ptr<BlockExpression> body;
 	int typeID = -1;
 public:
-	Function(std::unique_ptr<Symbol> returnTypeAnnotation,
+	Function(std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
+	               parameters,
+	      std::unique_ptr<Symbol> returnTypeAnnotation,
 	      std::unique_ptr<BlockExpression> body);
 	Function(std::unique_ptr<BlockExpression> body);
 	Symbol *getReturnTypeAnnotation();

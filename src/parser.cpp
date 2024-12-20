@@ -62,6 +62,43 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> Parser::parseFunct
 		return {nullptr, nullptr};
 	}
 	i++;
+
+	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters;
+	auto *argSymbol = dynamic_cast<Symbol *>(tokens[i].get());
+	while (argSymbol != nullptr) {
+		argSymbol = dynamic_cast<Symbol *>(tokens[i++].release());
+		auto *p1 = dynamic_cast<Punctuation *>(tokens[i].get());
+		if (p1 == nullptr || p1->type != Punctuation::Type::Colon) {
+			errorHandler->error(*tokens[i],
+			      "Expected ':' following symbol in function definition");
+			return {nullptr, nullptr};
+		}
+		i++;
+		auto *type = dynamic_cast<Symbol *>(tokens[i].get());
+		if (type == nullptr) {
+			errorHandler->error(*tokens[i],
+			      "Expected type following ':' in function definition");
+			return {nullptr, nullptr};
+		}
+		type = dynamic_cast<Symbol *>(tokens[i++].release());
+		parameters.push_back(
+		      {std::unique_ptr<Symbol>(argSymbol), std::unique_ptr<Symbol>(type)});
+		auto *p2 = dynamic_cast<Punctuation *>(tokens[i].get());
+		if (p2 == nullptr) {
+			errorHandler->error(*tokens[i], "Expected ',' or ')' in function definition");
+			return {nullptr, nullptr};
+		}
+		if (p2->type == Punctuation::Type::CloseParen) {
+			break;
+		}
+		if (p2->type != Punctuation::Type::Comma) {
+			errorHandler->error(*tokens[i], "Expected ',' or ')' in function definition");
+			return {nullptr, nullptr};
+		}
+		i++;
+		argSymbol = dynamic_cast<Symbol *>(tokens[i].get());
+	}
+
 	punc = dynamic_cast<Punctuation *>(tokens[i].get());
 	if (punc == nullptr || punc->type != Punctuation::Type::CloseParen) {
 		errorHandler->error(*tokens[i], "Expected ')' in function definition");
@@ -88,7 +125,8 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> Parser::parseFunct
 	}
 
 	return {std::unique_ptr<Symbol>(symbol),
-	      std::make_unique<Function>(std::unique_ptr<Symbol>(type), std::move(block))};
+	      std::make_unique<Function>(std::move(parameters), std::unique_ptr<Symbol>(type),
+	            std::move(block))};
 }
 
 std::unique_ptr<Statement> Parser::parseStatement() {
