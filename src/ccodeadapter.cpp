@@ -278,8 +278,60 @@ void CCodeAdapter::visit(IfElseExpression &node) {
 	}
 }
 
-void CCodeAdapter::visit([[maybe_unused]] WhileExpression &node) {
-	// TODO
+void CCodeAdapter::visit(WhileExpression &node) {
+	if (node.getTypeID() != inputModule->getType("()").id
+	      && node.getTypeID() != inputModule->getType("!").id) {
+		generatedStrings->push_back("CANYON_WHILE_" + std::to_string(blockCount++));
+		std::string_view tempVariableName = generatedStrings->back();
+		std::unique_ptr<LetStatement> declaration = std::make_unique<LetStatement>(
+		      std::make_unique<Symbol>(
+		            Slice(tempVariableName, inputModule->getSource(), 0, 0)),
+		      nullptr);
+		scopeStack.back()->setSymbolType(tempVariableName, node.getTypeID());
+		declaration->setSymbolTypeID(node.getTypeID());
+		scopeStack.back()->pushStatement(std::move(declaration));
+		blockTemporaryVariables.push(tempVariableName);
+
+		Expression &oldCondition = node.getCondition();
+		oldCondition.accept(*this);
+		std::unique_ptr<Expression> newCondition = std::unique_ptr<Expression>(
+		      dynamic_cast<Expression *>(returnValue.release()));
+
+		Expression &oldBlock = node.getBody();
+		std::unique_ptr<BlockExpression> newBlock = std::make_unique<BlockExpression>();
+		scopeStack.push_back(newBlock.get());
+		visitExpression(oldBlock);
+		scopeStack.pop_back();
+		std::unique_ptr<Expression> newFinalExpression = std::unique_ptr<Expression>(
+		      dynamic_cast<Expression *>(returnValue.release()));
+		Punctuation equalSign = Punctuation(Slice("=", inputModule->getSource(), 0, 0),
+		      Punctuation::Type::Equals);
+		std::unique_ptr<Operator> assignmentOperator
+		      = std::make_unique<Operator>(equalSign, Operator::Type::Assignment);
+		std::unique_ptr<BinaryExpression> assignment
+		      = std::make_unique<BinaryExpression>(std::move(assignmentOperator),
+		            std::make_unique<SymbolExpression>(std::make_unique<Symbol>(
+		                  Slice(tempVariableName, inputModule->getSource(), 0, 0))),
+		            std::move(newFinalExpression));
+		std::unique_ptr<ExpressionStatement> newAssignment
+		      = std::make_unique<ExpressionStatement>(std::move(assignment));
+		newBlock->pushStatement(std::move(newAssignment));
+		blockTemporaryVariables.pop();
+	} else {
+		Expression &oldCondition = node.getCondition();
+		Expression &oldBlock = node.getBody();
+		visitExpression(oldCondition);
+		std::unique_ptr<Expression> newCondition = std::unique_ptr<Expression>(
+		      dynamic_cast<Expression *>(returnValue.release()));
+		visitExpression(oldBlock);
+		std::unique_ptr<BlockExpression> newBlock = std::unique_ptr<BlockExpression>(
+		      dynamic_cast<BlockExpression *>(returnValue.release()));
+		std::unique_ptr<WhileExpression> newWhileExpression
+		      = std::make_unique<WhileExpression>(std::move(newCondition),
+		            std::move(newBlock));
+		newWhileExpression->setTypeID(node.getTypeID());
+		returnValue = std::move(newWhileExpression);
+	}
 }
 
 void CCodeAdapter::visit(ExpressionStatement &node) {

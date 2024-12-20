@@ -179,8 +179,10 @@ private:
 public:
 	WhileExpression(const Keyword &whileKeyword, std::unique_ptr<Expression> condition,
 	      std::unique_ptr<BlockExpression> body);
+	WhileExpression(std::unique_ptr<Expression> condition,
+	      std::unique_ptr<BlockExpression> body);
 	Expression &getCondition();
-	BlockExpression &getBlock();
+	BlockExpression &getBody();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~WhileExpression() = default;
 };

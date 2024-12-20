@@ -129,8 +129,11 @@ void CCodeGenerator::visit(IfElseExpression &node) {
 	}
 }
 
-void CCodeGenerator::visit([[maybe_unused]] WhileExpression &node) {
-	// TODO
+void CCodeGenerator::visit(WhileExpression &node) {
+	*os << "while (";
+	node.getCondition().accept(*this);
+	*os << ") ";
+	node.getBody().accept(*this);
 }
 
 void CCodeGenerator::visit(ExpressionStatement &node) {

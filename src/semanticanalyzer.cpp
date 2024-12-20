@@ -206,13 +206,13 @@ void SemanticAnalyzer::visit(WhileExpression &node) {
 	Expression &condition = node.getCondition();
 	condition.accept(*this);
 	if (inUnreachableCode) {
-		errorHandler->error(node.getBlock().getSlice(), "Unreachable code");
+		errorHandler->error(node.getBody().getSlice(), "Unreachable code");
 		return;
 	}
 	if (condition.getTypeID() != module->getType("bool").id) {
 		errorHandler->error(condition.getSlice(), "Condition is not of type bool");
 	}
-	BlockExpression &block = node.getBlock();
+	BlockExpression &block = node.getBody();
 	block.accept(*this);
 	node.setTypeID(block.getTypeID());
 }

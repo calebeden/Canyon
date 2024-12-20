@@ -228,11 +228,17 @@ WhileExpression::WhileExpression(const Keyword &whileKeyword,
       condition(std::move(condition)), body(std::move(body)) {
 }
 
+WhileExpression::WhileExpression(std::unique_ptr<Expression> condition,
+      std::unique_ptr<BlockExpression> body)
+    : Expression(Slice("", condition->getSlice().source, 0, 0)),
+      condition(std::move(condition)), body(std::move(body)) {
+}
+
 Expression &WhileExpression::getCondition() {
 	return *condition;
 }
 
-BlockExpression &WhileExpression::getBlock() {
+BlockExpression &WhileExpression::getBody() {
 	return *body;
 }
 
@@ -568,7 +574,7 @@ void ASTPrinter::visit(WhileExpression &node) {
 	std::cerr << "while ";
 	node.getCondition().accept(*this);
 	std::cerr << ' ';
-	node.getBlock().accept(*this);
+	node.getBody().accept(*this);
 }
 
 void ASTPrinter::visit(ExpressionStatement &node) {
