@@ -278,6 +278,10 @@ void CCodeAdapter::visit(IfElseExpression &node) {
 	}
 }
 
+void CCodeAdapter::visit([[maybe_unused]] WhileExpression &node) {
+	// TODO
+}
+
 void CCodeAdapter::visit(ExpressionStatement &node) {
 	Expression &oldExpression = node.getExpression();
 	visitExpression(oldExpression);

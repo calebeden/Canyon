@@ -11,7 +11,7 @@
 
 /**
  * @brief Parses a series of Tokens into an AST
- * 
+ *
  */
 class Parser {
 	std::vector<std::unique_ptr<Token>> tokens;
@@ -30,6 +30,7 @@ private:
 	std::unique_ptr<Expression> parseExpression();
 	std::unique_ptr<BlockExpression> parseBlock();
 	std::unique_ptr<IfElseExpression> parseIfElse();
+	std::unique_ptr<WhileExpression> parseWhile();
 	std::unique_ptr<Expression> parseReturnBreakExpression();
 	std::unique_ptr<Expression> parseAssignmentExpression();
 	std::unique_ptr<Expression> parseLogicalOrExpression();

@@ -312,6 +312,27 @@ std::unique_ptr<IfElseExpression> Parser::parseIfElse() {
 	      std::move(thenBlock), *keyword2, std::move(elseExpression));
 }
 
+std::unique_ptr<WhileExpression> Parser::parseWhile() {
+	auto *keyword = dynamic_cast<Keyword *>(tokens[i].get());
+	if (keyword == nullptr || keyword->type != Keyword::Type::WHILE) {
+		errorHandler->error(*tokens[i], "Expected keyword `while`");
+		return nullptr;
+	}
+	i++;
+	auto condition = parseExpression();
+	auto *p1 = dynamic_cast<Punctuation *>(tokens[i].get());
+	if (p1 == nullptr || p1->type != Punctuation::Type::OpenBrace) {
+		errorHandler->error(*tokens[i], "Expected '{'");
+		return nullptr;
+	}
+	auto block = parseBlock();
+	if (block == nullptr) {
+		return nullptr;
+	}
+	return std::make_unique<WhileExpression>(*keyword, std::move(condition),
+	      std::move(block));
+}
+
 std::unique_ptr<Expression> Parser::parseReturnBreakExpression() {
 	auto *keyword = dynamic_cast<Keyword *>(tokens[i].get());
 	if (keyword != nullptr && keyword->type == Keyword::Type::RETURN) {
@@ -622,6 +643,9 @@ std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
 	auto *keyword = dynamic_cast<Keyword *>(tokens[i].get());
 	if (keyword != nullptr && keyword->type == Keyword::Type::IF) {
 		return parseIfElse();
+	}
+	if (keyword != nullptr && keyword->type == Keyword::Type::WHILE) {
+		return parseWhile();
 	}
 
 	errorHandler->error(*tokens[i], "Expected expression");

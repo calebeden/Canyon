@@ -202,6 +202,10 @@ void SemanticAnalyzer::visit(IfElseExpression &node) {
 	node.setTypeID(typeID);
 }
 
+void SemanticAnalyzer::visit([[maybe_unused]] WhileExpression &node) {
+	// TODO
+}
+
 void SemanticAnalyzer::visit(ExpressionStatement &node) {
 	if (inUnreachableCode) {
 		errorHandler->error(node.getSlice(), "Unreachable code");

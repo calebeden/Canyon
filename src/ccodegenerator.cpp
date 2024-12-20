@@ -129,6 +129,10 @@ void CCodeGenerator::visit(IfElseExpression &node) {
 	}
 }
 
+void CCodeGenerator::visit([[maybe_unused]] WhileExpression &node) {
+	// TODO
+}
+
 void CCodeGenerator::visit(ExpressionStatement &node) {
 	node.getExpression().accept(*this);
 	if (!dynamic_cast<BlockExpression *>(&node.getExpression())) {
