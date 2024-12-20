@@ -173,7 +173,18 @@ void CCodeGenerator::visit(Module &node) {
 	node.forEachFunction([this](std::string_view name, Function &function) {
 		Type functionType = module->getType(function.getTypeID());
 		const std::string &cType = cTypes[functionType.id];
-		*os << cType << ' ' << name << "() ";
+		*os << cType << ' ' << name << '(';
+		bool first = true;
+		function.forEachParameter([this, &first](Symbol &parameter, [[maybe_unused]]
+		                                                            Symbol &type) {
+			const std::string &cType = cTypes[module->getType(type.s.contents).id];
+			if (!first) {
+				*os << ", ";
+			}
+			first = false;
+			*os << cType << ' ' << parameter.s;
+		});
+		*os << ") ";
 		function.getBody().accept(*this);
 		*os << "\n";
 	});

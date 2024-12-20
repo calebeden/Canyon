@@ -369,6 +369,19 @@ void CCodeAdapter::visit(LetStatement &node) {
 }
 
 void CCodeAdapter::visit(Function &node) {
+	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
+	      newParameters;
+	node.forEachParameter([this, &newParameters](Symbol &parameter, Symbol &type) {
+		generatedStrings->push_back(
+		      "CANYON_PARAMETER_" + std::string(parameter.s.contents));
+		std::string_view newParameterName = generatedStrings->back();
+		std::unique_ptr<Symbol> newParameter = std::make_unique<Symbol>(
+		      Slice(newParameterName, inputModule->getSource(), 0, 0));
+		std::unique_ptr<Symbol> newType = std::make_unique<Symbol>(type);
+		newParameters.push_back(
+		      std::make_pair(std::move(newParameter), std::move(newType)));
+	});
+
 	Expression &oldBody = node.getBody();
 	std::unique_ptr<BlockExpression> enclosingScope = std::make_unique<BlockExpression>();
 	scopeStack.push_back(enclosingScope.get());
@@ -379,7 +392,8 @@ void CCodeAdapter::visit(Function &node) {
 	std::unique_ptr<ExpressionStatement> bodyStatement
 	      = std::make_unique<ExpressionStatement>(std::move(newBody));
 	enclosingScope->pushStatement(std::move(bodyStatement));
-	returnValue = std::make_unique<Function>(std::move(enclosingScope));
+	returnValue = std::make_unique<Function>(std::move(newParameters),
+	      std::move(enclosingScope));
 }
 
 void CCodeAdapter::visit(Module &node) {
