@@ -102,7 +102,7 @@ void CCodeAdapter::visit(BoolLiteralExpression &node) {
 
 void CCodeAdapter::visit(SymbolExpression &node) {
 	Symbol &oldSymbol = node.getSymbol();
-	SymbolSource source;
+	SymbolSource source = SymbolSource::Unknown;
 	for (auto it = scopeStack.rbegin(); it != scopeStack.rend(); it++) {
 		source = (*it)->getSymbolSource(oldSymbol.s.contents);
 		if (source != SymbolSource::Unknown) {
@@ -131,8 +131,8 @@ void CCodeAdapter::visit(BlockExpression &node) {
 	      = std::make_unique<BlockExpression>();
 	scopeStack.push_back(newBlockExpression.get());
 
-	oldBlock.forEachSymbol([this, &newBlockExpression](std::string_view symbol,
-	                             int typeID, SymbolSource source) {
+	oldBlock.forEachSymbol([&newBlockExpression](std::string_view symbol, int typeID,
+	                             SymbolSource source) {
 		newBlockExpression->pushSymbol(symbol, typeID, source);
 	});
 
@@ -407,8 +407,7 @@ void CCodeAdapter::visit(Function &node) {
 		std::unique_ptr<Symbol> newParameter = std::make_unique<Symbol>(
 		      Slice(newParameterName, inputModule->getSource(), 0, 0));
 		std::unique_ptr<Symbol> newType = std::make_unique<Symbol>(type);
-		newParameters.push_back(
-		      std::make_pair(std::move(newParameter), std::move(newType)));
+		newParameters.emplace_back(std::move(newParameter), std::move(newType));
 	});
 
 	Expression &oldBody = node.getBody();

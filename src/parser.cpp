@@ -81,8 +81,8 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> Parser::parseFunct
 			return {nullptr, nullptr};
 		}
 		type = dynamic_cast<Symbol *>(tokens[i++].release());
-		parameters.push_back(
-		      {std::unique_ptr<Symbol>(argSymbol), std::unique_ptr<Symbol>(type)});
+		parameters.emplace_back(std::unique_ptr<Symbol>(argSymbol),
+		      std::unique_ptr<Symbol>(type));
 		auto *p2 = dynamic_cast<Punctuation *>(tokens[i].get());
 		if (p2 == nullptr) {
 			errorHandler->error(*tokens[i], "Expected ',' or ')' in function definition");

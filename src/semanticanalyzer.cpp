@@ -49,7 +49,7 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 	      [&parameters, &function](Symbol &parameter, [[maybe_unused]]
 	                                                  Symbol &type) {
 		      int typeId = function->getBody().getSymbolType(parameter.s.contents);
-		      parameters.push_back({parameter, typeId});
+		      parameters.emplace_back(parameter, typeId);
 	      });
 
 	size_t i = 0;
