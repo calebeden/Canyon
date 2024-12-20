@@ -90,7 +90,6 @@ struct Punctuation : public Token {
 
 struct Operator : public Token {
 	enum class Type {
-		Comma,
 		Assignment,
 		Equality,
 		Inequality,

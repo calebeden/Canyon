@@ -258,13 +258,9 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 				case Punctuation::Type::Semicolon:
 				case Punctuation::Type::OpenBrace:
 				case Punctuation::Type::CloseBrace:
-				case Punctuation::Type::Period: {
-					evaluated.push_back(std::move(token));
-					break;
-				}
+				case Punctuation::Type::Period:
 				case Punctuation::Type::Comma: {
-					evaluated.push_back(
-					      std::make_unique<Operator>(*token, Operator::Type::Comma));
+					evaluated.push_back(std::move(token));
 					break;
 				}
 				case Punctuation::Type::Equals: {

@@ -159,10 +159,6 @@ Operator::Operator(const Token &t, Type type) : Token(t.s), type(type) {
 
 void Operator::print(std::ostream &os) const {
 	switch (type) {
-		case Type::Comma: {
-			os << ',';
-			break;
-		}
 		case Type::Assignment: {
 			os << '=';
 			break;

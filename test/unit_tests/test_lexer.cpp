@@ -48,7 +48,6 @@ static constexpr std::array punctuations = {
       std::pair('^', Punctuation::Type::Caret),
 };
 static constexpr std::array operators = {
-      std::pair(",", Operator::Type::Comma),
       std::pair("=", Operator::Type::Assignment),
       std::pair("==", Operator::Type::Equality),
       std::pair("!=", Operator::Type::Inequality),
