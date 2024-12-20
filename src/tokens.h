@@ -49,6 +49,7 @@ struct Keyword : public Token {
 		FUN,
 		IF,
 		ELSE,
+		WHILE,
 	};
 
 	Type type;

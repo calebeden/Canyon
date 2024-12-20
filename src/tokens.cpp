@@ -55,6 +55,10 @@ void Keyword::print(std::ostream &os) const {
 			os << "else";
 			break;
 		}
+		case Type::WHILE: {
+			os << "while";
+			break;
+		}
 	}
 }
 
