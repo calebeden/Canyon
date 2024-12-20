@@ -636,11 +636,32 @@ std::unique_ptr<Expression> Parser::parseFunctionCallExpression() {
 	}
 	auto *p1 = dynamic_cast<Punctuation *>(tokens[i].get());
 	if (p1 != nullptr && (p1->type == Punctuation::Type::OpenParen)) {
-		auto *p2 = dynamic_cast<Punctuation *>(tokens[i + 1].get());
-		if (p2 != nullptr && (p2->type == Punctuation::Type::CloseParen)) {
-			i += 2;
-			return std::make_unique<FunctionCallExpression>(std::move(expr));
+		i++;
+		std::vector<std::unique_ptr<Expression>> arguments;
+		auto *p2 = dynamic_cast<Punctuation *>(tokens[i].get());
+		while (p2 == nullptr || p2->type != Punctuation::Type::CloseParen) {
+			std::unique_ptr<Expression> arg = parseExpression();
+			if (arg == nullptr) {
+				errorHandler->error(*tokens[i], "Expected expression");
+				return nullptr;
+			}
+			arguments.push_back(std::move(arg));
+			p2 = dynamic_cast<Punctuation *>(tokens[i].get());
+			if (p2 == nullptr) {
+				errorHandler->error(*tokens[i], "Expected ',' or ')'");
+				return nullptr;
+			}
+			if (p2->type == Punctuation::Type::CloseParen) {
+				break;
+			}
+			if (p2->type != Punctuation::Type::Comma) {
+				errorHandler->error(*tokens[i], "Expected ',' or ')'");
+				return nullptr;
+			}
 		}
+		i++;
+		return std::make_unique<FunctionCallExpression>(std::move(expr), *p1,
+		      std::move(arguments), *p2);
 	}
 	return expr;
 }

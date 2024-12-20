@@ -28,6 +28,13 @@ Slice &Statement::getSlice() {
 	return s;
 }
 
+FunctionCallExpression::FunctionCallExpression(std::unique_ptr<Expression> function,
+      [[maybe_unused]] const Punctuation &open,
+      std::vector<std::unique_ptr<Expression>> arguments, const Punctuation &close)
+    : Expression(Slice::merge(function->getSlice(), close.s)),
+      function(std::move(function)), arguments(std::move(arguments)) {
+}
+
 FunctionCallExpression::FunctionCallExpression(std::unique_ptr<Expression> function)
     : Expression(function->getSlice()), function(std::move(function)) {
 }

@@ -44,7 +44,10 @@ public:
 
 class FunctionCallExpression : public Expression {
 	std::unique_ptr<Expression> function;
+	std::vector<std::unique_ptr<Expression>> arguments;
 public:
+	FunctionCallExpression(std::unique_ptr<Expression> function, const Punctuation &open,
+	      std::vector<std::unique_ptr<Expression>> arguments, const Punctuation &close);
 	FunctionCallExpression(std::unique_ptr<Expression> function);
 	Expression &getFunction();
 	void accept(ASTVisitor &visitor) override;
