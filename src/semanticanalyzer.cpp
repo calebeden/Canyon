@@ -342,6 +342,10 @@ void SemanticAnalyzer::visit(Module &node) {
 	                           Function &function) {
 		function.forEachParameter([this, &function](Symbol &parameter, Symbol &type) {
 			int typeID = module->getType(type.s.contents).id;
+			if (typeID == -1) {
+				errorHandler->error(type.s, "Unknown type");
+				return;
+			}
 			function.getBody().pushSymbol(parameter.s.contents, typeID,
 			      SymbolSource::FunctionParameter);
 		});
