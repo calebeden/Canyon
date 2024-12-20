@@ -1,6 +1,6 @@
 fun main() {
     let x: i32 = 1;
-    let y: i32 = x + while true {
+    let y: i32 = x + while false {
         2
     };
 }

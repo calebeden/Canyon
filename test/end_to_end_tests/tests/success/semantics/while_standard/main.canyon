@@ -1,5 +1,5 @@
 fun main() {
-    while true {
+    while false {
         1;
     }
 }
