@@ -35,8 +35,10 @@ FunctionCallExpression::FunctionCallExpression(std::unique_ptr<Expression> funct
       function(std::move(function)), arguments(std::move(arguments)) {
 }
 
-FunctionCallExpression::FunctionCallExpression(std::unique_ptr<Expression> function)
-    : Expression(function->getSlice()), function(std::move(function)) {
+FunctionCallExpression::FunctionCallExpression(std::unique_ptr<Expression> function,
+      std::vector<std::unique_ptr<Expression>> arguments)
+    : Expression(function->getSlice()), function(std::move(function)),
+      arguments(std::move(arguments)) {
 }
 
 Expression &FunctionCallExpression::getFunction() {

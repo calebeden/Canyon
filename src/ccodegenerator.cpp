@@ -40,7 +40,16 @@ void CCodeGenerator::generateIncludes() {
 
 void CCodeGenerator::visit(FunctionCallExpression &node) {
 	node.getFunction().accept(*this);
-	*os << "()";
+	*os << '(';
+	bool first = true;
+	node.forEachArgument([this, &first](Expression &argument) {
+		if (!first) {
+			*os << ", ";
+		}
+		first = false;
+		argument.accept(*this);
+	});
+	*os << ')';
 }
 
 void CCodeGenerator::visit(BinaryExpression &node) {

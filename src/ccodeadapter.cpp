@@ -32,8 +32,18 @@ void CCodeAdapter::visit(FunctionCallExpression &node) {
 	      = std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0));
 	std::unique_ptr<SymbolExpression> newSymbolExpression
 	      = std::make_unique<SymbolExpression>(std::move(newSymbol));
+
+	std::vector<std::unique_ptr<Expression>> newArguments;
+	node.forEachArgument([this, &newArguments](Expression &argument) {
+		visitExpression(argument);
+		std::unique_ptr<Expression> newArgument = std::unique_ptr<Expression>(
+		      dynamic_cast<Expression *>(returnValue.release()));
+		newArguments.push_back(std::move(newArgument));
+	});
+
 	std::unique_ptr<FunctionCallExpression> newFunctionCall
-	      = std::make_unique<FunctionCallExpression>(std::move(newSymbolExpression));
+	      = std::make_unique<FunctionCallExpression>(std::move(newSymbolExpression),
+	            std::move(newArguments));
 	newFunctionCall->setTypeID(oldFunction.getTypeID());
 	returnValue = std::move(newFunctionCall);
 }
