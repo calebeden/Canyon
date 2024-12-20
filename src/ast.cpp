@@ -330,8 +330,18 @@ Function::Function(
       returnTypeAnnotation(std::move(returnTypeAnnotation)), body(std::move(body)) {
 }
 
-Function::Function(std::unique_ptr<BlockExpression> body)
-    : returnTypeAnnotation(nullptr), body(std::move(body)) {
+Function::Function(
+      std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters,
+      std::unique_ptr<BlockExpression> body)
+    : parameters(std::move(parameters)), returnTypeAnnotation(nullptr),
+      body(std::move(body)) {
+}
+
+void Function::forEachParameter(
+      const std::function<void(Symbol &, Symbol &)> &parameterHandler) {
+	for (auto &[symbol, type] : parameters) {
+		parameterHandler(*symbol, *type);
+	}
 }
 
 Symbol *Function::getReturnTypeAnnotation() {

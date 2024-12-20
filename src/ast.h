@@ -232,7 +232,11 @@ public:
 	               parameters,
 	      std::unique_ptr<Symbol> returnTypeAnnotation,
 	      std::unique_ptr<BlockExpression> body);
-	Function(std::unique_ptr<BlockExpression> body);
+	Function(std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
+	               parameters,
+	      std::unique_ptr<BlockExpression> body);
+	void forEachParameter(
+	      const std::function<void(Symbol &, Symbol &)> &parameterHandler);
 	Symbol *getReturnTypeAnnotation();
 	BlockExpression &getBody();
 	int getTypeID() const;

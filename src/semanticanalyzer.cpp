@@ -297,6 +297,11 @@ void SemanticAnalyzer::visit(Module &node) {
 	node.forEachFunction([this]([[maybe_unused]]
 	                            std::string_view name,
 	                           Function &function) {
+		function.forEachParameter([this, &function](Symbol &parameter, Symbol &type) {
+			int typeID = module->getType(type.s.contents).id;
+			function.getBody().setSymbolType(parameter.s.contents, typeID);
+		});
+
 		Symbol *type = function.getReturnTypeAnnotation();
 		if (type == nullptr) {
 			function.setTypeID(module->getType("()").id);
