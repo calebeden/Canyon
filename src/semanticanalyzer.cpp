@@ -59,6 +59,7 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 	                           &unreachableHandled](Expression &argument) {
 		if (i == parameters.size()) {
 			errorHandler->error(argument.getSlice(), "Incorrect number of arguments");
+			i++;
 			return;
 		}
 		if (i > parameters.size()) {
@@ -82,7 +83,7 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 		}
 		i++;
 	});
-	if (i != parameters.size()) {
+	if (i < parameters.size()) {
 		errorHandler->error(node.getSlice(), "Incorrect number of arguments");
 	}
 
