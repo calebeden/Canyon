@@ -66,6 +66,7 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 			return;
 		}
 		if (unreachableArgument) {
+			i++;
 			if (!unreachableHandled) {
 				errorHandler->error(argument.getSlice(), "Unreachable argument");
 				unreachableHandled = true;
@@ -73,8 +74,9 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 			return;
 		}
 		argument.accept(*this);
-		if (argument.getTypeID() == -1) {
+		if (inUnreachableCode) {
 			unreachableArgument = true;
+			i++;
 			return;
 		}
 		if (!module->isTypeConvertible(argument.getTypeID(), parameters[i].second)) {
