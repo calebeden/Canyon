@@ -121,6 +121,7 @@ enum class SymbolSource {
 	GENERATED_Block,
 	GENERATED_IfElse,
 	GENERATED_While,
+	GENERATED_Argument,
 };
 
 class BlockExpression : public Expression {

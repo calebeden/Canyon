@@ -35,10 +35,20 @@ void CCodeAdapter::visit(FunctionCallExpression &node) {
 
 	std::vector<std::unique_ptr<Expression>> newArguments;
 	node.forEachArgument([this, &newArguments](Expression &argument) {
+		generatedStrings->push_back("CANYON_ARGUMENT_" + std::to_string(blockCount++));
+		std::string_view tempVariableName = generatedStrings->back();
+		std::unique_ptr<Symbol> tempSymbol = std::make_unique<Symbol>(
+		      Slice(tempVariableName, inputModule->getSource(), 0, 0));
 		visitExpression(argument);
 		std::unique_ptr<Expression> newArgument = std::unique_ptr<Expression>(
 		      dynamic_cast<Expression *>(returnValue.release()));
-		newArguments.push_back(std::move(newArgument));
+		std::unique_ptr<LetStatement> newLetStatement = std::make_unique<LetStatement>(
+		      std::make_unique<Symbol>(*tempSymbol), std::move(newArgument));
+		scopeStack.back()->pushSymbol(tempVariableName, argument.getTypeID(),
+		      SymbolSource::GENERATED_Argument);
+		newLetStatement->setSymbolTypeID(argument.getTypeID());
+		scopeStack.back()->pushStatement(std::move(newLetStatement));
+		newArguments.push_back(std::make_unique<SymbolExpression>(std::move(tempSymbol)));
 	});
 
 	std::unique_ptr<FunctionCallExpression> newFunctionCall

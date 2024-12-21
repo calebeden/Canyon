@@ -47,9 +47,7 @@ void CCodeGenerator::visit(FunctionCallExpression &node) {
 			*os << ", ";
 		}
 		first = false;
-		*os << '(';
 		argument.accept(*this);
-		*os << ')';
 	});
 	*os << ')';
 }
