@@ -184,8 +184,7 @@ void CCodeGenerator::visit(Module &node) {
 		const std::string &cType = cTypes[functionType.id];
 		*os << cType << ' ' << name << '(';
 		bool first = true;
-		function.forEachParameter([this, &first](Symbol &parameter, [[maybe_unused]]
-		                                                            Symbol &type) {
+		function.forEachParameter([this, &first](Symbol &parameter, Symbol &type) {
 			const std::string &cType = cTypes[module->getType(type.s.contents).id];
 			if (!first) {
 				*os << ", ";
