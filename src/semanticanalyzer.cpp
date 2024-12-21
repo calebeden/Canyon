@@ -88,6 +88,13 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 	if (i < parameters.size()) {
 		errorHandler->error(node.getSlice(), "Incorrect number of arguments");
 	}
+	if (unreachableArgument) {
+		if (!unreachableHandled) {
+			errorHandler->error(node.getSlice(), "Unreachable function call");
+		}
+		node.setTypeID(module->getType("!").id);
+		return;
+	}
 
 	node.setTypeID(function->getTypeID());
 }
