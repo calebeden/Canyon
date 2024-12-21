@@ -382,7 +382,9 @@ std::unique_ptr<Expression> Parser::parseReturnBreakExpression() {
 		auto *punc = dynamic_cast<Punctuation *>(tokens[i].get());
 		if (punc != nullptr
 		      && (punc->type == Punctuation::Type::Semicolon
-		            || punc->type == Punctuation::Type::CloseBrace)) {
+		            || punc->type == Punctuation::Type::CloseBrace
+		            || punc->type == Punctuation::Type::CloseParen
+		            || punc->type == Punctuation::Type::Comma)) {
 			return std::make_unique<ReturnExpression>(*keyword, nullptr);
 		}
 		std::unique_ptr<Expression> expr = parseReturnBreakExpression();
