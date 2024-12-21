@@ -32,8 +32,28 @@ void CCodeAdapter::visit(FunctionCallExpression &node) {
 	      = std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0));
 	std::unique_ptr<SymbolExpression> newSymbolExpression
 	      = std::make_unique<SymbolExpression>(std::move(newSymbol));
+
+	std::vector<std::unique_ptr<Expression>> newArguments;
+	node.forEachArgument([this, &newArguments](Expression &argument) {
+		generatedStrings->push_back("CANYON_ARGUMENT_" + std::to_string(blockCount++));
+		std::string_view tempVariableName = generatedStrings->back();
+		std::unique_ptr<Symbol> tempSymbol = std::make_unique<Symbol>(
+		      Slice(tempVariableName, inputModule->getSource(), 0, 0));
+		visitExpression(argument);
+		std::unique_ptr<Expression> newArgument = std::unique_ptr<Expression>(
+		      dynamic_cast<Expression *>(returnValue.release()));
+		std::unique_ptr<LetStatement> newLetStatement = std::make_unique<LetStatement>(
+		      std::make_unique<Symbol>(*tempSymbol), std::move(newArgument));
+		scopeStack.back()->pushSymbol(tempVariableName, argument.getTypeID(),
+		      SymbolSource::GENERATED_Argument);
+		newLetStatement->setSymbolTypeID(argument.getTypeID());
+		scopeStack.back()->pushStatement(std::move(newLetStatement));
+		newArguments.push_back(std::make_unique<SymbolExpression>(std::move(tempSymbol)));
+	});
+
 	std::unique_ptr<FunctionCallExpression> newFunctionCall
-	      = std::make_unique<FunctionCallExpression>(std::move(newSymbolExpression));
+	      = std::make_unique<FunctionCallExpression>(std::move(newSymbolExpression),
+	            std::move(newArguments));
 	newFunctionCall->setTypeID(oldFunction.getTypeID());
 	returnValue = std::move(newFunctionCall);
 }
@@ -92,7 +112,19 @@ void CCodeAdapter::visit(BoolLiteralExpression &node) {
 
 void CCodeAdapter::visit(SymbolExpression &node) {
 	Symbol &oldSymbol = node.getSymbol();
-	generatedStrings->push_back("CANYON_LOCAL_" + std::string(oldSymbol.s.contents));
+	SymbolSource source = SymbolSource::Unknown;
+	for (auto it = scopeStack.rbegin(); it != scopeStack.rend(); it++) {
+		source = (*it)->getSymbolSource(oldSymbol.s.contents);
+		if (source != SymbolSource::Unknown) {
+			break;
+		}
+	}
+	if (source == SymbolSource::FunctionParameter) {
+		generatedStrings->push_back(
+		      "CANYON_PARAMETER_" + std::string(oldSymbol.s.contents));
+	} else {
+		generatedStrings->push_back("CANYON_LOCAL_" + std::string(oldSymbol.s.contents));
+	}
 	std::string_view newName = generatedStrings->back();
 	std::unique_ptr<Symbol> newSymbol
 	      = std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0));
@@ -108,6 +140,11 @@ void CCodeAdapter::visit(BlockExpression &node) {
 	std::unique_ptr<BlockExpression> newBlockExpression
 	      = std::make_unique<BlockExpression>();
 	scopeStack.push_back(newBlockExpression.get());
+
+	oldBlock.forEachSymbol([&newBlockExpression](std::string_view symbol, int typeID,
+	                             SymbolSource source) {
+		newBlockExpression->pushSymbol(symbol, typeID, source);
+	});
 
 	oldBlock.forEachStatement([this, &newBlockExpression](Statement &statement) {
 		statement.accept(*this);
@@ -183,7 +220,8 @@ void CCodeAdapter::visit(IfElseExpression &node) {
 		      std::make_unique<Symbol>(
 		            Slice(tempVariableName, inputModule->getSource(), 0, 0)),
 		      nullptr);
-		scopeStack.back()->setSymbolType(tempVariableName, node.getTypeID());
+		scopeStack.back()->pushSymbol(tempVariableName, node.getTypeID(),
+		      SymbolSource::GENERATED_IfElse);
 		declaration->setSymbolTypeID(node.getTypeID());
 		scopeStack.back()->pushStatement(std::move(declaration));
 		blockTemporaryVariables.push(tempVariableName);
@@ -287,7 +325,8 @@ void CCodeAdapter::visit(WhileExpression &node) {
 		      std::make_unique<Symbol>(
 		            Slice(tempVariableName, inputModule->getSource(), 0, 0)),
 		      nullptr);
-		scopeStack.back()->setSymbolType(tempVariableName, node.getTypeID());
+		scopeStack.back()->pushSymbol(tempVariableName, node.getTypeID(),
+		      SymbolSource::GENERATED_While);
 		declaration->setSymbolTypeID(node.getTypeID());
 		scopeStack.back()->pushStatement(std::move(declaration));
 		blockTemporaryVariables.push(tempVariableName);
@@ -369,6 +408,18 @@ void CCodeAdapter::visit(LetStatement &node) {
 }
 
 void CCodeAdapter::visit(Function &node) {
+	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
+	      newParameters;
+	node.forEachParameter([this, &newParameters](Symbol &parameter, Symbol &type) {
+		generatedStrings->push_back(
+		      "CANYON_PARAMETER_" + std::string(parameter.s.contents));
+		std::string_view newParameterName = generatedStrings->back();
+		std::unique_ptr<Symbol> newParameter = std::make_unique<Symbol>(
+		      Slice(newParameterName, inputModule->getSource(), 0, 0));
+		std::unique_ptr<Symbol> newType = std::make_unique<Symbol>(type);
+		newParameters.emplace_back(std::move(newParameter), std::move(newType));
+	});
+
 	Expression &oldBody = node.getBody();
 	std::unique_ptr<BlockExpression> enclosingScope = std::make_unique<BlockExpression>();
 	scopeStack.push_back(enclosingScope.get());
@@ -379,7 +430,8 @@ void CCodeAdapter::visit(Function &node) {
 	std::unique_ptr<ExpressionStatement> bodyStatement
 	      = std::make_unique<ExpressionStatement>(std::move(newBody));
 	enclosingScope->pushStatement(std::move(bodyStatement));
-	returnValue = std::make_unique<Function>(std::move(enclosingScope));
+	returnValue = std::make_unique<Function>(std::move(newParameters),
+	      std::move(enclosingScope));
 }
 
 void CCodeAdapter::visit(Module &node) {
@@ -408,7 +460,8 @@ void CCodeAdapter::visitExpression(Expression &node) {
 		      std::make_unique<Symbol>(
 		            Slice(tempVariableName, inputModule->getSource(), 0, 0)),
 		      nullptr);
-		scopeStack.back()->setSymbolType(tempVariableName, node.getTypeID());
+		scopeStack.back()->pushSymbol(tempVariableName, node.getTypeID(),
+		      SymbolSource::GENERATED_Block);
 		declaration->setSymbolTypeID(node.getTypeID());
 		scopeStack.back()->pushStatement(std::move(declaration));
 		blockTemporaryVariables.push(tempVariableName);

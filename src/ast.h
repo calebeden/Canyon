@@ -44,9 +44,14 @@ public:
 
 class FunctionCallExpression : public Expression {
 	std::unique_ptr<Expression> function;
+	std::vector<std::unique_ptr<Expression>> arguments;
 public:
-	FunctionCallExpression(std::unique_ptr<Expression> function);
+	FunctionCallExpression(std::unique_ptr<Expression> function, const Punctuation &open,
+	      std::vector<std::unique_ptr<Expression>> arguments, const Punctuation &close);
+	FunctionCallExpression(std::unique_ptr<Expression> function,
+	      std::vector<std::unique_ptr<Expression>> arguments);
 	Expression &getFunction();
+	void forEachArgument(const std::function<void(Expression &)> &argumentHandler);
 	void accept(ASTVisitor &visitor) override;
 	virtual ~FunctionCallExpression() = default;
 };
@@ -109,11 +114,21 @@ public:
 	virtual ~SymbolExpression() = default;
 };
 
+enum class SymbolSource {
+	Unknown,
+	LetStatement,
+	FunctionParameter,
+	GENERATED_Block,
+	GENERATED_IfElse,
+	GENERATED_While,
+	GENERATED_Argument,
+};
+
 class BlockExpression : public Expression {
 private:
 	std::vector<std::unique_ptr<Statement>> statements;
 	std::unique_ptr<Expression> finalExpression;
-	std::unordered_map<std::string_view, int> symbols;
+	std::unordered_map<std::string_view, std::tuple<int, SymbolSource>> symbols;
 public:
 	BlockExpression(const Punctuation &open,
 	      std::vector<std::unique_ptr<Statement>> statements,
@@ -122,7 +137,10 @@ public:
 	void forEachStatement(const std::function<void(Statement &)> &statementHandler);
 	Expression *getFinalExpression();
 	int getSymbolType(std::string_view symbol);
-	void setSymbolType(std::string_view symbol, int typeID);
+	SymbolSource getSymbolSource(std::string_view symbol);
+	void pushSymbol(std::string_view symbol, int typeID, SymbolSource source);
+	void forEachSymbol(
+	      const std::function<void(std::string_view, int, SymbolSource)> &symbolHandler);
 	void pushStatement(std::unique_ptr<Statement> statement);
 	void accept(ASTVisitor &visitor) override;
 	virtual ~BlockExpression() = default;
@@ -223,13 +241,20 @@ public:
 
 class Function : public ASTComponent {
 private:
+	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters;
 	std::unique_ptr<Symbol> returnTypeAnnotation;
 	std::unique_ptr<BlockExpression> body;
 	int typeID = -1;
 public:
-	Function(std::unique_ptr<Symbol> returnTypeAnnotation,
+	Function(std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
+	               parameters,
+	      std::unique_ptr<Symbol> returnTypeAnnotation,
 	      std::unique_ptr<BlockExpression> body);
-	Function(std::unique_ptr<BlockExpression> body);
+	Function(std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
+	               parameters,
+	      std::unique_ptr<BlockExpression> body);
+	void forEachParameter(
+	      const std::function<void(Symbol &, Symbol &)> &parameterHandler);
 	Symbol *getReturnTypeAnnotation();
 	BlockExpression &getBody();
 	int getTypeID() const;

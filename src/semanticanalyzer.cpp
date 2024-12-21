@@ -44,6 +44,58 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 		      "Function " + std::string(symbol->getSymbol().s.contents) + " not found");
 		return;
 	}
+	std::vector<std::pair<Symbol &, int>> parameters;
+	function->forEachParameter(
+	      [&parameters, &function](Symbol &parameter, [[maybe_unused]]
+	                                                  Symbol &type) {
+		      int typeId = function->getBody().getSymbolType(parameter.s.contents);
+		      parameters.emplace_back(parameter, typeId);
+	      });
+
+	size_t i = 0;
+	bool unreachableArgument = false;
+	bool unreachableHandled = false;
+	node.forEachArgument([this, &parameters, &i, &unreachableArgument,
+	                           &unreachableHandled](Expression &argument) {
+		if (i == parameters.size()) {
+			errorHandler->error(argument.getSlice(), "Incorrect number of arguments");
+			i++;
+			return;
+		}
+		if (i > parameters.size()) {
+			return;
+		}
+		if (unreachableArgument) {
+			i++;
+			if (!unreachableHandled) {
+				errorHandler->error(argument.getSlice(), "Unreachable argument");
+				unreachableHandled = true;
+			}
+			return;
+		}
+		argument.accept(*this);
+		if (inUnreachableCode) {
+			unreachableArgument = true;
+			i++;
+			return;
+		}
+		if (!module->isTypeConvertible(argument.getTypeID(), parameters[i].second)) {
+			errorHandler->error(argument.getSlice(),
+			      "Argument type is not convertible to parameter type");
+		}
+		i++;
+	});
+	if (i < parameters.size()) {
+		errorHandler->error(node.getSlice(), "Incorrect number of arguments");
+	}
+	if (unreachableArgument) {
+		if (!unreachableHandled) {
+			errorHandler->error(node.getSlice(), "Unreachable function call");
+		}
+		node.setTypeID(module->getType("!").id);
+		return;
+	}
+
 	node.setTypeID(function->getTypeID());
 }
 
@@ -251,7 +303,8 @@ void SemanticAnalyzer::visit(LetStatement &node) {
 		errorHandler->error(node.getEqualSign().s, "Unreachable code");
 		return;
 	}
-	scopeStack.back()->setSymbolType(node.getSymbol().s.contents, typeID);
+	scopeStack.back()->pushSymbol(node.getSymbol().s.contents, typeID,
+	      SymbolSource::LetStatement);
 	if (typeID != value->getTypeID() && value->getTypeID() != -1) {
 		errorHandler->error(node.getExpression()->getSlice(),
 		      "Type mismatch in let statement");
@@ -297,6 +350,16 @@ void SemanticAnalyzer::visit(Module &node) {
 	node.forEachFunction([this]([[maybe_unused]]
 	                            std::string_view name,
 	                           Function &function) {
+		function.forEachParameter([this, &function](Symbol &parameter, Symbol &type) {
+			int typeID = module->getType(type.s.contents).id;
+			if (typeID == -1) {
+				errorHandler->error(type.s, "Unknown type");
+				return;
+			}
+			function.getBody().pushSymbol(parameter.s.contents, typeID,
+			      SymbolSource::FunctionParameter);
+		});
+
 		Symbol *type = function.getReturnTypeAnnotation();
 		if (type == nullptr) {
 			function.setTypeID(module->getType("()").id);

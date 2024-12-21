@@ -28,12 +28,28 @@ Slice &Statement::getSlice() {
 	return s;
 }
 
-FunctionCallExpression::FunctionCallExpression(std::unique_ptr<Expression> function)
-    : Expression(function->getSlice()), function(std::move(function)) {
+FunctionCallExpression::FunctionCallExpression(std::unique_ptr<Expression> function,
+      [[maybe_unused]] const Punctuation &open,
+      std::vector<std::unique_ptr<Expression>> arguments, const Punctuation &close)
+    : Expression(Slice::merge(function->getSlice(), close.s)),
+      function(std::move(function)), arguments(std::move(arguments)) {
+}
+
+FunctionCallExpression::FunctionCallExpression(std::unique_ptr<Expression> function,
+      std::vector<std::unique_ptr<Expression>> arguments)
+    : Expression(function->getSlice()), function(std::move(function)),
+      arguments(std::move(arguments)) {
 }
 
 Expression &FunctionCallExpression::getFunction() {
 	return *function;
+}
+
+void FunctionCallExpression::forEachArgument(
+      const std::function<void(Expression &)> &argumentHandler) {
+	for (auto &argument : arguments) {
+		argumentHandler(*argument);
+	}
 }
 
 void FunctionCallExpression::accept(ASTVisitor &visitor) {
@@ -142,15 +158,30 @@ int BlockExpression::getSymbolType(std::string_view symbol) {
 	if (symbols.find(symbol) == symbols.end()) {
 		return -1;
 	}
-	return symbols[symbol];
+	return std::get<0>(symbols[symbol]);
 }
 
-void BlockExpression::setSymbolType(std::string_view symbol, int typeID) {
+SymbolSource BlockExpression::getSymbolSource(std::string_view symbol) {
 	if (symbols.find(symbol) == symbols.end()) {
-		symbols[symbol] = typeID;
+		return SymbolSource::Unknown;
+	}
+	return std::get<1>(symbols[symbol]);
+}
+
+void BlockExpression::pushSymbol(std::string_view symbol, int typeID,
+      SymbolSource source) {
+	if (symbols.find(symbol) == symbols.end()) {
+		symbols[symbol] = {typeID, source};
 	} else {
 		std::cerr << "Symbol already exists";
 		exit(EXIT_FAILURE);
+	}
+}
+
+void BlockExpression::forEachSymbol(
+      const std::function<void(std::string_view, int, SymbolSource)> &symbolHandler) {
+	for (auto &[symbol, info] : symbols) {
+		symbolHandler(symbol, std::get<0>(info), std::get<1>(info));
 	}
 }
 
@@ -323,13 +354,25 @@ void LetStatement::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-Function::Function(std::unique_ptr<Symbol> returnTypeAnnotation,
-      std::unique_ptr<BlockExpression> body)
-    : returnTypeAnnotation(std::move(returnTypeAnnotation)), body(std::move(body)) {
+Function::Function(
+      std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters,
+      std::unique_ptr<Symbol> returnTypeAnnotation, std::unique_ptr<BlockExpression> body)
+    : parameters(std::move(parameters)),
+      returnTypeAnnotation(std::move(returnTypeAnnotation)), body(std::move(body)) {
 }
 
-Function::Function(std::unique_ptr<BlockExpression> body)
-    : returnTypeAnnotation(nullptr), body(std::move(body)) {
+Function::Function(
+      std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters,
+      std::unique_ptr<BlockExpression> body)
+    : parameters(std::move(parameters)), returnTypeAnnotation(nullptr),
+      body(std::move(body)) {
+}
+
+void Function::forEachParameter(
+      const std::function<void(Symbol &, Symbol &)> &parameterHandler) {
+	for (auto &[symbol, type] : parameters) {
+		parameterHandler(*symbol, *type);
+	}
 }
 
 Symbol *Function::getReturnTypeAnnotation() {

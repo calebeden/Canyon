@@ -40,7 +40,16 @@ void CCodeGenerator::generateIncludes() {
 
 void CCodeGenerator::visit(FunctionCallExpression &node) {
 	node.getFunction().accept(*this);
-	*os << "()";
+	*os << '(';
+	bool first = true;
+	node.forEachArgument([this, &first](Expression &argument) {
+		if (!first) {
+			*os << ", ";
+		}
+		first = false;
+		argument.accept(*this);
+	});
+	*os << ')';
 }
 
 void CCodeGenerator::visit(BinaryExpression &node) {
@@ -173,7 +182,17 @@ void CCodeGenerator::visit(Module &node) {
 	node.forEachFunction([this](std::string_view name, Function &function) {
 		Type functionType = module->getType(function.getTypeID());
 		const std::string &cType = cTypes[functionType.id];
-		*os << cType << ' ' << name << "() ";
+		*os << cType << ' ' << name << '(';
+		bool first = true;
+		function.forEachParameter([this, &first](Symbol &parameter, Symbol &type) {
+			const std::string &cType = cTypes[module->getType(type.s.contents).id];
+			if (!first) {
+				*os << ", ";
+			}
+			first = false;
+			*os << cType << ' ' << parameter.s;
+		});
+		*os << ") ";
 		function.getBody().accept(*this);
 		*os << "\n";
 	});

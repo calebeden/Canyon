@@ -1,0 +1,6 @@
+fun main() {
+    foo(1, 2);
+}
+
+fun foo(x: i32, y: i32) {
+}
