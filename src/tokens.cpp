@@ -59,6 +59,10 @@ void Keyword::print(std::ostream &os) const {
 			os << "while";
 			break;
 		}
+		case Type::CLASS: {
+			os << "class";
+			break;
+		}
 	}
 }
 

@@ -50,6 +50,7 @@ struct Keyword : public Token {
 		IF,
 		ELSE,
 		WHILE,
+		CLASS,
 	};
 
 	Type type;
