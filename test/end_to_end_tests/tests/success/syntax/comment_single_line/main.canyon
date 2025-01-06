@@ -1,3 +1,6 @@
 fun main() {
     // this is a comment which should be ignored
+    let x: i32 = 0; // this is a comment following code
+    //no space between slashes and comment
+    // multiple // on same line
 }
