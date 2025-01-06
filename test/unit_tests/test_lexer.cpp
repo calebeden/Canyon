@@ -1490,3 +1490,12 @@ TEST_F(TestLexer, testFalseLiteral) {
 	EXPECT_EQ(*dynamic_cast<BoolLiteral *>(tokens[0].get()), BoolLiteral(dummy, false));
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
 }
+
+TEST_F(TestLexer, testCharacterLiteral) {
+	std::string program = "'a'";
+	l = Lexer(program, "", &e);
+	tokens = l.lex();
+	EXPECT_EQ(tokens.size(), 2);
+	EXPECT_EQ(*dynamic_cast<CharacterLiteral *>(tokens[0].get()), CharacterLiteral(dummy, 'a'));
+	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
+}
