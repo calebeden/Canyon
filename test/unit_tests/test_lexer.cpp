@@ -72,6 +72,11 @@ static constexpr std::array operators = {
       std::pair(">>", Operator::Type::BitwiseShiftRight),
 };
 
+static constexpr std::array escapeSequences = {std::pair("\\a", '\a'),
+      std::pair("\\b", '\b'), std::pair("\\f", '\f'), std::pair("\\n", '\n'),
+      std::pair("\\r", '\r'), std::pair("\\t", '\t'), std::pair("\\v", '\v'),
+      std::pair("\\\\", '\\'), std::pair("\\'", '\''), std::pair("\\\"", '\"')};
+
 class TestLexer : public testing::Test {
 public:
 	TestLexer() : l("", "", &e) {
@@ -1496,6 +1501,19 @@ TEST_F(TestLexer, testCharacterLiteral) {
 	l = Lexer(program, "", &e);
 	tokens = l.lex();
 	EXPECT_EQ(tokens.size(), 2);
-	EXPECT_EQ(*dynamic_cast<CharacterLiteral *>(tokens[0].get()), CharacterLiteral(dummy, 'a'));
+	EXPECT_EQ(*dynamic_cast<CharacterLiteral *>(tokens[0].get()),
+	      CharacterLiteral(dummy, 'a'));
 	EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
+}
+
+TEST_F(TestLexer, testCharacterLiteralEscapeSequences) {
+	for (const auto &escape : escapeSequences) {
+		std::string program = std::string("'") + escape.first + "'";
+		l = Lexer(program, "", &e);
+		tokens = l.lex();
+		EXPECT_EQ(tokens.size(), 2);
+		EXPECT_EQ(*dynamic_cast<CharacterLiteral *>(tokens[0].get()),
+		      CharacterLiteral(dummy, escape.second));
+		EXPECT_TRUE(dynamic_cast<EndOfFile *>(tokens[1].get()));
+	}
 }
