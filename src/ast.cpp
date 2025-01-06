@@ -122,8 +122,8 @@ void BoolLiteralExpression::accept(ASTVisitor &visitor) {
 }
 
 CharacterLiteralExpression::CharacterLiteralExpression(
-	  std::unique_ptr<CharacterLiteral> literal)
-	: Expression(literal->s), literal(std::move(literal)) {
+      std::unique_ptr<CharacterLiteral> literal)
+    : Expression(literal->s), literal(std::move(literal)) {
 }
 
 CharacterLiteral &CharacterLiteralExpression::getLiteral() {
