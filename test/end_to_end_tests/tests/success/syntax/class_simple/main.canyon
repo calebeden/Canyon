@@ -1,0 +1,7 @@
+fun main() {
+}
+
+class Foo {
+    x: i32 = 0;
+    y: i32 = 0;
+}
