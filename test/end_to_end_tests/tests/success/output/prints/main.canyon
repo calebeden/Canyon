@@ -9,4 +9,5 @@ fun main() {
     printU64(8u64);
     printBool(true);
     printBool(false);
+    printChar('a');
 }
