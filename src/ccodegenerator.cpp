@@ -96,7 +96,44 @@ void CCodeGenerator::visit(BoolLiteralExpression &node) {
 }
 
 void CCodeGenerator::visit(CharacterLiteralExpression &node) {
-	*os << '\'' << node.getLiteral().value << '\'';
+	*os << '\'';
+	char c = node.getLiteral().value;
+	switch (c) {
+		case '\a':
+			*os << "\\a";
+			break;
+		case '\b':
+			*os << "\\b";
+			break;
+		case '\f':
+			*os << "\\f";
+			break;
+		case '\n':
+			*os << "\\n";
+			break;
+		case '\r':
+			*os << "\\r";
+			break;
+		case '\t':
+			*os << "\\t";
+			break;
+		case '\v':
+			*os << "\\v";
+			break;
+		case '\\':
+			*os << "\\\\";
+			break;
+		case '\'':
+			*os << "\\'";
+			break;
+		case '\"':
+			*os << "\\\"";
+			break;
+		default:
+			*os << c;
+			break;
+	}
+	*os << '\'';
 }
 
 void CCodeGenerator::visit(SymbolExpression &node) {
