@@ -4,6 +4,7 @@
 #include "tokens.h"
 
 #include <functional>
+#include <list>
 #include <memory>
 #include <tuple>
 #include <unordered_map>
@@ -273,7 +274,8 @@ struct Type {
 
 class Module : public ASTComponent {
 private:
-	std::unordered_map<std::string_view, std::unique_ptr<Function>> functions;
+	std::unordered_map<std::string_view, std::tuple<std::unique_ptr<Function>, bool>>
+	      functions;
 	std::unordered_map<std::string_view, Type> typeTableByName;
 	std::unordered_map<int, Type> typeTableByID;
 	std::unordered_map<Operator::Type, std::vector<std::tuple<int, int>>> unaryOperators;
@@ -281,11 +283,13 @@ private:
 	      binaryOperators;
 	std::filesystem::path source;
 public:
+	std::list<std::string> ownedStrings;
 	explicit Module(std::filesystem::path source);
 	explicit Module(const Module &module);
-	void addFunction(std::unique_ptr<Symbol> name, std::unique_ptr<Function> function);
+	void addFunction(std::unique_ptr<Symbol> name, std::unique_ptr<Function> function,
+	      bool isBuiltin = false);
 	void forEachFunction(
-	      const std::function<void(std::string_view, Function &)> &functionHandler);
+	      const std::function<void(std::string_view, Function &, bool)> &functionHandler);
 	Type getType(std::string_view typeName);
 	Type getType(int id);
 	void insertType(std::string_view typeName);

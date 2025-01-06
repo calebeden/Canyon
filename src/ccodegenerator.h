@@ -18,6 +18,7 @@ private:
 	std::ostream *os;
 	std::unordered_map<int, std::string> cTypes;
 	int tabLevel = 0;
+	std::list<std::string> generatedStrings;
 public:
 	CCodeGenerator(Module *module, std::ostream *os);
 	void generate();

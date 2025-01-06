@@ -2,6 +2,8 @@
 
 #include "ast.h"
 #include "errorhandler.h"
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 #include <array>
 #include <initializer_list>
@@ -21,9 +23,11 @@ static void addSameSignIntegerComparisonTypes(Module *module,
       std::span<const std::string_view> types,
       std::span<const Operator::Type> comparisonOperators);
 static void addDefaultBoolOperators(Module *module);
+static void addRuntimeFunctions(Module *module, std::istream &builtinApiJsonFile);
 
-SemanticAnalyzer::SemanticAnalyzer(Module *module, ErrorHandler *errorHandler)
-    : module(module), errorHandler(errorHandler) {
+SemanticAnalyzer::SemanticAnalyzer(Module *module, ErrorHandler *errorHandler,
+      std::istream &builtinApiJsonFile)
+    : module(module), errorHandler(errorHandler), builtinApiJsonFile(builtinApiJsonFile) {
 }
 
 void SemanticAnalyzer::analyze() {
@@ -347,9 +351,10 @@ void SemanticAnalyzer::visit(Function &node) {
 
 void SemanticAnalyzer::visit(Module &node) {
 	addDefaultOperators(&node);
+	addRuntimeFunctions(&node, builtinApiJsonFile);
 	node.forEachFunction([this]([[maybe_unused]]
 	                            std::string_view name,
-	                           Function &function) {
+	                           Function &function, bool) {
 		function.forEachParameter([this, &function](Symbol &parameter, Symbol &type) {
 			int typeID = module->getType(type.s.contents).id;
 			if (typeID == -1) {
@@ -368,17 +373,21 @@ void SemanticAnalyzer::visit(Module &node) {
 		}
 	});
 	bool hasMain = false;
-	node.forEachFunction([this, &hasMain](std::string_view name, Function &function) {
-		currentFunction = &function;
-		function.accept(*this);
-		if (name == "main") {
-			hasMain = true;
-			if (function.getTypeID() != module->getType("()").id) {
-				errorHandler->error(*function.getReturnTypeAnnotation(),
-				      "main must return unit type");
-			}
-		}
-	});
+	node.forEachFunction(
+	      [this, &hasMain](std::string_view name, Function &function, bool isBuiltin) {
+		      if (isBuiltin) {
+			      return;
+		      }
+		      currentFunction = &function;
+		      function.accept(*this);
+		      if (name == "main") {
+			      hasMain = true;
+			      if (function.getTypeID() != module->getType("()").id) {
+				      errorHandler->error(*function.getReturnTypeAnnotation(),
+				            "main must return unit type");
+			      }
+		      }
+	      });
 	if (!hasMain) {
 		errorHandler->error(module->getSource(), "No main function");
 	}
@@ -479,4 +488,33 @@ static void addDefaultBoolOperators(Module *module) {
 	static const int unitTypeID = module->getType("()").id;
 	module->addBinaryOperator(Operator::Type::Assignment, boolTypeID, boolTypeID,
 	      unitTypeID);
+}
+
+static void addRuntimeFunctions(Module *module, std::istream &builtinApiJsonFile) {
+	json data;
+	builtinApiJsonFile >> data;
+
+	for (auto &[name, function] : data["functions"].items()) {
+		module->ownedStrings.push_back(name);
+		std::string_view functionName = module->ownedStrings.back();
+		std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
+		      parameters;
+		for (auto &parameter : function["parameters"]) {
+			module->ownedStrings.push_back(parameter["name"].get<std::string>());
+			std::string_view name = module->ownedStrings.back();
+			module->ownedStrings.push_back(parameter["type"].get<std::string>());
+			std::string_view type = module->ownedStrings.back();
+			parameters.push_back({std::make_unique<Symbol>(Slice(name, "", 0, 0)),
+			      std::make_unique<Symbol>(Slice(type, "", 0, 0))});
+		}
+		module->ownedStrings.emplace_back(function["returnType"].get<std::string>());
+		std::string_view returnType = module->ownedStrings.back();
+		std::unique_ptr<Symbol> returnTypeAnnotation
+		      = std::make_unique<Symbol>(Slice(returnType, "", 0, 0));
+		std::unique_ptr<Function> builtin
+		      = std::make_unique<Function>(std::move(parameters),
+		            std::move(returnTypeAnnotation), std::make_unique<BlockExpression>());
+		module->addFunction(std::make_unique<Symbol>(Slice(functionName, "", 0, 0)),
+		      std::move(builtin), true);
+	}
 }

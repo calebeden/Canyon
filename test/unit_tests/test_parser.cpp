@@ -54,7 +54,7 @@ TEST_F(TestParser, testPrecedenceUnaryFunctionCall) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view s,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -89,7 +89,7 @@ TEST_F(TestParser, testPrecedenceFunctionCallMultiplicative) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -127,7 +127,7 @@ TEST_F(TestParser, testPrecedenceMultiplicativeAdditive) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -171,7 +171,7 @@ TEST_F(TestParser, testPrecedenceAdditiveBitshift) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -216,7 +216,7 @@ TEST_F(TestParser, testPrecedenceBitshiftBitwiseAnd) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -260,7 +260,7 @@ TEST_F(TestParser, testPrecedenceBitwiseAndBitwiseXor) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -304,7 +304,7 @@ TEST_F(TestParser, testPrecedenceBitwiseXorBitwiseOr) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -348,7 +348,7 @@ TEST_F(TestParser, testPrecedenceBitwiseOrRelational) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -392,7 +392,7 @@ TEST_F(TestParser, testPrecedenceRelationalLogicalAnd) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -436,7 +436,7 @@ TEST_F(TestParser, testPrecedenceLogicalAndLogicalOr) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -480,7 +480,7 @@ TEST_F(TestParser, testPrecedenceLogicalOrAssignment) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -521,7 +521,7 @@ TEST_F(TestParser, testPrecedenceAssignmentReturn) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -563,7 +563,7 @@ TEST_F(TestParser, testPrecedenceParenthesizedAdditionMultiplication) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -613,7 +613,7 @@ TEST_F(TestParser, testPrecedenceParenthesizedBitwiseOrAndBitshift) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -666,7 +666,7 @@ TEST_P(TestParserAssociativityLeftBinary, testAssociativityLeftBinary) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([&operators]([[maybe_unused]]
 	                                  std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);
@@ -748,7 +748,7 @@ TEST_F(TestParser, testAssociativityRightUnary) {
 	std::unique_ptr<Module> mod = p.parse();
 	mod->forEachFunction([]([[maybe_unused]]
 	                           std::string_view name,
-	                           Function &f) {
+	                           Function &f, bool) {
 		BlockExpression &body = f.getBody();
 		Expression *expr = body.getFinalExpression();
 		EXPECT_NE(expr, nullptr);

@@ -1,5 +1,6 @@
 #include "ast.h"
 #include "ccodegenerator.h"
+#include "config.h"
 #include "errorhandler.h"
 #include "lexer.h"
 #include "parser.h"
@@ -27,6 +28,7 @@ int main(int argc, char **argv) {
 	auto args = std::span(argv, size_t(argc));
 	std::filesystem::path infileName = std::filesystem::path(args[1]);
 	std::filesystem::path outfileName = std::filesystem::path(args[2]);
+	std::filesystem::path apiJsonFile = std::filesystem::path(BUILTIN_API_PATH);
 
 	// Read the source file into a string
 	std::ifstream infile = std::ifstream(infileName);
@@ -53,7 +55,8 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	SemanticAnalyzer analyzer = SemanticAnalyzer(mod.get(), &errorHandler);
+	std::ifstream apiFile = std::ifstream(apiJsonFile);
+	SemanticAnalyzer analyzer = SemanticAnalyzer(mod.get(), &errorHandler, apiFile);
 	analyzer.analyze();
 	if (errorHandler.handleErrors(std::cerr)) {
 		return EXIT_FAILURE;

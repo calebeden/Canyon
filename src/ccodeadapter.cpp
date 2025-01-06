@@ -435,7 +435,8 @@ void CCodeAdapter::visit(Function &node) {
 }
 
 void CCodeAdapter::visit(Module &node) {
-	node.forEachFunction([this](std::string_view name, Function &oldFunction) {
+	node.forEachFunction([this](std::string_view name, Function &oldFunction,
+	                           bool isBuiltin) {
 		oldFunction.accept(*this);
 		std::unique_ptr<Function> newFunction = std::unique_ptr<Function>(
 		      dynamic_cast<Function *>(returnValue.release()));
@@ -444,7 +445,7 @@ void CCodeAdapter::visit(Module &node) {
 		newFunction->setTypeID(oldFunction.getTypeID());
 		outputModule->addFunction(
 		      std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0)),
-		      std::move(newFunction));
+		      std::move(newFunction), isBuiltin);
 	});
 }
 
