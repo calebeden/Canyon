@@ -228,6 +228,9 @@ TEST_F(TestLexer, testTwoPunctuation) {
 		for (const auto &pair2 : punctuations) {
 			const char c2 = pair2.first;
 			const Punctuation::Type punctuation2 = pair2.second;
+			if (c1 == '/' && (c2 == '/' || c2 == '*')) {
+				continue;
+			}
 			const std::string combo = std::string(1, c1) + std::string(1, c2);
 			l = Lexer(combo, "", &e);
 			tokens = l.lex();
@@ -273,9 +276,15 @@ TEST_F(TestLexer, testThreePunctuation) {
 		for (const auto &pair2 : punctuations) {
 			const char c2 = pair2.first;
 			const Punctuation::Type punctuation2 = pair2.second;
+			if (c1 == '/' && (c2 == '/' || c2 == '*')) {
+				continue;
+			}
 			for (const auto &pair3 : punctuations) {
 				const char c3 = pair3.first;
 				const Punctuation::Type punctuation3 = pair3.second;
+				if (c2 == '/' && (c3 == '/' || c3 == '*')) {
+					continue;
+				}
 				const std::string combo
 				      = std::string(1, c1) + std::string(1, c2) + std::string(1, c3);
 				l = Lexer(combo, "", &e);
