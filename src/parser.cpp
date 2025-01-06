@@ -14,9 +14,33 @@ Parser::Parser(std::filesystem::path source, std::vector<std::unique_ptr<Token>>
 std::unique_ptr<Module> Parser::parse() {
 	auto mod = std::make_unique<Module>(source);
 	while (!isAtEnd()) {
-		std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> func
-		      = parseFunction();
-		if (func.second == nullptr) {
+		auto *keyword = dynamic_cast<Keyword *>(tokens[i].get());
+		if (keyword != nullptr && keyword->type == Keyword::Type::FUN) {
+			std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> func
+			      = parseFunction();
+			if (func.second == nullptr) {
+				synchronize();
+				mustSynchronize = false;
+				auto *punc = dynamic_cast<Punctuation *>(tokens[i].get());
+				while (punc != nullptr) {
+					if (punc->type == Punctuation::Type::Semicolon) {
+						i++;
+						synchronize();
+						mustSynchronize = false;
+						punc = dynamic_cast<Punctuation *>(tokens[i].get());
+					} else if (punc->type == Punctuation::Type::CloseBrace) {
+						i++;
+						break;
+					} else {
+						std::cerr << "Unexpected token in parse" << std::endl;
+						exit(EXIT_FAILURE);
+					}
+				}
+				continue;
+			}
+			mod->addFunction(std::move(func.first), std::move(func.second));
+		} else {
+			errorHandler->error(*tokens[i], "Expected keyword `fun`");
 			synchronize();
 			mustSynchronize = false;
 			auto *punc = dynamic_cast<Punctuation *>(tokens[i].get());
@@ -36,7 +60,6 @@ std::unique_ptr<Module> Parser::parse() {
 			}
 			continue;
 		}
-		mod->addFunction(std::move(func.first), std::move(func.second));
 	}
 	return mod;
 }
