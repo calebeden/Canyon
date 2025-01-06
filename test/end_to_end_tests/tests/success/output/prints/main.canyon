@@ -1,0 +1,12 @@
+fun main() {
+    printI8(1i8);
+    printI16(2i16);
+    printI32(3i32);
+    printI64(4i64);
+    printU8(5u8);
+    printU16(6u16);
+    printU32(7u32);
+    printU64(8u64);
+    printBool(true);
+    printBool(false);
+}

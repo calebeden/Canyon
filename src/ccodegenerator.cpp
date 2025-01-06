@@ -25,7 +25,6 @@ CCodeGenerator::CCodeGenerator(Module *module, std::ostream *os)
 }
 
 void CCodeGenerator::generate() {
-	std::list<std::string> generatedStrings;
 	generateIncludes();
 	CCodeAdapter adapter = CCodeAdapter(module, &generatedStrings);
 	std::unique_ptr<Module> adapted = adapter.transform();
@@ -35,6 +34,8 @@ void CCodeGenerator::generate() {
 void CCodeGenerator::generateIncludes() {
 	*os << "#include <stdint.h>\n"
 	       "#include <stdbool.h>\n"
+	       "#include <stdio.h>\n"
+	       "#include <inttypes.h>\n"
 	       "\n";
 }
 
@@ -170,32 +171,88 @@ void CCodeGenerator::visit([[maybe_unused]] Function &node) {
 
 void CCodeGenerator::visit(Module &node) {
 	// Forward declarations
-	node.forEachFunction([this](std::string_view name, Function &function) {
-		Type functionType = module->getType(function.getTypeID());
-		const std::string &cType = cTypes[functionType.id];
-		*os << cType << ' ' << name << "();\n";
-	});
+	node.forEachFunction(
+	      [this](std::string_view name, Function &function, bool /*unused*/) {
+		      Type functionType = module->getType(function.getTypeID());
+		      const std::string &cType = cTypes[functionType.id];
+		      *os << cType << ' ' << name << '(';
+		      bool first = true;
+		      function.forEachParameter([this, &first](Symbol &parameter, Symbol &type) {
+			      const std::string &cType = cTypes[module->getType(type.s.contents).id];
+			      if (!first) {
+				      *os << ", ";
+			      }
+			      first = false;
+			      *os << cType << ' ' << parameter.s;
+		      });
+		      *os << ");\n";
+	      });
 	*os << '\n';
 	generateMain();
 
 	// Function definitions
-	node.forEachFunction([this](std::string_view name, Function &function) {
-		Type functionType = module->getType(function.getTypeID());
-		const std::string &cType = cTypes[functionType.id];
-		*os << cType << ' ' << name << '(';
-		bool first = true;
-		function.forEachParameter([this, &first](Symbol &parameter, Symbol &type) {
-			const std::string &cType = cTypes[module->getType(type.s.contents).id];
-			if (!first) {
-				*os << ", ";
-			}
-			first = false;
-			*os << cType << ' ' << parameter.s;
-		});
-		*os << ") ";
-		function.getBody().accept(*this);
-		*os << "\n";
-	});
+	node.forEachFunction(
+	      [this](std::string_view name, Function &function, bool isBuiltin) {
+		      Type functionType = module->getType(function.getTypeID());
+		      const std::string &cType = cTypes[functionType.id];
+		      *os << cType << ' ' << name << '(';
+		      bool first = true;
+		      function.forEachParameter([this, &first](Symbol &parameter, Symbol &type) {
+			      const std::string &cType = cTypes[module->getType(type.s.contents).id];
+			      if (!first) {
+				      *os << ", ";
+			      }
+			      first = false;
+			      *os << cType << ' ' << parameter.s;
+		      });
+		      *os << ") ";
+		      if (!isBuiltin) {
+			      function.getBody().accept(*this);
+			      *os << "\n";
+			      return;
+		      }
+		      if (name == "CANYON_FUNCTION_printI8") {
+			      *os << "{\n"
+			             "    printf(\"%\" PRId8, CANYON_PARAMETER_value);\n"
+			             "}\n";
+		      } else if (name == "CANYON_FUNCTION_printI16") {
+			      *os << "{\n"
+			             "    printf(\"%\" PRId16, CANYON_PARAMETER_value);\n"
+			             "}\n";
+		      } else if (name == "CANYON_FUNCTION_printI32") {
+			      *os << "{\n"
+			             "    printf(\"%\" PRId32, CANYON_PARAMETER_value);\n"
+			             "}\n";
+		      } else if (name == "CANYON_FUNCTION_printI64") {
+			      *os << "{\n"
+			             "    printf(\"%\" PRId64, CANYON_PARAMETER_value);\n"
+			             "}\n";
+		      } else if (name == "CANYON_FUNCTION_printU8") {
+			      *os << "{\n"
+			             "    printf(\"%\" PRIu8, CANYON_PARAMETER_value);\n"
+			             "}\n";
+		      } else if (name == "CANYON_FUNCTION_printU16") {
+			      *os << "{\n"
+			             "    printf(\"%\" PRIu16, CANYON_PARAMETER_value);\n"
+			             "}\n";
+		      } else if (name == "CANYON_FUNCTION_printU32") {
+			      *os << "{\n"
+			             "    printf(\"%\" PRIu32, CANYON_PARAMETER_value);\n"
+			             "}\n";
+		      } else if (name == "CANYON_FUNCTION_printU64") {
+			      *os << "{\n"
+			             "    printf(\"%\" PRIu64, CANYON_PARAMETER_value);\n"
+			             "}\n";
+		      } else if (name == "CANYON_FUNCTION_printBool") {
+			      *os << "{\n"
+			             "    printf(CANYON_PARAMETER_value ? \"true\" : \"false\");\n"
+			             "}\n";
+		      } else {
+			      std::cerr << "Unknown builtin function: " << name << '\n';
+			      exit(EXIT_FAILURE);
+		      }
+		      *os << "\n";
+	      });
 }
 
 void CCodeGenerator::generateMain() {

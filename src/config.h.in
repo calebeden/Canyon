@@ -2,4 +2,6 @@
 #define CANYON_VERSION_MAJOR @canyon_VERSION_MAJOR@
 #define CANYON_VERSION_MINOR @canyon_VERSION_MINOR@
 #define CANYON_VERSION_PATCH @canyon_VERSION_PATCH@
+
+#define BUILTIN_API_PATH "@CMAKE_SOURCE_DIR@/resources/builtin_api.json"
 // clang-format on

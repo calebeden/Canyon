@@ -18,8 +18,10 @@ class SemanticAnalyzer : public ASTVisitor {
 	std::vector<BlockExpression *> scopeStack;
 	bool inUnreachableCode = false;
 	Function *currentFunction = nullptr;
+	std::istream &builtinApiJsonFile;
 public:
-	SemanticAnalyzer(Module *module, ErrorHandler *errorHandler);
+	SemanticAnalyzer(Module *module, ErrorHandler *errorHandler,
+	      std::istream &builtinApiJsonFile);
 	void analyze();
 	void visit(FunctionCallExpression &node) override;
 	void visit(BinaryExpression &node) override;

@@ -1,0 +1,85 @@
+{
+    "functions": {
+        "printI8": {
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "i8"
+                }
+            ],
+            "returnType": "()"
+        },
+        "printI16": {
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "i16"
+                }
+            ],
+            "returnType": "()"
+        },
+        "printI32": {
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "i32"
+                }
+            ],
+            "returnType": "()"
+        },
+        "printI64": {
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "i64"
+                }
+            ],
+            "returnType": "()"
+        },
+        "printU8": {
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "u8"
+                }
+            ],
+            "returnType": "()"
+        },
+        "printU16": {
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "u16"
+                }
+            ],
+            "returnType": "()"
+        },
+        "printU32": {
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "u32"
+                }
+            ],
+            "returnType": "()"
+        },
+        "printU64": {
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "u64"
+                }
+            ],
+            "returnType": "()"
+        },
+        "printBool": {
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "bool"
+                }
+            ],
+            "returnType": "()"
+        }
+    }
+}

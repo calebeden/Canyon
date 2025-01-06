@@ -37,6 +37,41 @@ list(REMOVE_ITEM SRC_FILES ${PROJECT_SOURCE_DIR}/src/main.cpp)
 add_library(${PROJECT_LIBRARY} ${SRC_FILES})
 
 # #######################################
+# Git Submodules
+# #######################################
+find_package(Git QUIET)
+
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    # Update submodules as needed
+    option(GIT_SUBMODULE "Check submodules during build" ON)
+
+    if(GIT_SUBMODULE)
+        message(STATUS "Submodule update")
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            RESULT_VARIABLE GIT_SUBMOD_RESULT)
+
+        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+            message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+        endif()
+    endif()
+endif()
+
+# #######################################
+# JSON Dependency
+# #######################################
+# CHECK SUBMODULE
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/json/CMakeLists.txt")
+    message(FATAL_ERROR "The submodules was not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+endif()
+
+# nlohmann json is a git submodule for the project, and it is also cmake-based
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+set(JSON_Install OFF CACHE INTERNAL "")
+add_subdirectory("json")
+target_link_libraries(${PROJECT_LIBRARY} PRIVATE nlohmann_json::nlohmann_json)
+
+# #######################################
 # Main is separate (e.g. library client)
 # #######################################
 add_executable(${PROJECT_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/main.cpp)
@@ -90,26 +125,7 @@ target_link_libraries(${PROJECT_EXECUTABLE} ${PROJECT_LIBRARY})
 # #######################################
 # Testing
 # #######################################
-# get googletest from github
-find_package(Git QUIET)
-
-if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-    # Update submodules as needed
-    option(GIT_SUBMODULE "Check submodules during build" ON)
-
-    if(GIT_SUBMODULE)
-        message(STATUS "Submodule update")
-        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-            RESULT_VARIABLE GIT_SUBMOD_RESULT)
-
-        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-            message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
-        endif()
-    endif()
-endif()
-
-# CHECK ALL THE SUBMODULES
+# CHECK SUBMODULE
 if(NOT EXISTS "${PROJECT_SOURCE_DIR}/googletest/CMakeLists.txt")
     message(FATAL_ERROR "The submodules was not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
 endif()

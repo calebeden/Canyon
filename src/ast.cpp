@@ -419,15 +419,15 @@ Module::Module(const Module &module)
       source(module.source) {
 }
 
-void Module::addFunction(std::unique_ptr<Symbol> name,
-      std::unique_ptr<Function> function) {
-	functions[name->s.contents] = std::move(function);
+void Module::addFunction(std::unique_ptr<Symbol> name, std::unique_ptr<Function> function,
+      bool isBuiltin) {
+	functions[name->s.contents] = {std::move(function), isBuiltin};
 }
 
 void Module::forEachFunction(
-      const std::function<void(std::string_view, Function &)> &functionHandler) {
+      const std::function<void(std::string_view, Function &, bool)> &functionHandler) {
 	for (auto &[name, function] : functions) {
-		functionHandler(name, *function);
+		functionHandler(name, *std::get<0>(function), std::get<1>(function));
 	}
 }
 
@@ -522,7 +522,7 @@ Function *Module::getFunction(std::string_view name) {
 	if (functions.find(name) == functions.end()) {
 		return nullptr;
 	}
-	return functions[name].get();
+	return std::get<0>(functions[name]).get();
 }
 
 std::filesystem::path Module::getSource() {
@@ -653,10 +653,11 @@ void ASTPrinter::visit([[maybe_unused]] Function &node) {
 }
 
 void ASTPrinter::visit(Module &node) {
-	node.forEachFunction([this](std::string_view name, Function &function) {
-		std::cerr << std::string(tabLevel, '\t') << "fun " << name
-		          << "():" << function.getReturnTypeAnnotation()->s << ' ';
-		function.getBody().accept(*this);
-		std::cerr << '\n';
-	});
+	node.forEachFunction(
+	      [this](std::string_view name, Function &function, bool /*unused*/) {
+		      std::cerr << std::string(tabLevel, '\t') << "fun " << name
+		                << "():" << function.getReturnTypeAnnotation()->s << ' ';
+		      function.getBody().accept(*this);
+		      std::cerr << '\n';
+	      });
 }
