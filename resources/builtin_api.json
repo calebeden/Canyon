@@ -80,6 +80,15 @@
                 }
             ],
             "returnType": "()"
+        },
+        "printChar": {
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "char"
+                }
+            ],
+            "returnType": "()"
         }
     }
 }

@@ -252,6 +252,10 @@ void CCodeGenerator::visit(Module &node) {
 			      *os << "{\n"
 			             "    printf(CANYON_PARAMETER_value ? \"true\" : \"false\");\n"
 			             "}\n";
+		      } else if (name == "CANYON_FUNCTION_printChar") {
+			      *os << "{\n"
+			             "    printf(\"%c\", CANYON_PARAMETER_value);\n"
+			             "}\n";
 		      } else {
 			      std::cerr << "Unknown builtin function: " << name << '\n';
 			      exit(EXIT_FAILURE);
