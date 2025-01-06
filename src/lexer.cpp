@@ -454,7 +454,7 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 				std::unique_ptr<Token> literal = evaluateCharacterLiteral(
 				      dynamic_cast<SymbolOrLiteral *>(token.get()));
 				if (literal == nullptr) {
-					errorHandler->error(*token, "Invalid integer literal");
+					errorHandler->error(*token, "Invalid character literal");
 					evaluated.push_back(std::move(token));
 				} else {
 					evaluated.push_back(std::move(literal));
