@@ -444,6 +444,10 @@ void CCodeAdapter::visit(Function &node) {
 	      std::move(enclosingScope));
 }
 
+void CCodeAdapter::visit([[maybe_unused]] Class &node) {
+	// TODO
+}
+
 void CCodeAdapter::visit(Module &node) {
 	node.forEachFunction([this](std::string_view name, Function &oldFunction,
 	                           bool isBuiltin) {
@@ -457,6 +461,7 @@ void CCodeAdapter::visit(Module &node) {
 		      std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0)),
 		      std::move(newFunction), isBuiltin);
 	});
+	// TODO classes
 }
 
 void CCodeAdapter::visitExpression(Expression &node) {

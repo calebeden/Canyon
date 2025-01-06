@@ -26,7 +26,9 @@ public:
 	~Parser() = default;
 private:
 	std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> parseFunction();
+	std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Class>> parseClass();
 	std::unique_ptr<Statement> parseStatement();
+	std::unique_ptr<LetStatement> parseLet();
 	std::unique_ptr<Expression> parseExpression();
 	std::unique_ptr<BlockExpression> parseBlock();
 	std::unique_ptr<IfElseExpression> parseIfElse();

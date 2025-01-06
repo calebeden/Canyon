@@ -408,6 +408,28 @@ void Function::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
+Class::Class(
+      std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> fields,
+      std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>>> methods)
+    : fields(std::move(fields)), methods(std::move(methods)) {
+}
+
+void Class::forEachField(const std::function<void(Symbol &, Symbol &)> &fieldHandler) {
+	for (auto &[name, type] : fields) {
+		fieldHandler(*name, *type);
+	}
+}
+
+void Class::forEachMethod(const std::function<void(Symbol &, Function &)> &methodHandler) {
+	for (auto &[name, method] : methods) {
+		methodHandler(*name, *method);
+	}
+}
+
+void Class::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+
 Type::Type(int id, int parentID, std::string_view name)
     : id(id), parentID(parentID), name(name) {
 }
@@ -442,6 +464,18 @@ void Module::forEachFunction(
       const std::function<void(std::string_view, Function &, bool)> &functionHandler) {
 	for (auto &[name, function] : functions) {
 		functionHandler(name, *std::get<0>(function), std::get<1>(function));
+	}
+}
+
+void Module::addClass(std::unique_ptr<Symbol> name, std::unique_ptr<Class> cls,
+      bool isBuiltin) {
+	classes[name->s.contents] = {std::move(cls), isBuiltin};
+}
+
+void Module::forEachClass(
+      const std::function<void(std::string_view, Class &, bool)> &classHandler) {
+	for (auto &[name, cls] : classes) {
+		classHandler(name, *std::get<0>(cls), std::get<1>(cls));
 	}
 }
 
@@ -670,6 +704,9 @@ void ASTPrinter::visit(LetStatement &node) {
 void ASTPrinter::visit([[maybe_unused]] Function &node) {
 }
 
+void ASTPrinter::visit([[maybe_unused]] Class &node) {
+}
+
 void ASTPrinter::visit(Module &node) {
 	node.forEachFunction(
 	      [this](std::string_view name, Function &function, bool /*unused*/) {
@@ -678,4 +715,5 @@ void ASTPrinter::visit(Module &node) {
 		      function.getBody().accept(*this);
 		      std::cerr << '\n';
 	      });
+	// TODO classes
 }

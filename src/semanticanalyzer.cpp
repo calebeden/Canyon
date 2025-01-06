@@ -353,6 +353,10 @@ void SemanticAnalyzer::visit(Function &node) {
 	inUnreachableCode = false;
 }
 
+void SemanticAnalyzer::visit([[maybe_unused]] Class &node) {
+	// TODO
+}
+
 void SemanticAnalyzer::visit(Module &node) {
 	addDefaultOperators(&node);
 	addRuntimeFunctions(&node, builtinApiJsonFile);
@@ -376,6 +380,7 @@ void SemanticAnalyzer::visit(Module &node) {
 			function.setTypeID(module->getType(type->s.contents).id);
 		}
 	});
+	// TODO classes
 	bool hasMain = false;
 	node.forEachFunction(
 	      [this, &hasMain](std::string_view name, Function &function, bool isBuiltin) {

@@ -37,6 +37,7 @@ public:
 	void visit(ExpressionStatement &node) override;
 	void visit(LetStatement &node) override;
 	void visit(Function &node) override;
+	void visit(Class &node) override;
 	void visit(Module &node) override;
 	~CCodeGenerator() = default;
 private:

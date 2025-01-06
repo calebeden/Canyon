@@ -211,6 +211,10 @@ void CCodeGenerator::visit([[maybe_unused]] Function &node) {
 	// Currently being handled in the Module visitor
 }
 
+void CCodeGenerator::visit([[maybe_unused]] Class &node) {
+	// TODO
+}
+
 void CCodeGenerator::visit(Module &node) {
 	// Forward declarations
 	node.forEachFunction(
@@ -231,6 +235,8 @@ void CCodeGenerator::visit(Module &node) {
 	      });
 	*os << '\n';
 	generateMain();
+
+	// TODO classes
 
 	// Function definitions
 	node.forEachFunction(

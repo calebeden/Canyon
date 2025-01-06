@@ -274,6 +274,20 @@ public:
 	~Function() = default;
 };
 
+class Class : public ASTComponent {
+private:
+	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> fields;
+	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>>> methods;
+public:
+	Class(std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> fields,
+	      std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>>>
+	            methods);
+	void forEachField(const std::function<void(Symbol &, Symbol &)> &fieldHandler);
+	void forEachMethod(const std::function<void(Symbol &, Function &)> &methodHandler);
+	void accept(ASTVisitor &visitor);
+	~Class() = default;
+};
+
 struct Type {
 	int id;
 	int parentID;
@@ -292,6 +306,8 @@ private:
 	std::unordered_map<Operator::Type, std::vector<std::tuple<int, int, int>>>
 	      binaryOperators;
 	std::filesystem::path source;
+	std::unordered_map<std::string_view, std::tuple<std::unique_ptr<Class>, bool>>
+	      classes;
 public:
 	std::list<std::string> ownedStrings;
 	explicit Module(std::filesystem::path source);
@@ -300,6 +316,10 @@ public:
 	      bool isBuiltin = false);
 	void forEachFunction(
 	      const std::function<void(std::string_view, Function &, bool)> &functionHandler);
+	void addClass(std::unique_ptr<Symbol> name, std::unique_ptr<Class> cls,
+	      bool isBuiltin = false);
+	void forEachClass(
+	      const std::function<void(std::string_view, Class &, bool)> &classHandler);
 	Type getType(std::string_view typeName);
 	Type getType(int id);
 	void insertType(std::string_view typeName);
@@ -333,6 +353,7 @@ public:
 	virtual void visit(ExpressionStatement &node) = 0;
 	virtual void visit(LetStatement &node) = 0;
 	virtual void visit(Function &node) = 0;
+	virtual void visit(Class &node) = 0;
 	virtual void visit(Module &node) = 0;
 	virtual ~ASTVisitor() = default;
 };
@@ -355,6 +376,7 @@ public:
 	void visit(ExpressionStatement &node) override;
 	void visit(LetStatement &node) override;
 	void visit(Function &node) override;
+	void visit(Class &node) override;
 	void visit(Module &node) override;
 	virtual ~ASTPrinter() = default;
 };
