@@ -22,6 +22,7 @@ CCodeGenerator::CCodeGenerator(Module *module, std::ostream *os)
 	cTypes[this->module->getType("u32").id] = "uint32_t";
 	cTypes[this->module->getType("u64").id] = "uint64_t";
 	cTypes[this->module->getType("bool").id] = "bool";
+	cTypes[this->module->getType("char").id] = "char";
 }
 
 void CCodeGenerator::generate() {
@@ -92,6 +93,10 @@ void CCodeGenerator::visit(IntegerLiteralExpression &node) {
 
 void CCodeGenerator::visit(BoolLiteralExpression &node) {
 	*os << (node.getLiteral().value ? "true" : "false");
+}
+
+void CCodeGenerator::visit(CharacterLiteralExpression &node) {
+	*os << '\'' << node.getLiteral().value << '\'';
 }
 
 void CCodeGenerator::visit(SymbolExpression &node) {

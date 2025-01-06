@@ -105,6 +105,16 @@ public:
 	virtual ~BoolLiteralExpression() = default;
 };
 
+class CharacterLiteralExpression : public Expression {
+private:
+	std::unique_ptr<CharacterLiteral> literal;
+public:
+	CharacterLiteralExpression(std::unique_ptr<CharacterLiteral> literal);
+	CharacterLiteral &getLiteral();
+	void accept(ASTVisitor &visitor) override;
+	virtual ~CharacterLiteralExpression() = default;
+};
+
 class SymbolExpression : public Expression {
 private:
 	std::unique_ptr<Symbol> symbol;
@@ -313,6 +323,7 @@ public:
 	virtual void visit(UnaryExpression &node) = 0;
 	virtual void visit(IntegerLiteralExpression &node) = 0;
 	virtual void visit(BoolLiteralExpression &node) = 0;
+	virtual void visit(CharacterLiteralExpression &node) = 0;
 	virtual void visit(SymbolExpression &node) = 0;
 	virtual void visit(BlockExpression &node) = 0;
 	virtual void visit(ReturnExpression &node) = 0;
@@ -334,6 +345,7 @@ public:
 	void visit(UnaryExpression &node) override;
 	void visit(IntegerLiteralExpression &node) override;
 	void visit(BoolLiteralExpression &node) override;
+	void visit(CharacterLiteralExpression &node) override;
 	void visit(SymbolExpression &node) override;
 	void visit(BlockExpression &node) override;
 	void visit(ReturnExpression &node) override;
