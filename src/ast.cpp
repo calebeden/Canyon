@@ -653,10 +653,11 @@ void ASTPrinter::visit([[maybe_unused]] Function &node) {
 }
 
 void ASTPrinter::visit(Module &node) {
-	node.forEachFunction([this](std::string_view name, Function &function, bool) {
-		std::cerr << std::string(tabLevel, '\t') << "fun " << name
-		          << "():" << function.getReturnTypeAnnotation()->s << ' ';
-		function.getBody().accept(*this);
-		std::cerr << '\n';
-	});
+	node.forEachFunction(
+	      [this](std::string_view name, Function &function, bool /*unused*/) {
+		      std::cerr << std::string(tabLevel, '\t') << "fun " << name
+		                << "():" << function.getReturnTypeAnnotation()->s << ' ';
+		      function.getBody().accept(*this);
+		      std::cerr << '\n';
+	      });
 }

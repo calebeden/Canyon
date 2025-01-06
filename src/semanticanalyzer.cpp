@@ -354,7 +354,7 @@ void SemanticAnalyzer::visit(Module &node) {
 	addRuntimeFunctions(&node, builtinApiJsonFile);
 	node.forEachFunction([this]([[maybe_unused]]
 	                            std::string_view name,
-	                           Function &function, bool) {
+	                           Function &function, bool /*unused*/) {
 		function.forEachParameter([this, &function](Symbol &parameter, Symbol &type) {
 			int typeID = module->getType(type.s.contents).id;
 			if (typeID == -1) {
@@ -494,7 +494,7 @@ static void addRuntimeFunctions(Module *module, std::istream &builtinApiJsonFile
 	json data;
 	builtinApiJsonFile >> data;
 
-	for (auto &[name, function] : data["functions"].items()) {
+	for (const auto &[name, function] : data["functions"].items()) {
 		module->ownedStrings.push_back(name);
 		std::string_view functionName = module->ownedStrings.back();
 		std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
@@ -504,8 +504,8 @@ static void addRuntimeFunctions(Module *module, std::istream &builtinApiJsonFile
 			std::string_view name = module->ownedStrings.back();
 			module->ownedStrings.push_back(parameter["type"].get<std::string>());
 			std::string_view type = module->ownedStrings.back();
-			parameters.push_back({std::make_unique<Symbol>(Slice(name, "", 0, 0)),
-			      std::make_unique<Symbol>(Slice(type, "", 0, 0))});
+			parameters.emplace_back(std::make_unique<Symbol>(Slice(name, "", 0, 0)),
+			      std::make_unique<Symbol>(Slice(type, "", 0, 0)));
 		}
 		module->ownedStrings.emplace_back(function["returnType"].get<std::string>());
 		std::string_view returnType = module->ownedStrings.back();

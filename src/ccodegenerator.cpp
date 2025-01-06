@@ -171,21 +171,22 @@ void CCodeGenerator::visit([[maybe_unused]] Function &node) {
 
 void CCodeGenerator::visit(Module &node) {
 	// Forward declarations
-	node.forEachFunction([this](std::string_view name, Function &function, bool) {
-		Type functionType = module->getType(function.getTypeID());
-		const std::string &cType = cTypes[functionType.id];
-		*os << cType << ' ' << name << '(';
-		bool first = true;
-		function.forEachParameter([this, &first](Symbol &parameter, Symbol &type) {
-			const std::string &cType = cTypes[module->getType(type.s.contents).id];
-			if (!first) {
-				*os << ", ";
-			}
-			first = false;
-			*os << cType << ' ' << parameter.s;
-		});
-		*os << ");\n";
-	});
+	node.forEachFunction(
+	      [this](std::string_view name, Function &function, bool /*unused*/) {
+		      Type functionType = module->getType(function.getTypeID());
+		      const std::string &cType = cTypes[functionType.id];
+		      *os << cType << ' ' << name << '(';
+		      bool first = true;
+		      function.forEachParameter([this, &first](Symbol &parameter, Symbol &type) {
+			      const std::string &cType = cTypes[module->getType(type.s.contents).id];
+			      if (!first) {
+				      *os << ", ";
+			      }
+			      first = false;
+			      *os << cType << ' ' << parameter.s;
+		      });
+		      *os << ");\n";
+	      });
 	*os << '\n';
 	generateMain();
 
