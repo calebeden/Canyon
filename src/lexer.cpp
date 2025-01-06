@@ -109,6 +109,16 @@ void Lexer::slice() {
 		if (current >= program.size()) {
 			break;
 		}
+
+		if (program[current] == '/' && current + 1 < program.size()
+		      && program[current + 1] == '/') {
+			do {
+				current++;
+				col++;
+			} while (current < program.size() && program[current] != '\n');
+			continue;
+		}
+
 		size_t tokenStart = current;
 		size_t startCol = col;
 		if (program[current] == '\'') {
