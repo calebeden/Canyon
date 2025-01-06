@@ -157,6 +157,10 @@ void SemanticAnalyzer::visit(BoolLiteralExpression &node) {
 	node.setTypeID(module->getType("bool").id);
 }
 
+void SemanticAnalyzer::visit(CharacterLiteralExpression &node) {
+	node.setTypeID(module->getType("char").id);
+}
+
 void SemanticAnalyzer::visit(SymbolExpression &node) {
 	for (auto it = scopeStack.rbegin(); it != scopeStack.rend(); it++) {
 		int typeID = (*it)->getSymbolType(node.getSymbol().s.contents);

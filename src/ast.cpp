@@ -121,6 +121,19 @@ void BoolLiteralExpression::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
+CharacterLiteralExpression::CharacterLiteralExpression(
+      std::unique_ptr<CharacterLiteral> literal)
+    : Expression(literal->s), literal(std::move(literal)) {
+}
+
+CharacterLiteral &CharacterLiteralExpression::getLiteral() {
+	return *literal;
+}
+
+void CharacterLiteralExpression::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+
 SymbolExpression::SymbolExpression(std::unique_ptr<Symbol> symbol)
     : Expression(symbol->s), symbol(std::move(symbol)) {
 }
@@ -411,6 +424,7 @@ Module::Module(std::filesystem::path source) : source(std::move(source)) {
 	insertType("u32");
 	insertType("u64");
 	insertType("bool");
+	insertType("char");
 }
 
 Module::Module(const Module &module)
@@ -562,6 +576,10 @@ void ASTPrinter::visit(IntegerLiteralExpression &node) {
 }
 
 void ASTPrinter::visit(BoolLiteralExpression &node) {
+	node.getLiteral().print(std::cerr);
+}
+
+void ASTPrinter::visit(CharacterLiteralExpression &node) {
 	node.getLiteral().print(std::cerr);
 }
 

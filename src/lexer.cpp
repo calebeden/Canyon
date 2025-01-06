@@ -111,10 +111,30 @@ void Lexer::slice() {
 		}
 		size_t tokenStart = current;
 		size_t startCol = col;
-		do {
+		if (program[current] == '\'') {
+			do {
+				if (program[current] == '\\') {
+					current++;
+					col++;
+				}
+				current++;
+				col++;
+			} while (current < program.size() && program[current] != '\'');
+			if (current >= program.size()) {
+				errorHandler->error(Slice(std::string_view(program).substr(tokenStart,
+				                                current - tokenStart),
+				                          source, line, startCol),
+				      "Unterminated character literal");
+				break;
+			}
 			current++;
 			col++;
-		} while (current < program.size() && !isSep(current));
+		} else {
+			do {
+				current++;
+				col++;
+			} while (current < program.size() && !isSep(current));
+		}
 		slices.emplace(std::string_view(program).substr(tokenStart, current - tokenStart),
 		      source, line, startCol);
 	}
@@ -129,7 +149,8 @@ bool Lexer::isSep(size_t offset) {
 	      || program[offset] == '/' || program[offset] == '%' || program[offset] == '='
 	      || program[offset] == ':' || program[offset] == '!' || program[offset] == '<'
 	      || program[offset] == '>' || program[offset] == '&' || program[offset] == '|'
-	      || program[offset] == '~' || program[offset] == '^') {
+	      || program[offset] == '~' || program[offset] == '^'
+	      || program[offset] == '\'') {
 		return true;
 	}
 
@@ -428,6 +449,16 @@ std::vector<std::unique_ptr<Token>> Lexer::evaluate(
 				} else {
 					evaluated.push_back(std::move(literal));
 				}
+			} else if (dynamic_cast<SymbolOrLiteral *>(token.get())->s.contents[0]
+			           == '\'') {
+				std::unique_ptr<Token> literal = evaluateCharacterLiteral(
+				      dynamic_cast<SymbolOrLiteral *>(token.get()));
+				if (literal == nullptr) {
+					errorHandler->error(*token, "Invalid integer literal");
+					evaluated.push_back(std::move(token));
+				} else {
+					evaluated.push_back(std::move(literal));
+				}
 			} else if (dynamic_cast<SymbolOrLiteral *>(token.get())->s.contents
 			           == "true") {
 				evaluated.push_back(std::make_unique<BoolLiteral>(
@@ -578,4 +609,51 @@ std::unique_ptr<IntegerLiteral> Lexer::evaluateIntegerLiteral(SymbolOrLiteral *l
 	}
 	return std::make_unique<IntegerLiteral>(*literal, IntegerLiteral::Type::I32,
 	      intValue);
+}
+
+std::unique_ptr<CharacterLiteral> Lexer::evaluateCharacterLiteral(
+      SymbolOrLiteral *literal) {
+	if (literal->s.contents.size() < 3) {
+		return nullptr;
+	}
+	if (literal->s.contents[0] != '\'') {
+		return nullptr;
+	}
+	if (literal->s.contents[1] == '\\') {
+		if (literal->s.contents.size() < 4) {
+			return nullptr;
+		}
+		if (literal->s.contents[3] != '\'') {
+			return nullptr;
+		}
+		switch (literal->s.contents[2]) {
+			case 'a':
+				return std::make_unique<CharacterLiteral>(*literal, '\a');
+			case 'b':
+				return std::make_unique<CharacterLiteral>(*literal, '\b');
+			case 'f':
+				return std::make_unique<CharacterLiteral>(*literal, '\f');
+			case 'n':
+				return std::make_unique<CharacterLiteral>(*literal, '\n');
+			case 'r':
+				return std::make_unique<CharacterLiteral>(*literal, '\r');
+			case 't':
+				return std::make_unique<CharacterLiteral>(*literal, '\t');
+			case 'v':
+				return std::make_unique<CharacterLiteral>(*literal, '\v');
+			case '\\':
+				return std::make_unique<CharacterLiteral>(*literal, '\\');
+			case '\'':
+				return std::make_unique<CharacterLiteral>(*literal, '\'');
+			case '\"':
+				return std::make_unique<CharacterLiteral>(*literal, '\"');
+			default:
+				return nullptr;
+		}
+	}
+	if (literal->s.contents[2] != '\'') {
+		return nullptr;
+	}
+	char value = literal->s.contents[1];
+	return std::make_unique<CharacterLiteral>(*literal, value);
 }

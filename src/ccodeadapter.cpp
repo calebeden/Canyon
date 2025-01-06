@@ -110,6 +110,16 @@ void CCodeAdapter::visit(BoolLiteralExpression &node) {
 	returnValue = std::move(newLiteralExpression);
 }
 
+void CCodeAdapter::visit(CharacterLiteralExpression &node) {
+	CharacterLiteral &previousLiteral = node.getLiteral();
+	std::unique_ptr<CharacterLiteral> newLiteral
+	      = std::make_unique<CharacterLiteral>(previousLiteral, previousLiteral.value);
+	std::unique_ptr<CharacterLiteralExpression> newLiteralExpression
+	      = std::make_unique<CharacterLiteralExpression>(std::move(newLiteral));
+	newLiteralExpression->setTypeID(node.getTypeID());
+	returnValue = std::move(newLiteralExpression);
+}
+
 void CCodeAdapter::visit(SymbolExpression &node) {
 	Symbol &oldSymbol = node.getSymbol();
 	SymbolSource source = SymbolSource::Unknown;

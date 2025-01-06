@@ -164,6 +164,15 @@ struct BoolLiteral : public Token {
 
 bool operator==(const BoolLiteral &lhs, const BoolLiteral &rhs);
 
+struct CharacterLiteral : public Token {
+	char value;
+	explicit CharacterLiteral(const Token &t, char value);
+	virtual void print(std::ostream &os) const;
+	virtual ~CharacterLiteral() = default;
+};
+
+bool operator==(const CharacterLiteral &lhs, const CharacterLiteral &rhs);
+
 struct Whitespace : public Token {
 	explicit Whitespace(const Slice &s);
 	virtual void print(std::ostream &os) const;

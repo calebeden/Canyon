@@ -22,6 +22,7 @@ CCodeGenerator::CCodeGenerator(Module *module, std::ostream *os)
 	cTypes[this->module->getType("u32").id] = "uint32_t";
 	cTypes[this->module->getType("u64").id] = "uint64_t";
 	cTypes[this->module->getType("bool").id] = "bool";
+	cTypes[this->module->getType("char").id] = "char";
 }
 
 void CCodeGenerator::generate() {
@@ -92,6 +93,47 @@ void CCodeGenerator::visit(IntegerLiteralExpression &node) {
 
 void CCodeGenerator::visit(BoolLiteralExpression &node) {
 	*os << (node.getLiteral().value ? "true" : "false");
+}
+
+void CCodeGenerator::visit(CharacterLiteralExpression &node) {
+	*os << '\'';
+	char c = node.getLiteral().value;
+	switch (c) {
+		case '\a':
+			*os << "\\a";
+			break;
+		case '\b':
+			*os << "\\b";
+			break;
+		case '\f':
+			*os << "\\f";
+			break;
+		case '\n':
+			*os << "\\n";
+			break;
+		case '\r':
+			*os << "\\r";
+			break;
+		case '\t':
+			*os << "\\t";
+			break;
+		case '\v':
+			*os << "\\v";
+			break;
+		case '\\':
+			*os << "\\\\";
+			break;
+		case '\'':
+			*os << "\\'";
+			break;
+		case '\"':
+			*os << "\\\"";
+			break;
+		default:
+			*os << c;
+			break;
+	}
+	*os << '\'';
 }
 
 void CCodeGenerator::visit(SymbolExpression &node) {
@@ -246,6 +288,10 @@ void CCodeGenerator::visit(Module &node) {
 		      } else if (name == "CANYON_FUNCTION_printBool") {
 			      *os << "{\n"
 			             "    printf(CANYON_PARAMETER_value ? \"true\" : \"false\");\n"
+			             "}\n";
+		      } else if (name == "CANYON_FUNCTION_printChar") {
+			      *os << "{\n"
+			             "    printf(\"%c\", CANYON_PARAMETER_value);\n"
 			             "}\n";
 		      } else {
 			      std::cerr << "Unknown builtin function: " << name << '\n';

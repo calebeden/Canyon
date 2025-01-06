@@ -683,6 +683,13 @@ std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
 		      std::unique_ptr<BoolLiteral>(boolLiteral));
 	}
 
+	auto *charLiteral = dynamic_cast<CharacterLiteral *>(tokens[i].get());
+	if (charLiteral != nullptr) {
+		charLiteral = dynamic_cast<CharacterLiteral *>(tokens[i++].release());
+		return std::make_unique<CharacterLiteralExpression>(
+		      std::unique_ptr<CharacterLiteral>(charLiteral));
+	}
+
 	auto *symbol = dynamic_cast<Symbol *>(tokens[i].get());
 	if (symbol != nullptr) {
 		symbol = dynamic_cast<Symbol *>(tokens[i++].release());

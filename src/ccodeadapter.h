@@ -30,6 +30,7 @@ public:
 	void visit(UnaryExpression &node) override;
 	void visit(IntegerLiteralExpression &node) override;
 	void visit(BoolLiteralExpression &node) override;
+	void visit(CharacterLiteralExpression &node) override;
 	void visit(SymbolExpression &node) override;
 	void visit(BlockExpression &node) override;
 	void visit(ReturnExpression &node) override;

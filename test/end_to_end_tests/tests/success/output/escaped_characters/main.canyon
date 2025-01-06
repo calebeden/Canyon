@@ -1,0 +1,16 @@
+fun main() {
+    printChar('a');
+    printChar('\n');
+    printChar('b');
+    printChar('\t');
+    printChar('c');
+    printChar('\b');
+    printChar('d');
+    printChar('\v');
+    printChar('e');
+    printChar('\f');
+    printChar('f');
+    printChar('\'');
+    printChar('\"');
+    printChar('\\');
+}

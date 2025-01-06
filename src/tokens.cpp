@@ -326,6 +326,18 @@ bool operator==(const BoolLiteral &lhs, const BoolLiteral &rhs) {
 	return lhs.value == rhs.value;
 }
 
+CharacterLiteral::CharacterLiteral(const Token &t, char value)
+    : Token(t.s), value(value) {
+}
+
+void CharacterLiteral::print(std::ostream &os) const {
+	os << '\'' << value << '\'';
+}
+
+bool operator==(const CharacterLiteral &lhs, const CharacterLiteral &rhs) {
+	return lhs.value == rhs.value;
+}
+
 Whitespace::Whitespace(const Slice &s) : Token(s) {
 }
 
