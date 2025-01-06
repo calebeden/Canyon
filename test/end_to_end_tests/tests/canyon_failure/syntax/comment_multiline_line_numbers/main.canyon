@@ -1,0 +1,9 @@
+fun main() {
+    /* this comment
+    has newlines
+    so the numbering
+    needs to be updated
+    for error reporting */
+
+    error;
+}

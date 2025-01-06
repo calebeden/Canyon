@@ -109,6 +109,50 @@ void Lexer::slice() {
 		if (current >= program.size()) {
 			break;
 		}
+
+		if (program[current] == '/' && current + 1 < program.size()
+		      && program[current + 1] == '/') {
+			do {
+				current++;
+				col++;
+			} while (current < program.size() && program[current] != '\n');
+			continue;
+		}
+		if (program[current] == '/' && current + 1 < program.size()
+		      && program[current + 1] == '*') {
+			size_t startLine = line;
+			size_t startCol = col;
+			do {
+				if (program[current] == '\n') {
+					line++;
+					col = 1;
+				}
+				if (program[current] == '\r') {
+					if (current + 1 < program.size() && program[current + 1] == '\n') {
+						current++;
+						line++;
+						col = 1;
+					} else {
+						line++;
+						col = 1;
+					}
+				}
+				current++;
+				col++;
+			} while (current + 1 < program.size()
+			         && (program[current] != '*' || program[current + 1] != '/'));
+			if (current + 1 >= program.size()) {
+				errorHandler->error(Slice(std::string_view(program).substr(current,
+				                                program.size() - current),
+				                          source, startLine, startCol),
+				      "Unterminated block comment");
+				break;
+			}
+			current += 2;
+			col += 2;
+			continue;
+		}
+
 		size_t tokenStart = current;
 		size_t startCol = col;
 		if (program[current] == '\'') {

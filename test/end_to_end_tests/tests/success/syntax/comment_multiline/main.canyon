@@ -1,0 +1,7 @@
+fun main() {
+    /* This is a
+    multiline comment */
+    let x: i32 = 0; /* this is a comment following code */
+    /*no space between slashes and comment*/
+    /* another /* inside comment */
+}
