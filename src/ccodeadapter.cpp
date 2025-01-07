@@ -444,24 +444,55 @@ void CCodeAdapter::visit(Function &node) {
 	      std::move(enclosingScope));
 }
 
-void CCodeAdapter::visit([[maybe_unused]] Class &node) {
-	// TODO
+void CCodeAdapter::visit(Class &node) {
+	std::vector<std::unique_ptr<LetStatement>> newFieldDeclarations;
+	node.forEachFieldDeclaration([this, &newFieldDeclarations](
+	                                   LetStatement &declaration) {
+		declaration.accept(*this);
+		std::unique_ptr<LetStatement> newDeclaration = std::unique_ptr<LetStatement>(
+		      dynamic_cast<LetStatement *>(returnValue.release()));
+		generatedStrings->push_back(std::string(declaration.getSymbol().s.contents));
+		std::string_view newName = generatedStrings->back();
+		newDeclaration->getSymbol().s.contents = newName;
+		newFieldDeclarations.push_back(std::move(newDeclaration));
+	});
+	std::unordered_map<std::string_view, std::unique_ptr<Function>> newMethods;
+	node.forEachMethod([this, &newMethods](std::string_view name, Function &method) {
+		// 
+		method.accept(*this);
+		std::unique_ptr<Function> newMethod = std::unique_ptr<Function>(
+		      dynamic_cast<Function *>(returnValue.release()));
+		newMethod->setTypeID(method.getTypeID());
+		newMethods.emplace(name, std::move(newMethod));
+	});
+	returnValue = std::make_unique<Class>(std::move(newFieldDeclarations),
+	      std::move(newMethods));
 }
 
 void CCodeAdapter::visit(Module &node) {
 	node.forEachFunction([this](std::string_view name, Function &oldFunction,
 	                           bool isBuiltin) {
+		generatedStrings->push_back("CANYON_FUNCTION_" + std::string(name));
+		std::string_view newName = generatedStrings->back();
 		oldFunction.accept(*this);
 		std::unique_ptr<Function> newFunction = std::unique_ptr<Function>(
 		      dynamic_cast<Function *>(returnValue.release()));
-		generatedStrings->push_back("CANYON_FUNCTION_" + std::string(name));
-		std::string_view newName = generatedStrings->back();
 		newFunction->setTypeID(oldFunction.getTypeID());
 		outputModule->addFunction(
 		      std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0)),
 		      std::move(newFunction), isBuiltin);
 	});
-	// TODO classes
+	node.forEachClass([this](std::string_view name, Class &oldClass, bool isBuiltin) {
+		generatedStrings->push_back("CANYON_CLASS_" + std::string(name));
+		std::string_view newName = generatedStrings->back();
+		currentClassName = &generatedStrings->back();
+		oldClass.accept(*this);
+		std::unique_ptr<Class> newClass
+		      = std::unique_ptr<Class>(dynamic_cast<Class *>(returnValue.release()));
+		outputModule->addClass(
+		      std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0)),
+		      std::move(newClass), isBuiltin);
+	});
 }
 
 void CCodeAdapter::visitExpression(Expression &node) {

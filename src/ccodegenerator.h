@@ -42,7 +42,7 @@ public:
 	~CCodeGenerator() = default;
 private:
 	void generateIncludes();
-	void generateMain();
+	void generateBuiltinFunctions();
 };
 
 #endif

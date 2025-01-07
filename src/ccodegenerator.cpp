@@ -212,11 +212,11 @@ void CCodeGenerator::visit([[maybe_unused]] Function &node) {
 }
 
 void CCodeGenerator::visit([[maybe_unused]] Class &node) {
-	// TODO
+	// Currently being handled in the Module visitor
 }
 
 void CCodeGenerator::visit(Module &node) {
-	// Forward declarations
+	// Function prototypes
 	node.forEachFunction(
 	      [this](std::string_view name, Function &function, bool /*unused*/) {
 		      Type functionType = module->getType(function.getTypeID());
@@ -234,13 +234,85 @@ void CCodeGenerator::visit(Module &node) {
 		      *os << ");\n";
 	      });
 	*os << '\n';
-	generateMain();
 
-	// TODO classes
+	// Class method prototypes
+	node.forEachClass([this](std::string_view className, Class &cls, bool /*unused*/) {
+		cls.forEachMethod([this, &className](std::string_view methodName,
+		                        Function &method) {
+			Type methodType = module->getType(method.getTypeID());
+			const std::string &cType = cTypes[methodType.id];
+			std::string newName
+			      = std::string(className) + "_METHOD_" + std::string(methodName);
+			*os << cType << ' ' << newName << '(';
+			bool first = true;
+			method.forEachParameter([this, &first](Symbol &parameter, Symbol &type) {
+				const std::string &cType = cTypes[module->getType(type.s.contents).id];
+				if (!first) {
+					*os << ", ";
+				}
+				first = false;
+				*os << cType << ' ' << parameter.s;
+			});
+			*os << ");\n";
+		});
+	});
+	*os << '\n';
+
+	// Virtual tables
+	node.forEachClass([this](std::string_view className, Class &cls, bool /*unused*/) {
+		*os << "struct " << className << "_VT {\n";
+		tabLevel++;
+		cls.forEachMethod([this](std::string_view methodName, Function &method) {
+			Type methodType = module->getType(method.getTypeID());
+			const std::string &cType = cTypes[methodType.id];
+			*os << std::string(tabLevel, '\t') << cType << " (*" << methodName << ")(";
+			bool first = true;
+			method.forEachParameter([this, &first](Symbol &/*unused*/, Symbol &type) {
+				const std::string &cType = cTypes[module->getType(type.s.contents).id];
+				if (!first) {
+					*os << ", ";
+				}
+				first = false;
+				*os << cType;
+			});
+			*os << ");\n";
+		});
+		tabLevel--;
+		*os << "} " << className << "_VT_INSTANCE = {\n";
+		tabLevel++;
+		cls.forEachMethod(
+		      [this, &className](std::string_view methodName, Function & /*unused*/) {
+			      std::string newName
+			            = std::string(className) + "_METHOD_" + std::string(methodName);
+			      *os << std::string(tabLevel, '\t') << newName << ",\n";
+		      });
+		tabLevel--;
+		*os << "};\n";
+	});
+	*os << '\n';
+
+	// Class structs
+	node.forEachClass([this](std::string_view name, Class &cls, bool /*unused*/) {
+		*os << "typedef struct {\n";
+		tabLevel++;
+		*os << std::string(tabLevel, '\t') << "struct " << name << "_VT *vt;\n";
+		cls.forEachFieldDeclaration([this](LetStatement &declaration) {
+			*os << std::string(tabLevel, '\t');
+			const std::string &cType = cTypes[declaration.getSymbolTypeID()];
+			*os << cType << ' ' << declaration.getSymbol().s << ";\n";
+		});
+		tabLevel--;
+		*os << "} *" << name << ";\n";
+	});
+	*os << '\n';
 
 	// Function definitions
+	generateBuiltinFunctions();
 	node.forEachFunction(
 	      [this](std::string_view name, Function &function, bool isBuiltin) {
+		      if (isBuiltin) {
+			      return;
+		      }
 		      Type functionType = module->getType(function.getTypeID());
 		      const std::string &cType = cTypes[functionType.id];
 		      *os << cType << ' ' << name << '(';
@@ -254,63 +326,70 @@ void CCodeGenerator::visit(Module &node) {
 			      *os << cType << ' ' << parameter.s;
 		      });
 		      *os << ") ";
-		      if (!isBuiltin) {
-			      function.getBody().accept(*this);
-			      *os << "\n";
-			      return;
-		      }
-		      if (name == "CANYON_FUNCTION_printI8") {
-			      *os << "{\n"
-			             "    printf(\"%\" PRId8, CANYON_PARAMETER_value);\n"
-			             "}\n";
-		      } else if (name == "CANYON_FUNCTION_printI16") {
-			      *os << "{\n"
-			             "    printf(\"%\" PRId16, CANYON_PARAMETER_value);\n"
-			             "}\n";
-		      } else if (name == "CANYON_FUNCTION_printI32") {
-			      *os << "{\n"
-			             "    printf(\"%\" PRId32, CANYON_PARAMETER_value);\n"
-			             "}\n";
-		      } else if (name == "CANYON_FUNCTION_printI64") {
-			      *os << "{\n"
-			             "    printf(\"%\" PRId64, CANYON_PARAMETER_value);\n"
-			             "}\n";
-		      } else if (name == "CANYON_FUNCTION_printU8") {
-			      *os << "{\n"
-			             "    printf(\"%\" PRIu8, CANYON_PARAMETER_value);\n"
-			             "}\n";
-		      } else if (name == "CANYON_FUNCTION_printU16") {
-			      *os << "{\n"
-			             "    printf(\"%\" PRIu16, CANYON_PARAMETER_value);\n"
-			             "}\n";
-		      } else if (name == "CANYON_FUNCTION_printU32") {
-			      *os << "{\n"
-			             "    printf(\"%\" PRIu32, CANYON_PARAMETER_value);\n"
-			             "}\n";
-		      } else if (name == "CANYON_FUNCTION_printU64") {
-			      *os << "{\n"
-			             "    printf(\"%\" PRIu64, CANYON_PARAMETER_value);\n"
-			             "}\n";
-		      } else if (name == "CANYON_FUNCTION_printBool") {
-			      *os << "{\n"
-			             "    printf(CANYON_PARAMETER_value ? \"true\" : \"false\");\n"
-			             "}\n";
-		      } else if (name == "CANYON_FUNCTION_printChar") {
-			      *os << "{\n"
-			             "    printf(\"%c\", CANYON_PARAMETER_value);\n"
-			             "}\n";
-		      } else {
-			      std::cerr << "Unknown builtin function: " << name << '\n';
-			      exit(EXIT_FAILURE);
-		      }
+		      function.getBody().accept(*this);
 		      *os << "\n";
 	      });
+
+	// Method definitions
+	node.forEachClass([this](std::string_view className, Class &cls, bool /*unused*/) {
+		cls.forEachMethod([this, &className](std::string_view methodName,
+		                        Function &method) {
+			Type methodType = module->getType(method.getTypeID());
+			const std::string &cType = cTypes[methodType.id];
+			std::string newName
+			      = std::string(className) + "_METHOD_" + std::string(methodName);
+			*os << cType << ' ' << newName << '(';
+			bool first = true;
+			method.forEachParameter([this, &first](Symbol &parameter, Symbol &type) {
+				const std::string &cType = cTypes[module->getType(type.s.contents).id];
+				if (!first) {
+					*os << ", ";
+				}
+				first = false;
+				*os << cType << ' ' << parameter.s;
+			});
+			*os << ") ";
+			method.getBody().accept(*this);
+			*os << "\n";
+			return;
+			*os << "\n";
+		});
+	});
 }
 
-void CCodeGenerator::generateMain() {
+void CCodeGenerator::generateBuiltinFunctions() {
 	*os << "int main() {\n"
-	       "    CANYON_FUNCTION_main();\n"
-	       "    return 0;\n"
+	       "\tCANYON_FUNCTION_main();\n"
+	       "\treturn 0;\n"
 	       "}\n"
-	       "\n";
+	       "void CANYON_FUNCTION_printI8(int8_t CANYON_PARAMETER_value) {\n"
+	       "\tprintf(\"%\" PRId8, CANYON_PARAMETER_value);\n"
+	       "}\n"
+	       "void CANYON_FUNCTION_printI16(int16_t CANYON_PARAMETER_value) {\n"
+	       "\tprintf(\"%\" PRId16, CANYON_PARAMETER_value);\n"
+	       "}\n"
+	       "void CANYON_FUNCTION_printI32(int32_t CANYON_PARAMETER_value) {\n"
+	       "\tprintf(\"%\" PRId32, CANYON_PARAMETER_value);\n"
+	       "}\n"
+	       "void CANYON_FUNCTION_printI64(int64_t CANYON_PARAMETER_value) {\n"
+	       "\tprintf(\"%\" PRId64, CANYON_PARAMETER_value);\n"
+	       "}\n"
+	       "void CANYON_FUNCTION_printU8(uint8_t CANYON_PARAMETER_value) {\n"
+	       "\tprintf(\"%\" PRIu8, CANYON_PARAMETER_value);\n"
+	       "}\n"
+	       "void CANYON_FUNCTION_printU16(uint16_t CANYON_PARAMETER_value) {\n"
+	       "\tprintf(\"%\" PRIu16, CANYON_PARAMETER_value);\n"
+	       "}\n"
+	       "void CANYON_FUNCTION_printU32(uint32_t CANYON_PARAMETER_value) {\n"
+	       "\tprintf(\"%\" PRIu32, CANYON_PARAMETER_value);\n"
+	       "}\n"
+	       "void CANYON_FUNCTION_printU64(uint64_t CANYON_PARAMETER_value) {\n"
+	       "\tprintf(\"%\" PRIu64, CANYON_PARAMETER_value);\n"
+	       "}\n"
+	       "void CANYON_FUNCTION_printBool(bool CANYON_PARAMETER_value) {\n"
+	       "\tprintf(CANYON_PARAMETER_value ? \"true\" : \"false\");\n"
+	       "}\n"
+	       "void CANYON_FUNCTION_printChar(char CANYON_PARAMETER_value) {\n"
+	       "\tprintf(\"%c\", CANYON_PARAMETER_value);\n"
+	       "}\n";
 }

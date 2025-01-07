@@ -248,6 +248,8 @@ public:
 	int getSymbolTypeID() const;
 	void accept(ASTVisitor &visitor) override;
 	virtual ~LetStatement() = default;
+
+	friend struct Field;
 };
 
 class Function : public ASTComponent {
@@ -276,14 +278,16 @@ public:
 
 class Class : public ASTComponent {
 private:
-	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> fields;
-	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>>> methods;
+	std::vector<std::unique_ptr<LetStatement>> fieldDeclarations;
+	// std::unordered_map<std::string_view, > fields;
+	std::unordered_map<std::string_view, std::unique_ptr<Function>> methods;
+	std::unique_ptr<BlockExpression> scope = std::make_unique<BlockExpression>();
 public:
-	Class(std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> fields,
-	      std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>>>
-	            methods);
-	void forEachField(const std::function<void(Symbol &, Symbol &)> &fieldHandler);
-	void forEachMethod(const std::function<void(Symbol &, Function &)> &methodHandler);
+	Class(std::vector<std::unique_ptr<LetStatement>> fieldDeclarations,
+	      std::unordered_map<std::string_view, std::unique_ptr<Function>> methods);
+	void forEachFieldDeclaration(const std::function<void(LetStatement &)> &fieldHandler);
+	void forEachMethod(const std::function<void(std::string_view, Function &)> &methodHandler);
+	BlockExpression &getScope();
 	void accept(ASTVisitor &visitor);
 	~Class() = default;
 };

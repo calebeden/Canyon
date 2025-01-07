@@ -408,22 +408,27 @@ void Function::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-Class::Class(
-      std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> fields,
-      std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>>> methods)
-    : fields(std::move(fields)), methods(std::move(methods)) {
+Class::Class(std::vector<std::unique_ptr<LetStatement>> fieldDeclarations,
+      std::unordered_map<std::string_view, std::unique_ptr<Function>> methods)
+    : fieldDeclarations(std::move(fieldDeclarations)), methods(std::move(methods)) {
 }
 
-void Class::forEachField(const std::function<void(Symbol &, Symbol &)> &fieldHandler) {
-	for (auto &[name, type] : fields) {
-		fieldHandler(*name, *type);
+void Class::forEachFieldDeclaration(
+      const std::function<void(LetStatement &)> &fieldHandler) {
+	for (auto &field : fieldDeclarations) {
+		fieldHandler(*field);
 	}
 }
 
-void Class::forEachMethod(const std::function<void(Symbol &, Function &)> &methodHandler) {
+void Class::forEachMethod(
+      const std::function<void(std::string_view, Function &)> &methodHandler) {
 	for (auto &[name, method] : methods) {
-		methodHandler(*name, *method);
+		methodHandler(name, *method);
 	}
+}
+
+BlockExpression &Class::getScope() {
+	return *scope;
 }
 
 void Class::accept(ASTVisitor &visitor) {

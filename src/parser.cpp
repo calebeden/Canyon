@@ -61,6 +61,7 @@ std::unique_ptr<Module> Parser::parse() {
 				}
 				continue;
 			}
+			mod->addClass(std::move(cls.first), std::move(cls.second));
 		} else {
 			errorHandler->error(*tokens[i], "Expected keyword `fun` or `class`");
 			synchronize();
@@ -196,8 +197,8 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Class>> Parser::parseClass() 
 	}
 	i++;
 
-	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> fields;
-	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>>> methods;
+	std::vector<std::unique_ptr<LetStatement>> fields;
+	std::unordered_map<std::string_view, std::unique_ptr<Function>> methods;
 	while (true) {
 		auto *keyword2 = dynamic_cast<Keyword *>(tokens[i].get());
 		if (keyword2 != nullptr && keyword2->type == Keyword::Type::LET) {
@@ -205,15 +206,14 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Class>> Parser::parseClass() 
 			if (let == nullptr) {
 				return {nullptr, nullptr};
 			}
-			fields.emplace_back(std::make_unique<Symbol>(let->getSymbol()),
-			      std::make_unique<Symbol>(*let->getTypeAnnotation()));
+			fields.push_back(std::move(let));
 		} else if (keyword2 != nullptr && keyword2->type == Keyword::Type::FUN) {
 			std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> method
 			      = parseFunction();
 			if (method.second == nullptr) {
 				return {nullptr, nullptr};
 			}
-			methods.push_back(std::move(method));
+			methods[method.first->s.contents] = std::move(method.second);
 		} else {
 			break;
 		}

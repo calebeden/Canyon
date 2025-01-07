@@ -22,6 +22,7 @@ private:
 	std::stack<std::string_view> blockTemporaryVariables;
 	std::vector<BlockExpression *> scopeStack;
 	std::list<std::string> *generatedStrings;
+	std::string *currentClassName = nullptr;
 public:
 	CCodeAdapter(Module *module, std::list<std::string> *generatedStrings);
 	std::unique_ptr<Module> transform();
