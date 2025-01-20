@@ -67,6 +67,10 @@ void Keyword::print(std::ostream &os) const {
 			os << "constructor";
 			break;
 		}
+		case Type::IMPL: {
+			os << "impl";
+			break;
+		}
 	}
 }
 

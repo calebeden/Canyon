@@ -52,6 +52,7 @@ struct Keyword : public Token {
 		WHILE,
 		CLASS,
 		CONSTRUCTOR,
+		IMPL,
 	};
 
 	Type type;

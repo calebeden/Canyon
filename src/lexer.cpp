@@ -240,6 +240,9 @@ std::unique_ptr<Keyword> Lexer::createKeyword(const Slice &s) {
 	if (s.contents == "constructor") {
 		return std::make_unique<Keyword>(s, Keyword::Type::CONSTRUCTOR);
 	}
+	if (s.contents == "impl") {
+		return std::make_unique<Keyword>(s, Keyword::Type::IMPL);
+	}
 	return nullptr;
 }
 
