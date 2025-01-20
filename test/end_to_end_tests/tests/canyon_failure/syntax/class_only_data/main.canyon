@@ -1,0 +1,5 @@
+fun main() {}
+
+class Foo {
+    fun shouldFail() {}
+}
