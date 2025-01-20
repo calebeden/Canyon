@@ -188,6 +188,12 @@ void CCodeGenerator::visit([[maybe_unused]] PathExpression &node) {
 	// TODO
 }
 
+void CCodeGenerator::visit(FieldAccessExpression &node) {
+	node.getObject().accept(*this);
+	*os << "->";
+	node.getField().accept(*this);
+}
+
 void CCodeGenerator::visit(IfElseExpression &node) {
 	*os << "if (";
 	node.getCondition().accept(*this);

@@ -193,6 +193,19 @@ public:
 	virtual ~PathExpression() = default;
 };
 
+class FieldAccessExpression : public Expression {
+private:
+	std::unique_ptr<Expression> object;
+	std::unique_ptr<SymbolExpression> field;
+public:
+	FieldAccessExpression(std::unique_ptr<Expression> object,
+	      std::unique_ptr<SymbolExpression> field);
+	Expression &getObject();
+	SymbolExpression &getField();
+	void accept(ASTVisitor &visitor) override;
+	virtual ~FieldAccessExpression() = default;
+};
+
 class IfElseExpression : public Expression {
 private:
 	std::unique_ptr<Expression> condition;
@@ -380,6 +393,7 @@ public:
 	virtual void visit(ReturnExpression &node) = 0;
 	virtual void visit(ParenthesizedExpression &node) = 0;
 	virtual void visit(PathExpression &node) = 0;
+	virtual void visit(FieldAccessExpression &node) = 0;
 	virtual void visit(IfElseExpression &node) = 0;
 	virtual void visit(WhileExpression &node) = 0;
 	virtual void visit(ExpressionStatement &node) = 0;
@@ -405,6 +419,7 @@ public:
 	void visit(ReturnExpression &node) override;
 	void visit(ParenthesizedExpression &node) override;
 	void visit(PathExpression &node) override;
+	void visit(FieldAccessExpression &node) override;
 	void visit(IfElseExpression &node) override;
 	void visit(WhileExpression &node) override;
 	void visit(ExpressionStatement &node) override;

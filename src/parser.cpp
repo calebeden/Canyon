@@ -828,7 +828,7 @@ std::unique_ptr<Expression> Parser::parseUnaryExpression() {
 }
 
 std::unique_ptr<Expression> Parser::parseFunctionCallExpression() {
-	std::unique_ptr<Expression> expr = parsePathExpression();
+	std::unique_ptr<Expression> expr = parseFieldAccessExpression();
 	if (expr == nullptr) {
 		return nullptr;
 	}
@@ -862,6 +862,35 @@ std::unique_ptr<Expression> Parser::parseFunctionCallExpression() {
 		      std::move(arguments), *p2);
 	}
 	return expr;
+}
+
+std::unique_ptr<Expression> Parser::parseFieldAccessExpression() {
+	std::unique_ptr<Expression> expr = parsePathExpression();
+	if (expr == nullptr) {
+		return nullptr;
+	}
+	if (!dynamic_cast<SymbolExpression *>(expr.get())) {
+		return expr;
+	}
+	while (true) {
+		auto *punc = dynamic_cast<Punctuation *>(tokens[i].get());
+		if (punc != nullptr && punc->type == Punctuation::Type::Period) {
+			i++;
+			std::unique_ptr<Expression> expr2 = parsePathExpression();
+			if (expr2 == nullptr) {
+				return nullptr;
+			}
+			if (!dynamic_cast<SymbolExpression *>(expr2.get())) {
+				errorHandler->error(*tokens[i], "Expected symbol");
+				return nullptr;
+			}
+			expr = std::make_unique<FieldAccessExpression>(std::move(expr),
+			      std::unique_ptr<SymbolExpression>(
+			            dynamic_cast<SymbolExpression *>(expr2.release())));
+		} else {
+			return expr;
+		}
+	}
 }
 
 std::unique_ptr<Expression> Parser::parsePathExpression() {

@@ -294,6 +294,24 @@ void PathExpression::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
+FieldAccessExpression::FieldAccessExpression(std::unique_ptr<Expression> object,
+	  std::unique_ptr<SymbolExpression> field)
+	: Expression(Slice::merge(object->getSlice(), field->getSlice())),
+	  object(std::move(object)), field(std::move(field)) {
+}
+
+Expression &FieldAccessExpression::getObject() {
+	return *object;
+}
+
+SymbolExpression &FieldAccessExpression::getField() {
+	return *field;
+}
+
+void FieldAccessExpression::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+
 WhileExpression::WhileExpression(const Keyword &whileKeyword,
       std::unique_ptr<Expression> condition, std::unique_ptr<BlockExpression> body)
     : Expression(Slice::merge(whileKeyword.s, body->getSlice())),
@@ -734,6 +752,12 @@ void ASTPrinter::visit(PathExpression &node) {
 		}
 		first = false;
 	});
+}
+
+void ASTPrinter::visit(FieldAccessExpression &node) {
+	node.getObject().accept(*this);
+	std::cerr << '.';
+	node.getField().accept(*this);
 }
 
 void ASTPrinter::visit(IfElseExpression &node) {

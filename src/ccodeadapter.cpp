@@ -244,6 +244,23 @@ void CCodeAdapter::visit([[maybe_unused]] PathExpression &node) {
 	// TODO
 }
 
+void CCodeAdapter::visit(FieldAccessExpression &node) {
+	node.getObject().accept(*this);
+	std::unique_ptr<Expression> newObject = std::unique_ptr<Expression>(
+	      dynamic_cast<Expression *>(returnValue.release()));
+	// don't want to visit the field because otherwise it will get mangled; instead just
+	// make a new one with the same name
+	generatedStrings->push_back(std::string(node.getField().getSymbol().s.contents));
+	std::unique_ptr<SymbolExpression> newField
+	      = std::make_unique<SymbolExpression>(std::make_unique<Symbol>(
+	            Slice(generatedStrings->back(), inputModule->getSource(), 0, 0)));
+	std::unique_ptr<FieldAccessExpression> newFieldAccessExpression
+	      = std::make_unique<FieldAccessExpression>(std::move(newObject),
+	            std::move(newField));
+	newFieldAccessExpression->setTypeID(node.getTypeID());
+	returnValue = std::move(newFieldAccessExpression);
+}
+
 void CCodeAdapter::visit(IfElseExpression &node) {
 	if (node.getTypeID() != inputModule->getType("()").id
 	      && node.getTypeID() != inputModule->getType("!").id) {

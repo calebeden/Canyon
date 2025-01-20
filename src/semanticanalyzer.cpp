@@ -165,9 +165,10 @@ void SemanticAnalyzer::visit(BinaryExpression &node) {
 		return;
 	}
 	if (node.getOperator().type == Operator::Type::Assignment
-	      && (dynamic_cast<SymbolExpression *>(&left) == nullptr)) {
+	      && (dynamic_cast<SymbolExpression *>(&left) == nullptr)
+	      && (dynamic_cast<FieldAccessExpression *>(&left) == nullptr)) {
 		errorHandler->error(left.getSlice(),
-		      "Left side of assignment must be a variable");
+		      "Left side of assignment must be a variable or field access");
 		return;
 	}
 	if (left.getTypeID() == -1 || right.getTypeID() == -1) {
@@ -274,6 +275,10 @@ void SemanticAnalyzer::visit(ParenthesizedExpression &node) {
 }
 
 void SemanticAnalyzer::visit([[maybe_unused]] PathExpression &node) {
+	// TODO
+}
+
+void SemanticAnalyzer::visit([[maybe_unused]] FieldAccessExpression &node) {
 	// TODO
 }
 
@@ -445,19 +450,24 @@ void SemanticAnalyzer::visit(Module &node) {
 		}
 	});
 	node.forEachImpl([this](std::string_view implName, Impl &impl, bool /*unused*/) {
-		impl.forEachMethod([this, &implName](std::string_view /*unused*/, Function &method) {
+		impl.forEachMethod([this, &implName](std::string_view /*unused*/,
+		                         Function &method) {
 			bool first = true;
-			method.forEachParameter([this, &method, &first, &implName](Symbol &parameter, Symbol &type) {
+			method.forEachParameter([this, &method, &first, &implName](Symbol &parameter,
+			                              Symbol &type) {
 				int typeID = module->getType(type.s.contents).id;
 				if (typeID == -1) {
 					errorHandler->error(type.s, "Unknown type");
 					return;
 				}
-				if (first && method.getIsConstructor() && parameter.s.contents != "self") {
-					errorHandler->error(parameter.s, "First parameter of constructor must be self");
+				if (first && method.getIsConstructor()
+				      && parameter.s.contents != "self") {
+					errorHandler->error(parameter.s,
+					      "First parameter of constructor must be self");
 				}
 				if (first && method.getIsConstructor() && type.s.contents != implName) {
-					errorHandler->error(type.s, "Constructor self parameter type must be the same as impl name");
+					errorHandler->error(type.s, "Constructor self parameter type must be "
+					                            "the same as impl name");
 				}
 				first = false;
 				method.getBody().pushSymbol(parameter.s.contents, typeID,
