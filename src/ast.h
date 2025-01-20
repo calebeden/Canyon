@@ -70,7 +70,6 @@ public:
 	Operator &getOperator();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~BinaryExpression() = default;
-	friend class ASTVisitor;
 };
 
 class UnaryExpression : public Expression {
@@ -248,8 +247,6 @@ public:
 	int getSymbolTypeID() const;
 	void accept(ASTVisitor &visitor) override;
 	virtual ~LetStatement() = default;
-
-	friend struct Field;
 };
 
 class Function : public ASTComponent {
@@ -279,17 +276,24 @@ public:
 class Class : public ASTComponent {
 private:
 	std::vector<std::unique_ptr<LetStatement>> fieldDeclarations;
-	// std::unordered_map<std::string_view, > fields;
-	std::unordered_map<std::string_view, std::unique_ptr<Function>> methods;
 	std::unique_ptr<BlockExpression> scope = std::make_unique<BlockExpression>();
 public:
-	Class(std::vector<std::unique_ptr<LetStatement>> fieldDeclarations,
-	      std::unordered_map<std::string_view, std::unique_ptr<Function>> methods);
+	Class(std::vector<std::unique_ptr<LetStatement>> fieldDeclarations);
 	void forEachFieldDeclaration(const std::function<void(LetStatement &)> &fieldHandler);
-	void forEachMethod(const std::function<void(std::string_view, Function &)> &methodHandler);
 	BlockExpression &getScope();
 	void accept(ASTVisitor &visitor);
 	~Class() = default;
+};
+
+class Impl : public ASTComponent {
+private:
+	std::unordered_map<std::string_view, std::unique_ptr<Function>> methods;
+public:
+	Impl(std::unordered_map<std::string_view, std::unique_ptr<Function>> methods);
+	void forEachMethod(
+	      const std::function<void(std::string_view, Function &)> &methodHandler);
+	void accept(ASTVisitor &visitor);
+	~Impl() = default;
 };
 
 struct Type {
@@ -312,6 +316,7 @@ private:
 	std::filesystem::path source;
 	std::unordered_map<std::string_view, std::tuple<std::unique_ptr<Class>, bool>>
 	      classes;
+	std::unordered_map<std::string_view, std::tuple<std::unique_ptr<Impl>, bool>> impls;
 public:
 	std::list<std::string> ownedStrings;
 	explicit Module(std::filesystem::path source);
@@ -321,6 +326,8 @@ public:
 	void forEachFunction(
 	      const std::function<void(std::string_view, Function &, bool)> &functionHandler);
 	void addClass(std::unique_ptr<Symbol> name, std::unique_ptr<Class> cls,
+	      bool isBuiltin = false);
+	void addImpl(std::unique_ptr<Symbol> className, std::unique_ptr<Impl> impl,
 	      bool isBuiltin = false);
 	void forEachClass(
 	      const std::function<void(std::string_view, Class &, bool)> &classHandler);
@@ -358,6 +365,7 @@ public:
 	virtual void visit(LetStatement &node) = 0;
 	virtual void visit(Function &node) = 0;
 	virtual void visit(Class &node) = 0;
+	virtual void visit(Impl &node) = 0;
 	virtual void visit(Module &node) = 0;
 	virtual ~ASTVisitor() = default;
 };
@@ -381,6 +389,7 @@ public:
 	void visit(LetStatement &node) override;
 	void visit(Function &node) override;
 	void visit(Class &node) override;
+	void visit(Impl &node) override;
 	void visit(Module &node) override;
 	virtual ~ASTPrinter() = default;
 };

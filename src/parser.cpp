@@ -62,6 +62,29 @@ std::unique_ptr<Module> Parser::parse() {
 				continue;
 			}
 			mod->addClass(std::move(cls.first), std::move(cls.second));
+		} else if (keyword != nullptr && keyword->type == Keyword::Type::IMPL) {
+			std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Impl>> impl = parseImpl();
+			if (impl.second == nullptr) {
+				synchronize();
+				mustSynchronize = false;
+				auto *punc = dynamic_cast<Punctuation *>(tokens[i].get());
+				while (punc != nullptr) {
+					if (punc->type == Punctuation::Type::Semicolon) {
+						i++;
+						synchronize();
+						mustSynchronize = false;
+						punc = dynamic_cast<Punctuation *>(tokens[i].get());
+					} else if (punc->type == Punctuation::Type::CloseBrace) {
+						i++;
+						break;
+					} else {
+						std::cerr << "Unexpected token in parse" << std::endl;
+						exit(EXIT_FAILURE);
+					}
+				}
+				continue;
+			}
+			mod->addImpl(std::move(impl.first), std::move(impl.second));
 		} else {
 			errorHandler->error(*tokens[i], "Expected keyword `fun` or `class`");
 			synchronize();
@@ -198,7 +221,6 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Class>> Parser::parseClass() 
 	i++;
 
 	std::vector<std::unique_ptr<LetStatement>> fields;
-	std::unordered_map<std::string_view, std::unique_ptr<Function>> methods;
 	while (true) {
 		auto *keyword2 = dynamic_cast<Keyword *>(tokens[i].get());
 		if (keyword2 != nullptr && keyword2->type == Keyword::Type::LET) {
@@ -207,13 +229,10 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Class>> Parser::parseClass() 
 				return {nullptr, nullptr};
 			}
 			fields.push_back(std::move(let));
-		} else if (keyword2 != nullptr && keyword2->type == Keyword::Type::FUN) {
-			std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> method
-			      = parseFunction();
-			if (method.second == nullptr) {
-				return {nullptr, nullptr};
-			}
-			methods[method.first->s.contents] = std::move(method.second);
+		} else if (keyword2 != nullptr) {
+			errorHandler->error(*tokens[i], "Unexpected keyword in class definition");
+			mustSynchronize = true;
+			return {nullptr, nullptr};
 		} else {
 			break;
 		}
@@ -226,8 +245,57 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Class>> Parser::parseClass() 
 	}
 	i++;
 
-	return {std::unique_ptr<Symbol>(symbol),
-	      std::make_unique<Class>(std::move(fields), std::move(methods))};
+	return {std::unique_ptr<Symbol>(symbol), std::make_unique<Class>(std::move(fields))};
+}
+
+std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Impl>> Parser::parseImpl() {
+	auto *keyword = dynamic_cast<Keyword *>(tokens[i].get());
+	if (keyword == nullptr || keyword->type != Keyword::Type::IMPL) {
+		errorHandler->error(*tokens[i], "Expected keyword `impl`");
+		return {nullptr, nullptr};
+	}
+	i++;
+	auto *symbol = dynamic_cast<Symbol *>(tokens[i].get());
+	if (symbol == nullptr) {
+		errorHandler->error(*tokens[i], "Expected symbol following `impl`");
+		return {nullptr, nullptr};
+	}
+	symbol = dynamic_cast<Symbol *>(tokens[i++].release());
+	auto *punc = dynamic_cast<Punctuation *>(tokens[i].get());
+	if (punc == nullptr || punc->type != Punctuation::Type::OpenBrace) {
+		errorHandler->error(*tokens[i], "Expected '{' following symbol in impl block");
+		mustSynchronize = true;
+		return {nullptr, nullptr};
+	}
+	i++;
+
+	std::unordered_map<std::string_view, std::unique_ptr<Function>> methods;
+	while (true) {
+		auto *keyword2 = dynamic_cast<Keyword *>(tokens[i].get());
+		if (keyword2 != nullptr && keyword2->type == Keyword::Type::FUN) {
+			std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> method
+			      = parseFunction();
+			if (method.second == nullptr) {
+				return {nullptr, nullptr};
+			}
+			methods.emplace(method.first->s.contents, std::move(method.second));
+		} else if (keyword2 != nullptr) {
+			errorHandler->error(*tokens[i], "Unexpected keyword in impl block");
+			mustSynchronize = true;
+			return {nullptr, nullptr};
+		} else {
+			break;
+		}
+	}
+
+	auto *p2 = dynamic_cast<Punctuation *>(tokens[i].get());
+	if (p2 == nullptr || p2->type != Punctuation::Type::CloseBrace) {
+		errorHandler->error(*tokens[i], "Expected '}' after impl block");
+		return {nullptr, nullptr};
+	}
+	i++;
+
+	return {std::unique_ptr<Symbol>(symbol), std::make_unique<Impl>(std::move(methods))};
 }
 
 std::unique_ptr<Statement> Parser::parseStatement() {

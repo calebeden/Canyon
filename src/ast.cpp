@@ -408,9 +408,8 @@ void Function::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-Class::Class(std::vector<std::unique_ptr<LetStatement>> fieldDeclarations,
-      std::unordered_map<std::string_view, std::unique_ptr<Function>> methods)
-    : fieldDeclarations(std::move(fieldDeclarations)), methods(std::move(methods)) {
+Class::Class(std::vector<std::unique_ptr<LetStatement>> fieldDeclarations)
+    : fieldDeclarations(std::move(fieldDeclarations)) {
 }
 
 void Class::forEachFieldDeclaration(
@@ -420,11 +419,19 @@ void Class::forEachFieldDeclaration(
 	}
 }
 
-void Class::forEachMethod(
+Impl::Impl(std::unordered_map<std::string_view, std::unique_ptr<Function>> methods)
+    : methods(std::move(methods)) {
+}
+
+void Impl::forEachMethod(
       const std::function<void(std::string_view, Function &)> &methodHandler) {
 	for (auto &[name, method] : methods) {
 		methodHandler(name, *method);
 	}
+}
+
+void Impl::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
 }
 
 BlockExpression &Class::getScope() {
@@ -475,6 +482,11 @@ void Module::forEachFunction(
 void Module::addClass(std::unique_ptr<Symbol> name, std::unique_ptr<Class> cls,
       bool isBuiltin) {
 	classes[name->s.contents] = {std::move(cls), isBuiltin};
+}
+
+void Module::addImpl(std::unique_ptr<Symbol> className, std::unique_ptr<Impl> impl,
+      bool isBuiltin) {
+	impls[className->s.contents] = {std::move(impl), isBuiltin};
 }
 
 void Module::forEachClass(
@@ -710,6 +722,9 @@ void ASTPrinter::visit([[maybe_unused]] Function &node) {
 }
 
 void ASTPrinter::visit([[maybe_unused]] Class &node) {
+}
+
+void ASTPrinter::visit([[maybe_unused]] Impl &node) {
 }
 
 void ASTPrinter::visit(Module &node) {

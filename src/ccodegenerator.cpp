@@ -215,6 +215,10 @@ void CCodeGenerator::visit([[maybe_unused]] Class &node) {
 	// Currently being handled in the Module visitor
 }
 
+void CCodeGenerator::visit([[maybe_unused]] Impl &node) {
+	// TODO
+}
+
 void CCodeGenerator::visit(Module &node) {
 	// Function prototypes
 	node.forEachFunction(
@@ -233,62 +237,6 @@ void CCodeGenerator::visit(Module &node) {
 		      });
 		      *os << ");\n";
 	      });
-	*os << '\n';
-
-	// Class method prototypes
-	node.forEachClass([this](std::string_view className, Class &cls, bool /*unused*/) {
-		cls.forEachMethod([this, &className](std::string_view methodName,
-		                        Function &method) {
-			Type methodType = module->getType(method.getTypeID());
-			const std::string &cType = cTypes[methodType.id];
-			std::string newName
-			      = std::string(className) + "_METHOD_" + std::string(methodName);
-			*os << cType << ' ' << newName << '(';
-			bool first = true;
-			method.forEachParameter([this, &first](Symbol &parameter, Symbol &type) {
-				const std::string &cType = cTypes[module->getType(type.s.contents).id];
-				if (!first) {
-					*os << ", ";
-				}
-				first = false;
-				*os << cType << ' ' << parameter.s;
-			});
-			*os << ");\n";
-		});
-	});
-	*os << '\n';
-
-	// Virtual tables
-	node.forEachClass([this](std::string_view className, Class &cls, bool /*unused*/) {
-		*os << "struct " << className << "_VT {\n";
-		tabLevel++;
-		cls.forEachMethod([this](std::string_view methodName, Function &method) {
-			Type methodType = module->getType(method.getTypeID());
-			const std::string &cType = cTypes[methodType.id];
-			*os << std::string(tabLevel, '\t') << cType << " (*" << methodName << ")(";
-			bool first = true;
-			method.forEachParameter([this, &first](Symbol &/*unused*/, Symbol &type) {
-				const std::string &cType = cTypes[module->getType(type.s.contents).id];
-				if (!first) {
-					*os << ", ";
-				}
-				first = false;
-				*os << cType;
-			});
-			*os << ");\n";
-		});
-		tabLevel--;
-		*os << "} " << className << "_VT_INSTANCE = {\n";
-		tabLevel++;
-		cls.forEachMethod(
-		      [this, &className](std::string_view methodName, Function & /*unused*/) {
-			      std::string newName
-			            = std::string(className) + "_METHOD_" + std::string(methodName);
-			      *os << std::string(tabLevel, '\t') << newName << ",\n";
-		      });
-		tabLevel--;
-		*os << "};\n";
-	});
 	*os << '\n';
 
 	// Class structs
@@ -329,32 +277,6 @@ void CCodeGenerator::visit(Module &node) {
 		      function.getBody().accept(*this);
 		      *os << "\n";
 	      });
-
-	// Method definitions
-	node.forEachClass([this](std::string_view className, Class &cls, bool /*unused*/) {
-		cls.forEachMethod([this, &className](std::string_view methodName,
-		                        Function &method) {
-			Type methodType = module->getType(method.getTypeID());
-			const std::string &cType = cTypes[methodType.id];
-			std::string newName
-			      = std::string(className) + "_METHOD_" + std::string(methodName);
-			*os << cType << ' ' << newName << '(';
-			bool first = true;
-			method.forEachParameter([this, &first](Symbol &parameter, Symbol &type) {
-				const std::string &cType = cTypes[module->getType(type.s.contents).id];
-				if (!first) {
-					*os << ", ";
-				}
-				first = false;
-				*os << cType << ' ' << parameter.s;
-			});
-			*os << ") ";
-			method.getBody().accept(*this);
-			*os << "\n";
-			return;
-			*os << "\n";
-		});
-	});
 }
 
 void CCodeGenerator::generateBuiltinFunctions() {

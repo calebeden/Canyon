@@ -1,5 +1,12 @@
 fun main() {}
 
+/* The error on this one is a little weird due to how the parser tries to get itself back
+ * into a good state after the bad keyword. It looks for the first closing brace, not
+ * realizing that to the programmer it appears part of the function, not the closing brace
+ * of the class. So two errors are reported, one for the bad keyword, and one for the
+ * extra closing brace.
+ */
+
 class Foo {
     fun shouldFail() {}
 }

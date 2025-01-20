@@ -456,17 +456,11 @@ void CCodeAdapter::visit(Class &node) {
 		newDeclaration->getSymbol().s.contents = newName;
 		newFieldDeclarations.push_back(std::move(newDeclaration));
 	});
-	std::unordered_map<std::string_view, std::unique_ptr<Function>> newMethods;
-	node.forEachMethod([this, &newMethods](std::string_view name, Function &method) {
-		// 
-		method.accept(*this);
-		std::unique_ptr<Function> newMethod = std::unique_ptr<Function>(
-		      dynamic_cast<Function *>(returnValue.release()));
-		newMethod->setTypeID(method.getTypeID());
-		newMethods.emplace(name, std::move(newMethod));
-	});
-	returnValue = std::make_unique<Class>(std::move(newFieldDeclarations),
-	      std::move(newMethods));
+	returnValue = std::make_unique<Class>(std::move(newFieldDeclarations));
+}
+
+void CCodeAdapter::visit([[maybe_unused]] Impl &node) {
+	// TODO
 }
 
 void CCodeAdapter::visit(Module &node) {

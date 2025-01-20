@@ -39,6 +39,7 @@ public:
 	void visit(LetStatement &node) override;
 	void visit(Function &node) override;
 	void visit(Class &node) override;
+	void visit(Impl &node) override;
 	void visit(Module &node) override;
 	virtual ~SemanticAnalyzer() = default;
 };
