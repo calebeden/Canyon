@@ -266,6 +266,22 @@ IfElseExpression::IfElseExpression(std::unique_ptr<Expression> condition,
       thenBlock(std::move(thenBlock)), elseExpression(std::move(elseExpression)) {
 }
 
+PathExpression::PathExpression(std::vector<std::unique_ptr<SymbolExpression>> path)
+    : Expression(Slice::merge(path[0]->getSlice(), path.back()->getSlice())),
+      path(std::move(path)) {
+}
+
+void PathExpression::forEachSymbol(
+      const std::function<void(SymbolExpression &)> &symbolHandler) {
+	for (auto &symbol : path) {
+		symbolHandler(*symbol);
+	}
+}
+
+void PathExpression::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
+}
+
 WhileExpression::WhileExpression(const Keyword &whileKeyword,
       std::unique_ptr<Expression> condition, std::unique_ptr<BlockExpression> body)
     : Expression(Slice::merge(whileKeyword.s, body->getSlice())),
@@ -428,6 +444,13 @@ void Impl::forEachMethod(
 	for (auto &[name, method] : methods) {
 		methodHandler(name, *method);
 	}
+}
+
+Function *Impl::getMethod(std::string_view name) {
+	if (methods.find(name) == methods.end()) {
+		return nullptr;
+	}
+	return methods[name].get();
 }
 
 void Impl::accept(ASTVisitor &visitor) {
@@ -597,6 +620,13 @@ Function *Module::getFunction(std::string_view name) {
 	return std::get<0>(functions[name]).get();
 }
 
+Impl *Module::getImpl(std::string_view name) {
+	if (impls.find(name) == impls.end()) {
+		return nullptr;
+	}
+	return std::get<0>(impls[name]).get();
+}
+
 std::filesystem::path Module::getSource() {
 	return source;
 }
@@ -675,6 +705,17 @@ void ASTPrinter::visit(ReturnExpression &node) {
 
 void ASTPrinter::visit(ParenthesizedExpression &node) {
 	node.getExpression().accept(*this);
+}
+
+void ASTPrinter::visit(PathExpression &node) {
+	bool first = true;
+	node.forEachSymbol([this, &first](SymbolExpression &symbol) {
+		symbol.accept(*this);
+		if (!first) {
+			std::cerr << "::";
+		}
+		first = false;
+	});
 }
 
 void ASTPrinter::visit(IfElseExpression &node) {

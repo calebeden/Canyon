@@ -37,16 +37,52 @@ void SemanticAnalyzer::analyze() {
 void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 	Expression &functionCall = node.getFunction();
 	auto *symbol = dynamic_cast<SymbolExpression *>(&functionCall);
-	if (symbol == nullptr) {
+	auto *path = dynamic_cast<PathExpression *>(&functionCall);
+	if (symbol == nullptr && path == nullptr) {
 		errorHandler->error(functionCall.getSlice(),
-		      "Function call target is not a symbol");
+		      "Function call target is not a symbol or path");
 		return;
 	}
-	Function *function = module->getFunction(symbol->getSymbol().s.contents);
-	if (function == nullptr) {
-		errorHandler->error(symbol->getSymbol().s,
-		      "Function " + std::string(symbol->getSymbol().s.contents) + " not found");
-		return;
+	Function *function = nullptr;
+	if (symbol != nullptr) {
+		function = module->getFunction(symbol->getSymbol().s.contents);
+		if (function == nullptr) {
+			errorHandler->error(symbol->getSymbol().s,
+			      "Function " + std::string(symbol->getSymbol().s.contents)
+			            + " not found");
+			return;
+		}
+	} else {
+		Impl *impl = nullptr;
+		bool pathLookupGood = true;
+		size_t i = 0;
+		path->forEachSymbol([this, &impl, &function, &pathLookupGood, &i](SymbolExpression &symbol) {
+			if (impl == nullptr && pathLookupGood) {
+				impl = module->getImpl(symbol.getSymbol().s.contents);
+				if (impl == nullptr) {
+					errorHandler->error(symbol.getSymbol().s,
+					      "Impl " + std::string(symbol.getSymbol().s.contents) + " not found");
+					pathLookupGood = false;
+					return;
+				}
+				i++;
+			} else if (pathLookupGood) {
+				function = impl->getMethod(symbol.getSymbol().s.contents);
+				if (function == nullptr) {
+					errorHandler->error(symbol.getSymbol().s,
+					      "Method " + std::string(symbol.getSymbol().s.contents) + " not found");
+					pathLookupGood = false;
+					return;
+				}
+				i++;
+			} else if (i >= 2) {
+				errorHandler->error(symbol.getSymbol().s, "Path too long");
+				pathLookupGood = false;
+			}
+		});
+		if (!pathLookupGood) {
+			return;
+		}
 	}
 	std::vector<std::pair<Symbol &, int>> parameters;
 	function->forEachParameter(
@@ -223,6 +259,10 @@ void SemanticAnalyzer::visit(ParenthesizedExpression &node) {
 	Expression &expr = node.getExpression();
 	expr.accept(*this);
 	node.setTypeID(expr.getTypeID());
+}
+
+void SemanticAnalyzer::visit([[maybe_unused]] PathExpression &node) {
+	// TODO
 }
 
 void SemanticAnalyzer::visit(IfElseExpression &node) {

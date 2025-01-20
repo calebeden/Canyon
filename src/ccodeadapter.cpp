@@ -21,17 +21,35 @@ std::unique_ptr<Module> CCodeAdapter::transform() {
 void CCodeAdapter::visit(FunctionCallExpression &node) {
 	Expression &oldFunction = node.getFunction();
 	auto *oldSymbol = dynamic_cast<SymbolExpression *>(&oldFunction);
-	if (oldSymbol == nullptr) {
-		std::cerr << "Function call target is not a symbol" << std::endl;
+	auto *oldPath = dynamic_cast<PathExpression *>(&oldFunction);
+	if (oldSymbol == nullptr && oldPath == nullptr) {
+		std::cerr << "Function call target is not a symbol or path" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	generatedStrings->push_back(
-	      "CANYON_FUNCTION_" + std::string(oldSymbol->getSymbol().s.contents));
-	std::string_view newName = generatedStrings->back();
-	std::unique_ptr<Symbol> newSymbol
-	      = std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0));
-	std::unique_ptr<SymbolExpression> newSymbolExpression
-	      = std::make_unique<SymbolExpression>(std::move(newSymbol));
+	std::unique_ptr<SymbolExpression> newSymbolExpression = nullptr;
+	if (oldSymbol != nullptr) {
+		generatedStrings->push_back(
+		      "CANYON_FUNCTION_" + std::string(oldSymbol->getSymbol().s.contents));
+		std::string_view newName = generatedStrings->back();
+		std::unique_ptr<Symbol> newSymbol
+		      = std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0));
+		newSymbolExpression = std::make_unique<SymbolExpression>(std::move(newSymbol));
+	} else {
+		std::string functionName;
+		bool first = true;
+		oldPath->forEachSymbol([&functionName, &first](SymbolExpression &symbol) {
+			functionName += symbol.getSymbol().s.contents;
+			if (first) {
+				functionName += "_METHOD_";
+			}
+			first = false;
+		});
+		generatedStrings->push_back("CANYON_IMPL_" + functionName);
+		std::string_view newName = generatedStrings->back();
+		std::unique_ptr<Symbol> newSymbol
+		      = std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0));
+		newSymbolExpression = std::make_unique<SymbolExpression>(std::move(newSymbol));
+	}
 
 	std::vector<std::unique_ptr<Expression>> newArguments;
 	node.forEachArgument([this, &newArguments](Expression &argument) {
@@ -219,6 +237,10 @@ void CCodeAdapter::visit(ParenthesizedExpression &node) {
 	      = std::make_unique<ParenthesizedExpression>(std::move(newExpression));
 	newParenthesizedExpression->setTypeID(node.getTypeID());
 	returnValue = std::move(newParenthesizedExpression);
+}
+
+void CCodeAdapter::visit([[maybe_unused]] PathExpression &node) {
+	// TODO
 }
 
 void CCodeAdapter::visit(IfElseExpression &node) {
@@ -462,11 +484,13 @@ void CCodeAdapter::visit(Class &node) {
 void CCodeAdapter::visit(Impl &node) {
 	std::unordered_map<std::string_view, std::unique_ptr<Function>> newMethods;
 	node.forEachMethod([this, &newMethods](std::string_view name, Function &method) {
+		generatedStrings->push_back(std::string(name));
+		std::string_view newName = generatedStrings->back();
 		method.accept(*this);
 		std::unique_ptr<Function> newMethod = std::unique_ptr<Function>(
 		      dynamic_cast<Function *>(returnValue.release()));
 		newMethod->setTypeID(method.getTypeID());
-		newMethods.emplace(name, std::move(newMethod));
+		newMethods.emplace(newName, std::move(newMethod));
 	});
 	returnValue = std::make_unique<Impl>(std::move(newMethods));
 }

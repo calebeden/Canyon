@@ -809,7 +809,7 @@ std::unique_ptr<Expression> Parser::parseUnaryExpression() {
 }
 
 std::unique_ptr<Expression> Parser::parseFunctionCallExpression() {
-	std::unique_ptr<Expression> expr = parsePrimaryExpression();
+	std::unique_ptr<Expression> expr = parsePathExpression();
 	if (expr == nullptr) {
 		return nullptr;
 	}
@@ -843,6 +843,43 @@ std::unique_ptr<Expression> Parser::parseFunctionCallExpression() {
 		      std::move(arguments), *p2);
 	}
 	return expr;
+}
+
+std::unique_ptr<Expression> Parser::parsePathExpression() {
+	std::unique_ptr<Expression> expr = parsePrimaryExpression();
+	if (expr == nullptr) {
+		return nullptr;
+	}
+	if (!dynamic_cast<SymbolExpression *>(expr.get())) {
+		return expr;
+	}
+	std::unique_ptr<SymbolExpression> symExpr(
+	      dynamic_cast<SymbolExpression *>(expr.release()));
+	std::vector<std::unique_ptr<SymbolExpression>> symbols;
+	symbols.push_back(std::move(symExpr));
+	while (true) {
+		auto *op = dynamic_cast<Operator *>(tokens[i].get());
+		if (op != nullptr && op->type == Operator::Type::Scope) {
+			op = dynamic_cast<Operator *>(tokens[i++].release());
+			std::unique_ptr<Expression> expr2 = parsePrimaryExpression();
+			if (expr2 == nullptr) {
+				return nullptr;
+			}
+			if (!dynamic_cast<SymbolExpression *>(expr2.get())) {
+				errorHandler->error(*tokens[i], "Expected symbol");
+				return nullptr;
+			}
+			symExpr = std::unique_ptr<SymbolExpression>(
+			      dynamic_cast<SymbolExpression *>(expr2.release()));
+			symbols.push_back(std::move(symExpr));
+		} else {
+			if (symbols.size() == 1) {
+				return std::move(symbols[0]);
+			} else {
+				return std::make_unique<PathExpression>(std::move(symbols));
+			}
+		}
+	}
 }
 
 std::unique_ptr<Expression> Parser::parsePrimaryExpression() {

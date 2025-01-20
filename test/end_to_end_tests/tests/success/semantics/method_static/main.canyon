@@ -1,11 +1,11 @@
 fun main() {
-    let result = Foo::bar(1);
+    let result: i32 = Foo::bar(1);
 }
 
-struct Foo {}
+class Foo {}
 
 impl Foo {
     fun bar(x: i32): i32 {
-        x + 1
+        x
     }
 }

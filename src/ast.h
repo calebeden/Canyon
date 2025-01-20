@@ -179,6 +179,16 @@ public:
 	virtual ~ParenthesizedExpression() = default;
 };
 
+class PathExpression : public Expression {
+private:
+	std::vector<std::unique_ptr<SymbolExpression>> path;
+public:
+	PathExpression(std::vector<std::unique_ptr<SymbolExpression>> path);
+	void forEachSymbol(const std::function<void(SymbolExpression &)> &symbolHandler);
+	void accept(ASTVisitor &visitor) override;
+	virtual ~PathExpression() = default;
+};
+
 class IfElseExpression : public Expression {
 private:
 	std::unique_ptr<Expression> condition;
@@ -292,6 +302,7 @@ public:
 	Impl(std::unordered_map<std::string_view, std::unique_ptr<Function>> methods);
 	void forEachMethod(
 	      const std::function<void(std::string_view, Function &)> &methodHandler);
+	Function *getMethod(std::string_view name);
 	void accept(ASTVisitor &visitor);
 	~Impl() = default;
 };
@@ -343,6 +354,7 @@ public:
 	      int resultType);
 	int getBinaryOperator(Operator::Type op, int leftType, int rightType);
 	Function *getFunction(std::string_view name);
+	Impl *getImpl(std::string_view name);
 	std::filesystem::path getSource();
 	void accept(ASTVisitor &visitor);
 	~Module() = default;
@@ -360,6 +372,7 @@ public:
 	virtual void visit(BlockExpression &node) = 0;
 	virtual void visit(ReturnExpression &node) = 0;
 	virtual void visit(ParenthesizedExpression &node) = 0;
+	virtual void visit(PathExpression &node) = 0;
 	virtual void visit(IfElseExpression &node) = 0;
 	virtual void visit(WhileExpression &node) = 0;
 	virtual void visit(ExpressionStatement &node) = 0;
@@ -384,6 +397,7 @@ public:
 	void visit(BlockExpression &node) override;
 	void visit(ReturnExpression &node) override;
 	void visit(ParenthesizedExpression &node) override;
+	void visit(PathExpression &node) override;
 	void visit(IfElseExpression &node) override;
 	void visit(WhileExpression &node) override;
 	void visit(ExpressionStatement &node) override;
