@@ -110,16 +110,28 @@ std::unique_ptr<Module> Parser::parse() {
 	return mod;
 }
 
-std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> Parser::parseFunction() {
+std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> Parser::parseFunction(
+      bool isConstructor) {
 	auto *keyword = dynamic_cast<Keyword *>(tokens[i].get());
-	if (keyword == nullptr || keyword->type != Keyword::Type::FUN) {
-		errorHandler->error(*tokens[i], "Expected keyword `fun`");
-		return {nullptr, nullptr};
+	if (!isConstructor) {
+		if (keyword == nullptr || keyword->type != Keyword::Type::FUN) {
+			errorHandler->error(*tokens[i], "Expected keyword `fun`");
+			return {nullptr, nullptr};
+		}
+	} else {
+		if (keyword == nullptr || keyword->type != Keyword::Type::CONSTRUCTOR) {
+			errorHandler->error(*tokens[i], "Expected keyword `constructor`");
+			return {nullptr, nullptr};
+		}
 	}
 	i++;
 	auto *symbol = dynamic_cast<Symbol *>(tokens[i].get());
 	if (symbol == nullptr) {
-		errorHandler->error(*tokens[i], "Expected symbol following `fun`");
+		if (!isConstructor) {
+			errorHandler->error(*tokens[i], "Expected symbol following `fun`");
+		} else {
+			errorHandler->error(*tokens[i], "Expected symbol following `constructor`");
+		}
 		return {nullptr, nullptr};
 	}
 	symbol = dynamic_cast<Symbol *>(tokens[i++].release());
@@ -195,7 +207,7 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> Parser::parseFunct
 
 	return {std::unique_ptr<Symbol>(symbol),
 	      std::make_unique<Function>(std::move(parameters), std::unique_ptr<Symbol>(type),
-	            std::move(block))};
+	            std::move(block), isConstructor)};
 }
 
 std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Class>> Parser::parseClass() {
@@ -275,6 +287,13 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Impl>> Parser::parseImpl() {
 		if (keyword2 != nullptr && keyword2->type == Keyword::Type::FUN) {
 			std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> method
 			      = parseFunction();
+			if (method.second == nullptr) {
+				return {nullptr, nullptr};
+			}
+			methods.emplace(method.first->s.contents, std::move(method.second));
+		} else if (keyword2 != nullptr && keyword2->type == Keyword::Type::CONSTRUCTOR) {
+			std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> method
+			      = parseFunction(true);
 			if (method.second == nullptr) {
 				return {nullptr, nullptr};
 			}

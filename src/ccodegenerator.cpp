@@ -23,6 +23,14 @@ CCodeGenerator::CCodeGenerator(Module *module, std::ostream *os)
 	cTypes[this->module->getType("u64").id] = "uint64_t";
 	cTypes[this->module->getType("bool").id] = "bool";
 	cTypes[this->module->getType("char").id] = "char";
+
+	module->forEachClass(
+	      [this, &module](std::string_view name, Class & /*unused*/, bool isBuiltin) {
+		      if (!isBuiltin) {
+			      int typeID = module->getType(std::string(name)).id;
+			      cTypes[typeID] = "struct CANYON_CLASS_" + std::string(name) + " *";
+		      }
+	      });
 }
 
 void CCodeGenerator::generate() {
@@ -37,6 +45,7 @@ void CCodeGenerator::generateIncludes() {
 	       "#include <stdbool.h>\n"
 	       "#include <stdio.h>\n"
 	       "#include <inttypes.h>\n"
+	       "#include <stdlib.h>\n"
 	       "\n";
 }
 
@@ -44,7 +53,14 @@ void CCodeGenerator::visit(FunctionCallExpression &node) {
 	node.getFunction().accept(*this);
 	*os << '(';
 	bool first = true;
-	node.forEachArgument([this, &first](Expression &argument) {
+	if (node.getIsConstructor()) {
+		std::string_view type = cTypes[node.getTypeID()];
+		// need to convert the pointer type in the map to the struct itself
+		type = type.substr(0, type.size() - 2);
+		*os << "malloc(sizeof(" << type << "))";
+		first = false;
+	}
+	node.forEachArgument([this, &first, &node](Expression &argument) {
 		if (!first) {
 			*os << ", ";
 		}
@@ -153,9 +169,9 @@ void CCodeGenerator::visit(BlockExpression &node) {
 }
 
 void CCodeGenerator::visit(ReturnExpression &node) {
-	// Invariant: the return expression will only ever be in an ExpressionStatement (not
-	// nested inside another expression) Otherwise it would trigger unreachable code error
-	// before reaching the codegen phase
+	// Invariant: the return expression will only ever be in an ExpressionStatement
+	// (not nested inside another expression) Otherwise it would trigger unreachable
+	// code error before reaching the codegen phase
 	*os << "return";
 	Expression *expression = node.getExpression();
 	if (expression != nullptr) {
@@ -298,7 +314,7 @@ void CCodeGenerator::visit(Module &node) {
 
 	// Class structs
 	node.forEachClass([this](std::string_view name, Class &cls, bool /*unused*/) {
-		*os << "typedef struct {\n";
+		*os << "struct " << name << " {\n";
 		tabLevel++;
 		cls.forEachFieldDeclaration([this](LetStatement &declaration) {
 			*os << std::string(tabLevel, '\t');
@@ -306,7 +322,7 @@ void CCodeGenerator::visit(Module &node) {
 			*os << cType << ' ' << declaration.getSymbol().s << ";\n";
 		});
 		tabLevel--;
-		*os << "} *" << name << ";\n";
+		*os << "};\n";
 	});
 	*os << '\n';
 

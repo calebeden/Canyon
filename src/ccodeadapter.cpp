@@ -72,7 +72,8 @@ void CCodeAdapter::visit(FunctionCallExpression &node) {
 	std::unique_ptr<FunctionCallExpression> newFunctionCall
 	      = std::make_unique<FunctionCallExpression>(std::move(newSymbolExpression),
 	            std::move(newArguments));
-	newFunctionCall->setTypeID(oldFunction.getTypeID());
+	newFunctionCall->setTypeID(node.getTypeID());
+	newFunctionCall->setIsConstructor(node.getIsConstructor());
 	returnValue = std::move(newFunctionCall);
 }
 
@@ -442,15 +443,22 @@ void CCodeAdapter::visit(LetStatement &node) {
 void CCodeAdapter::visit(Function &node) {
 	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
 	      newParameters;
-	node.forEachParameter([this, &newParameters](Symbol &parameter, Symbol &type) {
-		generatedStrings->push_back(
-		      "CANYON_PARAMETER_" + std::string(parameter.s.contents));
-		std::string_view newParameterName = generatedStrings->back();
-		std::unique_ptr<Symbol> newParameter = std::make_unique<Symbol>(
-		      Slice(newParameterName, inputModule->getSource(), 0, 0));
-		std::unique_ptr<Symbol> newType = std::make_unique<Symbol>(type);
-		newParameters.emplace_back(std::move(newParameter), std::move(newType));
-	});
+	size_t i = 0;
+	int typeId = -1;
+	node.forEachParameter(
+	      [this, &newParameters, &i, &node, &typeId](Symbol &parameter, Symbol &type) {
+		      generatedStrings->push_back(
+		            "CANYON_PARAMETER_" + std::string(parameter.s.contents));
+		      std::string_view newParameterName = generatedStrings->back();
+		      std::unique_ptr<Symbol> newParameter = std::make_unique<Symbol>(
+		            Slice(newParameterName, inputModule->getSource(), 0, 0));
+		      std::unique_ptr<Symbol> newType = std::make_unique<Symbol>(type);
+		      newParameters.emplace_back(std::move(newParameter), std::move(newType));
+		      if (node.getIsConstructor() && i == 0) {
+			      typeId = node.getBody().getSymbolType(parameter.s.contents);
+		      }
+		      i++;
+	      });
 
 	Expression &oldBody = node.getBody();
 	std::unique_ptr<BlockExpression> enclosingScope = std::make_unique<BlockExpression>();
@@ -462,8 +470,25 @@ void CCodeAdapter::visit(Function &node) {
 	std::unique_ptr<ExpressionStatement> bodyStatement
 	      = std::make_unique<ExpressionStatement>(std::move(newBody));
 	enclosingScope->pushStatement(std::move(bodyStatement));
-	returnValue = std::make_unique<Function>(std::move(newParameters),
-	      std::move(enclosingScope));
+
+	if (node.getIsConstructor()) {
+		std::unique_ptr<Symbol> selfParameter = std::make_unique<Symbol>(
+		      Slice("CANYON_PARAMETER_self", inputModule->getSource(), 0, 0));
+		std::unique_ptr<SymbolExpression> selfSymbolExpression
+		      = std::make_unique<SymbolExpression>(std::move(selfParameter));
+		std::unique_ptr<ReturnExpression> returnExpression
+		      = std::make_unique<ReturnExpression>(std::move(selfSymbolExpression));
+		std::unique_ptr<ExpressionStatement> returnStatement
+		      = std::make_unique<ExpressionStatement>(std::move(returnExpression));
+		enclosingScope->pushStatement(std::move(returnStatement));
+	}
+
+	std::unique_ptr<Function> newFunction = std::make_unique<Function>(
+	      std::move(newParameters), std::move(enclosingScope), node.getIsConstructor());
+	if (node.getIsConstructor()) {
+		newFunction->setTypeID(typeId);
+	}
+	returnValue = std::move(newFunction);
 }
 
 void CCodeAdapter::visit(Class &node) {
@@ -489,7 +514,9 @@ void CCodeAdapter::visit(Impl &node) {
 		method.accept(*this);
 		std::unique_ptr<Function> newMethod = std::unique_ptr<Function>(
 		      dynamic_cast<Function *>(returnValue.release()));
-		newMethod->setTypeID(method.getTypeID());
+		if (!method.getIsConstructor()) {
+			newMethod->setTypeID(method.getTypeID());
+		}
 		newMethods.emplace(newName, std::move(newMethod));
 	});
 	returnValue = std::make_unique<Impl>(std::move(newMethods));
@@ -503,7 +530,9 @@ void CCodeAdapter::visit(Module &node) {
 		oldFunction.accept(*this);
 		std::unique_ptr<Function> newFunction = std::unique_ptr<Function>(
 		      dynamic_cast<Function *>(returnValue.release()));
-		newFunction->setTypeID(oldFunction.getTypeID());
+		if (!oldFunction.getIsConstructor()) {
+			newFunction->setTypeID(oldFunction.getTypeID());
+		}
 		outputModule->addFunction(
 		      std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0)),
 		      std::move(newFunction), isBuiltin);

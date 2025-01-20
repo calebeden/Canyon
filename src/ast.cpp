@@ -45,11 +45,23 @@ Expression &FunctionCallExpression::getFunction() {
 	return *function;
 }
 
+void FunctionCallExpression::addFirstArgument(std::unique_ptr<Expression> argument) {
+	arguments.insert(arguments.begin(), std::move(argument));
+}
+
 void FunctionCallExpression::forEachArgument(
       const std::function<void(Expression &)> &argumentHandler) {
 	for (auto &argument : arguments) {
 		argumentHandler(*argument);
 	}
+}
+
+void FunctionCallExpression::setIsConstructor(bool isConstructor) {
+	this->isConstructor = isConstructor;
+}
+
+bool FunctionCallExpression::getIsConstructor() const {
+	return isConstructor;
 }
 
 void FunctionCallExpression::accept(ASTVisitor &visitor) {
@@ -385,16 +397,18 @@ void LetStatement::accept(ASTVisitor &visitor) {
 
 Function::Function(
       std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters,
-      std::unique_ptr<Symbol> returnTypeAnnotation, std::unique_ptr<BlockExpression> body)
+      std::unique_ptr<Symbol> returnTypeAnnotation, std::unique_ptr<BlockExpression> body,
+      bool isConstructor)
     : parameters(std::move(parameters)),
-      returnTypeAnnotation(std::move(returnTypeAnnotation)), body(std::move(body)) {
+      returnTypeAnnotation(std::move(returnTypeAnnotation)), body(std::move(body)),
+      isConstructor(isConstructor) {
 }
 
 Function::Function(
       std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters,
-      std::unique_ptr<BlockExpression> body)
+      std::unique_ptr<BlockExpression> body, bool isConstructor)
     : parameters(std::move(parameters)), returnTypeAnnotation(nullptr),
-      body(std::move(body)) {
+      body(std::move(body)), isConstructor(isConstructor) {
 }
 
 void Function::forEachParameter(
@@ -418,6 +432,10 @@ int Function::getTypeID() const {
 
 void Function::setTypeID(int typeID) {
 	this->typeID = typeID;
+}
+
+bool Function::getIsConstructor() const {
+	return isConstructor;
 }
 
 void Function::accept(ASTVisitor &visitor) {

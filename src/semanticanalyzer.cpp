@@ -56,30 +56,33 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 		Impl *impl = nullptr;
 		bool pathLookupGood = true;
 		size_t i = 0;
-		path->forEachSymbol([this, &impl, &function, &pathLookupGood, &i](SymbolExpression &symbol) {
-			if (impl == nullptr && pathLookupGood) {
-				impl = module->getImpl(symbol.getSymbol().s.contents);
-				if (impl == nullptr) {
-					errorHandler->error(symbol.getSymbol().s,
-					      "Impl " + std::string(symbol.getSymbol().s.contents) + " not found");
-					pathLookupGood = false;
-					return;
-				}
-				i++;
-			} else if (pathLookupGood) {
-				function = impl->getMethod(symbol.getSymbol().s.contents);
-				if (function == nullptr) {
-					errorHandler->error(symbol.getSymbol().s,
-					      "Method " + std::string(symbol.getSymbol().s.contents) + " not found");
-					pathLookupGood = false;
-					return;
-				}
-				i++;
-			} else if (i >= 2) {
-				errorHandler->error(symbol.getSymbol().s, "Path too long");
-				pathLookupGood = false;
-			}
-		});
+		path->forEachSymbol(
+		      [this, &impl, &function, &pathLookupGood, &i](SymbolExpression &symbol) {
+			      if (impl == nullptr && pathLookupGood) {
+				      impl = module->getImpl(symbol.getSymbol().s.contents);
+				      if (impl == nullptr) {
+					      errorHandler->error(symbol.getSymbol().s,
+					            "Impl " + std::string(symbol.getSymbol().s.contents)
+					                  + " not found");
+					      pathLookupGood = false;
+					      return;
+				      }
+				      i++;
+			      } else if (pathLookupGood) {
+				      function = impl->getMethod(symbol.getSymbol().s.contents);
+				      if (function == nullptr) {
+					      errorHandler->error(symbol.getSymbol().s,
+					            "Method " + std::string(symbol.getSymbol().s.contents)
+					                  + " not found");
+					      pathLookupGood = false;
+					      return;
+				      }
+				      i++;
+			      } else if (i >= 2) {
+				      errorHandler->error(symbol.getSymbol().s, "Path too long");
+				      pathLookupGood = false;
+			      }
+		      });
 		if (!pathLookupGood) {
 			return;
 		}
@@ -95,6 +98,10 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 	size_t i = 0;
 	bool unreachableArgument = false;
 	bool unreachableHandled = false;
+	if (function->getIsConstructor()) {
+		// Implicit self argument
+		i++;
+	}
 	node.forEachArgument([this, &parameters, &i, &unreachableArgument,
 	                           &unreachableHandled](Expression &argument) {
 		if (i == parameters.size()) {
@@ -136,7 +143,12 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 		return;
 	}
 
-	node.setTypeID(function->getTypeID());
+	node.setIsConstructor(function->getIsConstructor());
+	if (function->getIsConstructor()) {
+		node.setTypeID(parameters[0].second);
+	} else {
+		node.setTypeID(function->getTypeID());
+	}
 }
 
 void SemanticAnalyzer::visit(BinaryExpression &node) {
@@ -400,7 +412,7 @@ void SemanticAnalyzer::visit(Class &node) {
 	});
 }
 
-void SemanticAnalyzer::visit([[maybe_unused]] Impl &node) {
+void SemanticAnalyzer::visit(Impl &node) {
 	node.forEachMethod([this](std::string_view /*unused*/, Function &method) {
 		method.accept(*this);
 	});
@@ -409,6 +421,9 @@ void SemanticAnalyzer::visit([[maybe_unused]] Impl &node) {
 void SemanticAnalyzer::visit(Module &node) {
 	addDefaultOperators(&node);
 	addRuntimeFunctions(&node, builtinApiJsonFile);
+	node.forEachClass([this](std::string_view name, Class & /*unused*/, bool /*unused*/) {
+		module->insertType(name);
+	});
 	node.forEachFunction([this]([[maybe_unused]]
 	                            std::string_view name,
 	                           Function &function, bool /*unused*/) {
@@ -429,14 +444,22 @@ void SemanticAnalyzer::visit(Module &node) {
 			function.setTypeID(module->getType(type->s.contents).id);
 		}
 	});
-	node.forEachImpl([this](std::string_view /*unused*/, Impl &impl, bool /*unused*/) {
-		impl.forEachMethod([this](std::string_view /*unused*/, Function &method) {
-			method.forEachParameter([this, &method](Symbol &parameter, Symbol &type) {
+	node.forEachImpl([this](std::string_view implName, Impl &impl, bool /*unused*/) {
+		impl.forEachMethod([this, &implName](std::string_view /*unused*/, Function &method) {
+			bool first = true;
+			method.forEachParameter([this, &method, &first, &implName](Symbol &parameter, Symbol &type) {
 				int typeID = module->getType(type.s.contents).id;
 				if (typeID == -1) {
 					errorHandler->error(type.s, "Unknown type");
 					return;
 				}
+				if (first && method.getIsConstructor() && parameter.s.contents != "self") {
+					errorHandler->error(parameter.s, "First parameter of constructor must be self");
+				}
+				if (first && method.getIsConstructor() && type.s.contents != implName) {
+					errorHandler->error(type.s, "Constructor self parameter type must be the same as impl name");
+				}
+				first = false;
 				method.getBody().pushSymbol(parameter.s.contents, typeID,
 				      SymbolSource::FunctionParameter);
 			});
@@ -601,9 +624,9 @@ static void addRuntimeFunctions(Module *module, std::istream &builtinApiJsonFile
 		std::string_view returnType = module->ownedStrings.back();
 		std::unique_ptr<Symbol> returnTypeAnnotation
 		      = std::make_unique<Symbol>(Slice(returnType, "", 0, 0));
-		std::unique_ptr<Function> builtin
-		      = std::make_unique<Function>(std::move(parameters),
-		            std::move(returnTypeAnnotation), std::make_unique<BlockExpression>());
+		std::unique_ptr<Function> builtin = std::make_unique<Function>(
+		      std::move(parameters), std::move(returnTypeAnnotation),
+		      std::make_unique<BlockExpression>(), false);
 		module->addFunction(std::make_unique<Symbol>(Slice(functionName, "", 0, 0)),
 		      std::move(builtin), true);
 	}

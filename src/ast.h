@@ -46,13 +46,17 @@ public:
 class FunctionCallExpression : public Expression {
 	std::unique_ptr<Expression> function;
 	std::vector<std::unique_ptr<Expression>> arguments;
+	bool isConstructor = false;
 public:
 	FunctionCallExpression(std::unique_ptr<Expression> function, const Punctuation &open,
 	      std::vector<std::unique_ptr<Expression>> arguments, const Punctuation &close);
 	FunctionCallExpression(std::unique_ptr<Expression> function,
 	      std::vector<std::unique_ptr<Expression>> arguments);
 	Expression &getFunction();
+	void addFirstArgument(std::unique_ptr<Expression> argument);
 	void forEachArgument(const std::function<void(Expression &)> &argumentHandler);
+	void setIsConstructor(bool isConstructor);
+	bool getIsConstructor() const;
 	void accept(ASTVisitor &visitor) override;
 	virtual ~FunctionCallExpression() = default;
 };
@@ -264,21 +268,23 @@ private:
 	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters;
 	std::unique_ptr<Symbol> returnTypeAnnotation;
 	std::unique_ptr<BlockExpression> body;
+	bool isConstructor;
 	int typeID = -1;
 public:
 	Function(std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
 	               parameters,
 	      std::unique_ptr<Symbol> returnTypeAnnotation,
-	      std::unique_ptr<BlockExpression> body);
+	      std::unique_ptr<BlockExpression> body, bool isConstructor);
 	Function(std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
 	               parameters,
-	      std::unique_ptr<BlockExpression> body);
+	      std::unique_ptr<BlockExpression> body, bool isConstructor);
 	void forEachParameter(
 	      const std::function<void(Symbol &, Symbol &)> &parameterHandler);
 	Symbol *getReturnTypeAnnotation();
 	BlockExpression &getBody();
 	int getTypeID() const;
 	void setTypeID(int typeID);
+	bool getIsConstructor() const;
 	void accept(ASTVisitor &visitor);
 	~Function() = default;
 };
@@ -342,7 +348,8 @@ public:
 	      bool isBuiltin = false);
 	void forEachClass(
 	      const std::function<void(std::string_view, Class &, bool)> &classHandler);
-	void forEachImpl(const std::function<void(std::string_view, Impl &, bool)> &implHandler);
+	void forEachImpl(
+	      const std::function<void(std::string_view, Impl &, bool)> &implHandler);
 	Type getType(std::string_view typeName);
 	Type getType(int id);
 	void insertType(std::string_view typeName);
