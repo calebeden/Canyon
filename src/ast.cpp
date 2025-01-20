@@ -186,6 +186,14 @@ int BlockExpression::getSymbolType(std::string_view symbol) {
 	return std::get<0>(symbols[symbol]);
 }
 
+void BlockExpression::setSymbolType(std::string_view symbol, int typeID) {
+	if (symbols.find(symbol) == symbols.end()) {
+		std::cerr << "Symbol not found";
+		exit(EXIT_FAILURE);
+	}
+	std::get<0>(symbols[symbol]) = typeID;
+}
+
 SymbolSource BlockExpression::getSymbolSource(std::string_view symbol) {
 	if (symbols.find(symbol) == symbols.end()) {
 		return SymbolSource::Unknown;
@@ -380,6 +388,12 @@ LetStatement::LetStatement(const Keyword &let, std::unique_ptr<Symbol> symbol,
 }
 
 LetStatement::LetStatement(std::unique_ptr<Symbol> symbol,
+      std::unique_ptr<Symbol> typeAnnotation, Punctuation *semicolon)
+    : Statement(Slice::merge(symbol->s, semicolon->s)), symbol(std::move(symbol)),
+      typeAnnotation(std::move(typeAnnotation)), isFieldDeclaration(true) {
+}
+
+LetStatement::LetStatement(std::unique_ptr<Symbol> symbol,
       std::unique_ptr<Expression> expression)
     : Statement(Slice("", "", 0, 0)), symbol(std::move(symbol)), typeAnnotation(nullptr),
       equalSign(nullptr), expression(std::move(expression)) {
@@ -407,6 +421,10 @@ void LetStatement::setSymbolTypeID(int typeID) {
 
 int LetStatement::getSymbolTypeID() const {
 	return symbolTypeID;
+}
+
+bool LetStatement::getIsFieldDeclaration() const {
+	return isFieldDeclaration;
 }
 
 void LetStatement::accept(ASTVisitor &visitor) {
@@ -468,11 +486,22 @@ Class::Class(std::vector<std::unique_ptr<LetStatement>> fieldDeclarations)
     : fieldDeclarations(std::move(fieldDeclarations)) {
 }
 
+Class::Class(std::unique_ptr<BlockExpression> scope) : scope(std::move(scope)) {
+}
+
 void Class::forEachFieldDeclaration(
       const std::function<void(LetStatement &)> &fieldHandler) {
 	for (auto &field : fieldDeclarations) {
 		fieldHandler(*field);
 	}
+}
+
+BlockExpression &Class::getScope() {
+	return *scope;
+}
+
+void Class::accept(ASTVisitor &visitor) {
+	visitor.visit(*this);
 }
 
 Impl::Impl(std::unordered_map<std::string_view, std::unique_ptr<Function>> methods)
@@ -494,14 +523,6 @@ Function *Impl::getMethod(std::string_view name) {
 }
 
 void Impl::accept(ASTVisitor &visitor) {
-	visitor.visit(*this);
-}
-
-BlockExpression &Class::getScope() {
-	return *scope;
-}
-
-void Class::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 

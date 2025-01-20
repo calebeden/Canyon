@@ -514,18 +514,16 @@ void CCodeAdapter::visit(Function &node) {
 }
 
 void CCodeAdapter::visit(Class &node) {
-	std::vector<std::unique_ptr<LetStatement>> newFieldDeclarations;
-	node.forEachFieldDeclaration([this, &newFieldDeclarations](
-	                                   LetStatement &declaration) {
-		declaration.accept(*this);
-		std::unique_ptr<LetStatement> newDeclaration = std::unique_ptr<LetStatement>(
-		      dynamic_cast<LetStatement *>(returnValue.release()));
-		generatedStrings->push_back(std::string(declaration.getSymbol().s.contents));
-		std::string_view newName = generatedStrings->back();
-		newDeclaration->getSymbol().s.contents = newName;
-		newFieldDeclarations.push_back(std::move(newDeclaration));
-	});
-	returnValue = std::make_unique<Class>(std::move(newFieldDeclarations));
+	std::unique_ptr<BlockExpression> newScope = std::make_unique<BlockExpression>();
+	node.getScope().forEachSymbol(
+	      [this, &newScope](std::string_view name, int typeID, SymbolSource source) {
+		      generatedStrings->push_back(std::string(name));
+		      std::string_view newName = generatedStrings->back();
+		      std::unique_ptr<Symbol> newSymbol = std::make_unique<Symbol>(
+		            Slice(newName, inputModule->getSource(), 0, 0));
+		      newScope->pushSymbol(newName, typeID, source);
+	      });
+	returnValue = std::make_unique<Class>(std::move(newScope));
 }
 
 void CCodeAdapter::visit(Impl &node) {

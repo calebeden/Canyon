@@ -321,13 +321,12 @@ void SemanticAnalyzer::visit(FieldAccessExpression &node) {
 		errorHandler->error(node.getSlice(), "Field access on non-class type");
 		return;
 	}
-	cls.second->forEachFieldDeclaration(
-	      [this, &node, &cls](LetStatement &fieldDeclaration) {
-		      if (fieldDeclaration.getSymbol().s.contents
-		            == node.getField().getSymbol().s.contents) {
-			      node.setTypeID(fieldDeclaration.getSymbolTypeID());
-		      }
-	      });
+	cls.second->getScope().forEachSymbol([this, &node, &cls](std::string_view fieldName,
+	                                           int /*unused*/, SymbolSource /*unused*/) {
+		if (fieldName == node.getField().getSymbol().s.contents) {
+			node.setTypeID(cls.second->getScope().getSymbolType(fieldName));
+		}
+	});
 }
 
 void SemanticAnalyzer::visit(IfElseExpression &node) {
@@ -406,21 +405,26 @@ void SemanticAnalyzer::visit(LetStatement &node) {
 		return;
 	}
 	int typeID = module->getType(typeAnnotation->s.contents).id;
-	Expression *value = node.getExpression();
-	if (!value) {
-		errorHandler->error(node.getSlice(), "Expression required for let statement");
-		return;
-	}
-	value->accept(*this);
-	if (inUnreachableCode) {
-		errorHandler->error(node.getEqualSign().s, "Unreachable code");
-		return;
-	}
-	scopeStack.back()->pushSymbol(node.getSymbol().s.contents, typeID,
-	      SymbolSource::LetStatement);
-	if (typeID != value->getTypeID() && value->getTypeID() != -1) {
-		errorHandler->error(node.getExpression()->getSlice(),
-		      "Type mismatch in let statement");
+	if (!node.getIsFieldDeclaration()) {
+		Expression *value = node.getExpression();
+		if (!value) {
+			errorHandler->error(node.getSlice(), "Expression required for let statement");
+			return;
+		}
+		value->accept(*this);
+		if (inUnreachableCode) {
+			errorHandler->error(node.getEqualSign().s, "Unreachable code");
+			return;
+		}
+		scopeStack.back()->pushSymbol(node.getSymbol().s.contents, typeID,
+		      SymbolSource::LetStatement);
+		if (typeID != value->getTypeID() && value->getTypeID() != -1) {
+			errorHandler->error(node.getExpression()->getSlice(),
+			      "Type mismatch in let statement");
+		}
+	} else {
+		scopeStack.back()->pushSymbol(node.getSymbol().s.contents, typeID,
+		      SymbolSource::FieldDeclaration);
 	}
 	node.setSymbolTypeID(typeID);
 }

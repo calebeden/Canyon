@@ -207,8 +207,9 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> Parser::parseFunct
 
 	return {std::unique_ptr<Symbol>(symbol),
 	      std::make_unique<Function>(std::move(parameters), std::unique_ptr<Symbol>(type),
-	            std::move(block), isConstructor ? FunctionVariant::CONSTRUCTOR
-	                                            : FunctionVariant::FUNCTION)};
+	            std::move(block),
+	            isConstructor ? FunctionVariant::CONSTRUCTOR
+	                          : FunctionVariant::FUNCTION)};
 }
 
 std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Class>> Parser::parseClass() {
@@ -235,20 +236,44 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Class>> Parser::parseClass() 
 
 	std::vector<std::unique_ptr<LetStatement>> fields;
 	while (true) {
-		auto *keyword2 = dynamic_cast<Keyword *>(tokens[i].get());
-		if (keyword2 != nullptr && keyword2->type == Keyword::Type::LET) {
-			std::unique_ptr<LetStatement> let = parseLet();
-			if (let == nullptr) {
-				return {nullptr, nullptr};
-			}
-			fields.push_back(std::move(let));
-		} else if (keyword2 != nullptr) {
-			errorHandler->error(*tokens[i], "Unexpected keyword in class definition");
-			mustSynchronize = true;
-			return {nullptr, nullptr};
-		} else {
+		auto *p1 = dynamic_cast<Punctuation *>(tokens[i].get());
+		if (p1 != nullptr && p1->type == Punctuation::Type::CloseBrace) {
 			break;
 		}
+		auto *field = dynamic_cast<Symbol *>(tokens[i].get());
+		if (field == nullptr) {
+			errorHandler->error(*tokens[i], "Expected symbol for class field declaration");
+			mustSynchronize = true;
+			return {nullptr, nullptr};
+		}
+		field = dynamic_cast<Symbol *>(tokens[i++].release());
+		auto *p2 = dynamic_cast<Punctuation *>(tokens[i].get());
+		if (p2 == nullptr || p2->type != Punctuation::Type::Colon) {
+			errorHandler->error(*tokens[i],
+			      "Expected ':' following symbol in class field declaration");
+			mustSynchronize = true;
+			return {nullptr, nullptr};
+		}
+		i++;
+		Symbol *type = dynamic_cast<Symbol *>(tokens[i].get());
+		if (type == nullptr) {
+			errorHandler->error(*tokens[i],
+			      "Expected type following ':' in `let` statement");
+			mustSynchronize = true;
+			return {nullptr, nullptr};
+		}
+		type = dynamic_cast<Symbol *>(tokens[i++].release());
+		auto *p3 = dynamic_cast<Punctuation *>(tokens[i].get());
+		if (p3 == nullptr || p3->type != Punctuation::Type::Semicolon) {
+			errorHandler->error(*tokens[i],
+			      "Expected ';' following type in class field declaration");
+			mustSynchronize = true;
+			return {nullptr, nullptr};
+		}
+		i++;
+
+		fields.emplace_back(std::make_unique<LetStatement>(std::unique_ptr<Symbol>(field),
+		      std::unique_ptr<Symbol>(type), punc));
 	}
 
 	auto *p2 = dynamic_cast<Punctuation *>(tokens[i].get());

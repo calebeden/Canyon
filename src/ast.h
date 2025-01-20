@@ -44,10 +44,10 @@ public:
 };
 
 enum class FunctionVariant {
-		FUNCTION,
-		METHOD,
-		CONSTRUCTOR,
-	};
+	FUNCTION,
+	METHOD,
+	CONSTRUCTOR,
+};
 
 class FunctionCallExpression : public Expression {
 	std::unique_ptr<Expression> function;
@@ -138,6 +138,7 @@ enum class SymbolSource {
 	Unknown,
 	LetStatement,
 	FunctionParameter,
+	FieldDeclaration,
 	GENERATED_Block,
 	GENERATED_IfElse,
 	GENERATED_While,
@@ -157,6 +158,7 @@ public:
 	void forEachStatement(const std::function<void(Statement &)> &statementHandler);
 	Expression *getFinalExpression();
 	int getSymbolType(std::string_view symbol);
+	void setSymbolType(std::string_view symbol, int typeID);
 	SymbolSource getSymbolSource(std::string_view symbol);
 	void pushSymbol(std::string_view symbol, int typeID, SymbolSource source);
 	void forEachSymbol(
@@ -266,11 +268,13 @@ private:
 	std::unique_ptr<Symbol> typeAnnotation;
 	std::unique_ptr<Operator> equalSign;
 	std::unique_ptr<Expression> expression;
+	bool isFieldDeclaration = false;
 	int symbolTypeID = -1;
 public:
 	LetStatement(const Keyword &let, std::unique_ptr<Symbol> symbol,
 	      std::unique_ptr<Symbol> typeAnnotation, std::unique_ptr<Operator> equalSign,
 	      std::unique_ptr<Expression> expression, Punctuation *semicolon);
+	LetStatement(std::unique_ptr<Symbol> symbol, std::unique_ptr<Symbol> typeAnnotation, Punctuation *semicolon);
 	LetStatement(std::unique_ptr<Symbol> symbol, std::unique_ptr<Expression> expression);
 	Symbol &getSymbol();
 	Expression *getExpression();
@@ -278,6 +282,7 @@ public:
 	Operator &getEqualSign();
 	void setSymbolTypeID(int typeID);
 	int getSymbolTypeID() const;
+	bool getIsFieldDeclaration() const;
 	void accept(ASTVisitor &visitor) override;
 	virtual ~LetStatement() = default;
 };
@@ -315,6 +320,7 @@ private:
 	std::unique_ptr<BlockExpression> scope = std::make_unique<BlockExpression>();
 public:
 	Class(std::vector<std::unique_ptr<LetStatement>> fieldDeclarations);
+	Class(std::unique_ptr<BlockExpression> scope);
 	void forEachFieldDeclaration(const std::function<void(LetStatement &)> &fieldHandler);
 	BlockExpression &getScope();
 	void accept(ASTVisitor &visitor);

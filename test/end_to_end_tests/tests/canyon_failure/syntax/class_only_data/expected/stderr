@@ -1,2 +1,2 @@
-Error at {main}:11:5: Unexpected keyword in class definition
+Error at {main}:11:5: Expected symbol for class field declaration
 Error at {main}:12:1: Expected keyword `fun` or `class`

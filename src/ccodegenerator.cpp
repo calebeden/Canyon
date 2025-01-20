@@ -391,11 +391,12 @@ void CCodeGenerator::visit(Module &node) {
 	node.forEachClass([this](std::string_view name, Class &cls, bool /*unused*/) {
 		*os << "struct CANYON_CLASS_" << name << " {\n";
 		tabLevel++;
-		cls.forEachFieldDeclaration([this](LetStatement &declaration) {
-			*os << std::string(tabLevel, '\t');
-			const std::string &cType = cTypes[declaration.getSymbolTypeID()];
-			*os << cType << ' ' << declaration.getSymbol().s << ";\n";
-		});
+		cls.getScope().forEachSymbol(
+		      [this](std::string_view fieldName, int typeId, SymbolSource /*unused*/) {
+			      *os << std::string(tabLevel, '\t');
+			      const std::string &cType = cTypes[typeId];
+			      *os << cType << ' ' << fieldName << ";\n";
+		      });
 		tabLevel--;
 		*os << "};\n";
 	});
