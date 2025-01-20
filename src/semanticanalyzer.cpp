@@ -361,7 +361,9 @@ void SemanticAnalyzer::visit(Class &node) {
 }
 
 void SemanticAnalyzer::visit([[maybe_unused]] Impl &node) {
-	// TODO
+	node.forEachMethod([this](std::string_view /*unused*/, Function &method) {
+		method.accept(*this);
+	});
 }
 
 void SemanticAnalyzer::visit(Module &node) {
@@ -387,6 +389,26 @@ void SemanticAnalyzer::visit(Module &node) {
 			function.setTypeID(module->getType(type->s.contents).id);
 		}
 	});
+	node.forEachImpl([this](std::string_view /*unused*/, Impl &impl, bool /*unused*/) {
+		impl.forEachMethod([this](std::string_view /*unused*/, Function &method) {
+			method.forEachParameter([this, &method](Symbol &parameter, Symbol &type) {
+				int typeID = module->getType(type.s.contents).id;
+				if (typeID == -1) {
+					errorHandler->error(type.s, "Unknown type");
+					return;
+				}
+				method.getBody().pushSymbol(parameter.s.contents, typeID,
+				      SymbolSource::FunctionParameter);
+			});
+
+			Symbol *type = method.getReturnTypeAnnotation();
+			if (type == nullptr) {
+				method.setTypeID(module->getType("()").id);
+			} else {
+				method.setTypeID(module->getType(type->s.contents).id);
+			}
+		});
+	});
 
 	bool hasMain = false;
 	node.forEachFunction(
@@ -404,6 +426,12 @@ void SemanticAnalyzer::visit(Module &node) {
 			      }
 		      }
 	      });
+	node.forEachImpl([this](std::string_view /*unused*/, Impl &impl, bool isBuiltin) {
+		if (isBuiltin) {
+			return;
+		}
+		impl.accept(*this);
+	});
 	node.forEachClass([this](std::string_view /*unused*/, Class &cls, bool isBuiltin) {
 		if (isBuiltin) {
 			return;
