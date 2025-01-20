@@ -43,10 +43,16 @@ public:
 	virtual ~Statement() = default;
 };
 
+enum class FunctionVariant {
+		FUNCTION,
+		METHOD,
+		CONSTRUCTOR,
+	};
+
 class FunctionCallExpression : public Expression {
 	std::unique_ptr<Expression> function;
 	std::vector<std::unique_ptr<Expression>> arguments;
-	bool isConstructor = false;
+	FunctionVariant variant;
 public:
 	FunctionCallExpression(std::unique_ptr<Expression> function, const Punctuation &open,
 	      std::vector<std::unique_ptr<Expression>> arguments, const Punctuation &close);
@@ -55,8 +61,8 @@ public:
 	Expression &getFunction();
 	void addFirstArgument(std::unique_ptr<Expression> argument);
 	void forEachArgument(const std::function<void(Expression &)> &argumentHandler);
-	void setIsConstructor(bool isConstructor);
-	bool getIsConstructor() const;
+	void setVariant(FunctionVariant variant);
+	FunctionVariant getVariant() const;
 	void accept(ASTVisitor &visitor) override;
 	virtual ~FunctionCallExpression() = default;
 };
@@ -281,23 +287,24 @@ private:
 	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters;
 	std::unique_ptr<Symbol> returnTypeAnnotation;
 	std::unique_ptr<BlockExpression> body;
-	bool isConstructor;
+	FunctionVariant variant;
 	int typeID = -1;
 public:
 	Function(std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
 	               parameters,
 	      std::unique_ptr<Symbol> returnTypeAnnotation,
-	      std::unique_ptr<BlockExpression> body, bool isConstructor);
+	      std::unique_ptr<BlockExpression> body, FunctionVariant variant);
 	Function(std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
 	               parameters,
-	      std::unique_ptr<BlockExpression> body, bool isConstructor);
+	      std::unique_ptr<BlockExpression> body, FunctionVariant variant);
 	void forEachParameter(
 	      const std::function<void(Symbol &, Symbol &)> &parameterHandler);
 	Symbol *getReturnTypeAnnotation();
 	BlockExpression &getBody();
 	int getTypeID() const;
 	void setTypeID(int typeID);
-	bool getIsConstructor() const;
+	void setVariant(FunctionVariant variant);
+	FunctionVariant getVariant() const;
 	void accept(ASTVisitor &visitor);
 	~Function() = default;
 };
@@ -329,8 +336,9 @@ public:
 struct Type {
 	int id;
 	int parentID;
+	bool isClass;
 	std::string_view name;
-	Type(int id, int parentID, std::string_view name);
+	Type(int id, int parentID, std::string_view name, bool isClass);
 	Type(const Type &) = default;
 };
 
@@ -365,7 +373,7 @@ public:
 	      const std::function<void(std::string_view, Impl &, bool)> &implHandler);
 	Type getType(std::string_view typeName);
 	Type getType(int id);
-	void insertType(std::string_view typeName);
+	void insertType(std::string_view typeName, bool isClass);
 	bool isTypeConvertible(int from, int to);
 	Type getCommonTypeAncestor(int type1, int type2);
 	void addUnaryOperator(Operator::Type op, int operandType, int resultType);
@@ -375,6 +383,8 @@ public:
 	int getBinaryOperator(Operator::Type op, int leftType, int rightType);
 	Function *getFunction(std::string_view name);
 	Impl *getImpl(std::string_view name);
+	std::pair<std::string_view, Impl *> getImpl(int typeID);
+	std::pair<std::string_view, Class *> getClass(int typeID);
 	std::filesystem::path getSource();
 	void accept(ASTVisitor &visitor);
 	~Module() = default;

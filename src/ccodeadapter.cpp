@@ -22,19 +22,20 @@ void CCodeAdapter::visit(FunctionCallExpression &node) {
 	Expression &oldFunction = node.getFunction();
 	auto *oldSymbol = dynamic_cast<SymbolExpression *>(&oldFunction);
 	auto *oldPath = dynamic_cast<PathExpression *>(&oldFunction);
-	if (oldSymbol == nullptr && oldPath == nullptr) {
-		std::cerr << "Function call target is not a symbol or path" << std::endl;
+	auto *oldFieldAccess = dynamic_cast<FieldAccessExpression *>(&oldFunction);
+	if (oldSymbol == nullptr && oldPath == nullptr && oldFieldAccess == nullptr) {
+		std::cerr << "Function call target is not a symbol, path, or method" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	std::unique_ptr<SymbolExpression> newSymbolExpression = nullptr;
+	std::unique_ptr<Expression> newWhichFunction = nullptr;
 	if (oldSymbol != nullptr) {
 		generatedStrings->push_back(
 		      "CANYON_FUNCTION_" + std::string(oldSymbol->getSymbol().s.contents));
 		std::string_view newName = generatedStrings->back();
 		std::unique_ptr<Symbol> newSymbol
 		      = std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0));
-		newSymbolExpression = std::make_unique<SymbolExpression>(std::move(newSymbol));
-	} else {
+		newWhichFunction = std::make_unique<SymbolExpression>(std::move(newSymbol));
+	} else if (oldPath != nullptr) {
 		std::string functionName;
 		bool first = true;
 		oldPath->forEachSymbol([&functionName, &first](SymbolExpression &symbol) {
@@ -48,7 +49,11 @@ void CCodeAdapter::visit(FunctionCallExpression &node) {
 		std::string_view newName = generatedStrings->back();
 		std::unique_ptr<Symbol> newSymbol
 		      = std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0));
-		newSymbolExpression = std::make_unique<SymbolExpression>(std::move(newSymbol));
+		newWhichFunction = std::make_unique<SymbolExpression>(std::move(newSymbol));
+	} else {
+		oldFieldAccess->accept(*this);
+		newWhichFunction = std::unique_ptr<FieldAccessExpression>(
+		      dynamic_cast<FieldAccessExpression *>(returnValue.release()));
 	}
 
 	std::vector<std::unique_ptr<Expression>> newArguments;
@@ -70,10 +75,10 @@ void CCodeAdapter::visit(FunctionCallExpression &node) {
 	});
 
 	std::unique_ptr<FunctionCallExpression> newFunctionCall
-	      = std::make_unique<FunctionCallExpression>(std::move(newSymbolExpression),
+	      = std::make_unique<FunctionCallExpression>(std::move(newWhichFunction),
 	            std::move(newArguments));
 	newFunctionCall->setTypeID(node.getTypeID());
-	newFunctionCall->setIsConstructor(node.getIsConstructor());
+	newFunctionCall->setVariant(node.getVariant());
 	returnValue = std::move(newFunctionCall);
 }
 
@@ -471,7 +476,7 @@ void CCodeAdapter::visit(Function &node) {
 		            Slice(newParameterName, inputModule->getSource(), 0, 0));
 		      std::unique_ptr<Symbol> newType = std::make_unique<Symbol>(type);
 		      newParameters.emplace_back(std::move(newParameter), std::move(newType));
-		      if (node.getIsConstructor() && i == 0) {
+		      if (node.getVariant() == FunctionVariant::CONSTRUCTOR && i == 0) {
 			      typeId = node.getBody().getSymbolType(parameter.s.contents);
 		      }
 		      i++;
@@ -488,7 +493,7 @@ void CCodeAdapter::visit(Function &node) {
 	      = std::make_unique<ExpressionStatement>(std::move(newBody));
 	enclosingScope->pushStatement(std::move(bodyStatement));
 
-	if (node.getIsConstructor()) {
+	if (node.getVariant() == FunctionVariant::CONSTRUCTOR) {
 		std::unique_ptr<Symbol> selfParameter = std::make_unique<Symbol>(
 		      Slice("CANYON_PARAMETER_self", inputModule->getSource(), 0, 0));
 		std::unique_ptr<SymbolExpression> selfSymbolExpression
@@ -501,8 +506,8 @@ void CCodeAdapter::visit(Function &node) {
 	}
 
 	std::unique_ptr<Function> newFunction = std::make_unique<Function>(
-	      std::move(newParameters), std::move(enclosingScope), node.getIsConstructor());
-	if (node.getIsConstructor()) {
+	      std::move(newParameters), std::move(enclosingScope), node.getVariant());
+	if (node.getVariant() == FunctionVariant::CONSTRUCTOR) {
 		newFunction->setTypeID(typeId);
 	}
 	returnValue = std::move(newFunction);
@@ -531,7 +536,7 @@ void CCodeAdapter::visit(Impl &node) {
 		method.accept(*this);
 		std::unique_ptr<Function> newMethod = std::unique_ptr<Function>(
 		      dynamic_cast<Function *>(returnValue.release()));
-		if (!method.getIsConstructor()) {
+		if (method.getVariant() != FunctionVariant::CONSTRUCTOR) {
 			newMethod->setTypeID(method.getTypeID());
 		}
 		newMethods.emplace(newName, std::move(newMethod));
@@ -547,7 +552,7 @@ void CCodeAdapter::visit(Module &node) {
 		oldFunction.accept(*this);
 		std::unique_ptr<Function> newFunction = std::unique_ptr<Function>(
 		      dynamic_cast<Function *>(returnValue.release()));
-		if (!oldFunction.getIsConstructor()) {
+		if (oldFunction.getVariant() != FunctionVariant::CONSTRUCTOR) {
 			newFunction->setTypeID(oldFunction.getTypeID());
 		}
 		outputModule->addFunction(
@@ -555,7 +560,7 @@ void CCodeAdapter::visit(Module &node) {
 		      std::move(newFunction), isBuiltin);
 	});
 	node.forEachClass([this](std::string_view name, Class &oldClass, bool isBuiltin) {
-		generatedStrings->push_back("CANYON_CLASS_" + std::string(name));
+		generatedStrings->push_back(std::string(name));
 		std::string_view newName = generatedStrings->back();
 		currentClassName = &generatedStrings->back();
 		oldClass.accept(*this);
@@ -566,7 +571,7 @@ void CCodeAdapter::visit(Module &node) {
 		      std::move(newClass), isBuiltin);
 	});
 	node.forEachImpl([this](std::string_view name, Impl &oldImpl, bool isBuiltin) {
-		generatedStrings->push_back("CANYON_IMPL_" + std::string(name));
+		generatedStrings->push_back(std::string(name));
 		std::string_view newName = generatedStrings->back();
 		oldImpl.accept(*this);
 		std::unique_ptr<Impl> newImpl

@@ -207,7 +207,8 @@ std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> Parser::parseFunct
 
 	return {std::unique_ptr<Symbol>(symbol),
 	      std::make_unique<Function>(std::move(parameters), std::unique_ptr<Symbol>(type),
-	            std::move(block), isConstructor)};
+	            std::move(block), isConstructor ? FunctionVariant::CONSTRUCTOR
+	                                            : FunctionVariant::FUNCTION)};
 }
 
 std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Class>> Parser::parseClass() {

@@ -56,12 +56,12 @@ void FunctionCallExpression::forEachArgument(
 	}
 }
 
-void FunctionCallExpression::setIsConstructor(bool isConstructor) {
-	this->isConstructor = isConstructor;
+void FunctionCallExpression::setVariant(FunctionVariant variant) {
+	this->variant = variant;
 }
 
-bool FunctionCallExpression::getIsConstructor() const {
-	return isConstructor;
+FunctionVariant FunctionCallExpression::getVariant() const {
+	return variant;
 }
 
 void FunctionCallExpression::accept(ASTVisitor &visitor) {
@@ -295,9 +295,9 @@ void PathExpression::accept(ASTVisitor &visitor) {
 }
 
 FieldAccessExpression::FieldAccessExpression(std::unique_ptr<Expression> object,
-	  std::unique_ptr<SymbolExpression> field)
-	: Expression(Slice::merge(object->getSlice(), field->getSlice())),
-	  object(std::move(object)), field(std::move(field)) {
+      std::unique_ptr<SymbolExpression> field)
+    : Expression(Slice::merge(object->getSlice(), field->getSlice())),
+      object(std::move(object)), field(std::move(field)) {
 }
 
 Expression &FieldAccessExpression::getObject() {
@@ -416,17 +416,17 @@ void LetStatement::accept(ASTVisitor &visitor) {
 Function::Function(
       std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters,
       std::unique_ptr<Symbol> returnTypeAnnotation, std::unique_ptr<BlockExpression> body,
-      bool isConstructor)
+      FunctionVariant variant)
     : parameters(std::move(parameters)),
       returnTypeAnnotation(std::move(returnTypeAnnotation)), body(std::move(body)),
-      isConstructor(isConstructor) {
+      variant(variant) {
 }
 
 Function::Function(
       std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters,
-      std::unique_ptr<BlockExpression> body, bool isConstructor)
+      std::unique_ptr<BlockExpression> body, FunctionVariant variant)
     : parameters(std::move(parameters)), returnTypeAnnotation(nullptr),
-      body(std::move(body)), isConstructor(isConstructor) {
+      body(std::move(body)), variant(variant) {
 }
 
 void Function::forEachParameter(
@@ -452,8 +452,12 @@ void Function::setTypeID(int typeID) {
 	this->typeID = typeID;
 }
 
-bool Function::getIsConstructor() const {
-	return isConstructor;
+void Function::setVariant(FunctionVariant variant) {
+	this->variant = variant;
+}
+
+FunctionVariant Function::getVariant() const {
+	return variant;
 }
 
 void Function::accept(ASTVisitor &visitor) {
@@ -501,23 +505,23 @@ void Class::accept(ASTVisitor &visitor) {
 	visitor.visit(*this);
 }
 
-Type::Type(int id, int parentID, std::string_view name)
-    : id(id), parentID(parentID), name(name) {
+Type::Type(int id, int parentID, std::string_view name, bool isClass)
+    : id(id), parentID(parentID), isClass(isClass), name(name) {
 }
 
 Module::Module(std::filesystem::path source) : source(std::move(source)) {
-	insertType("()");
-	insertType("!");
-	insertType("i8");
-	insertType("i16");
-	insertType("i32");
-	insertType("i64");
-	insertType("u8");
-	insertType("u16");
-	insertType("u32");
-	insertType("u64");
-	insertType("bool");
-	insertType("char");
+	insertType("()", false);
+	insertType("!", false);
+	insertType("i8", false);
+	insertType("i16", false);
+	insertType("i32", false);
+	insertType("i64", false);
+	insertType("u8", false);
+	insertType("u16", false);
+	insertType("u32", false);
+	insertType("u64", false);
+	insertType("bool", false);
+	insertType("char", false);
 }
 
 Module::Module(const Module &module)
@@ -564,23 +568,24 @@ void Module::forEachImpl(
 
 Type Module::getType(std::string_view typeName) {
 	if (typeTableByName.find(typeName) == typeTableByName.end()) {
-		return Type(-1, -1, "");
+		return Type(-1, -1, "", false);
 	}
 	return typeTableByName.at(typeName);
 }
 
 Type Module::getType(int id) {
 	if (typeTableByID.find(id) == typeTableByID.end()) {
-		return Type(-1, -1, "");
+		return Type(-1, -1, "", false);
 	}
 	return typeTableByID.at(id);
 }
 
-void Module::insertType(std::string_view typeName) {
+void Module::insertType(std::string_view typeName, bool isClass) {
 	if (typeTableByName.find(typeName) == typeTableByName.end()) {
-		typeTableByName.insert({typeName, Type(typeTableByName.size(), -1, typeName)});
+		typeTableByName.insert(
+		      {typeName, Type(typeTableByName.size(), -1, typeName, isClass)});
 		typeTableByID.insert(
-		      {typeTableByID.size(), Type(typeTableByID.size(), -1, typeName)});
+		      {typeTableByID.size(), Type(typeTableByID.size(), -1, typeName, isClass)});
 	} else {
 		std::cerr << "Type already exists";
 		exit(EXIT_FAILURE);
@@ -607,7 +612,7 @@ Type Module::getCommonTypeAncestor(int type1, int type2) {
 	if (type2 == getType("!").id) {
 		return getType(type1);
 	}
-	return Type(-1, -1, "");
+	return Type(-1, -1, "", false);
 }
 
 void Module::addUnaryOperator(Operator::Type op, int operandType, int resultType) {
@@ -661,6 +666,26 @@ Impl *Module::getImpl(std::string_view name) {
 		return nullptr;
 	}
 	return std::get<0>(impls[name]).get();
+}
+
+std::pair<std::string_view, Impl *> Module::getImpl(int typeID) {
+	for (auto &[name, impl] : impls) {
+		int implTypeID = getType(name).id;
+		if (implTypeID == typeID) {
+			return {name, std::get<0>(impl).get()};
+		}
+	}
+	return {{}, nullptr};
+}
+
+std::pair<std::string_view, Class *> Module::getClass(int typeID) {
+	for (auto &[name, cls] : classes) {
+		int implTypeID = getType(name).id;
+		if (implTypeID == typeID) {
+			return {name, std::get<0>(cls).get()};
+		}
+	}
+	return {{}, nullptr};
 }
 
 std::filesystem::path Module::getSource() {

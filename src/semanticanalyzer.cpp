@@ -38,9 +38,10 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 	Expression &functionCall = node.getFunction();
 	auto *symbol = dynamic_cast<SymbolExpression *>(&functionCall);
 	auto *path = dynamic_cast<PathExpression *>(&functionCall);
-	if (symbol == nullptr && path == nullptr) {
+	auto *fieldAccess = dynamic_cast<FieldAccessExpression *>(&functionCall);
+	if (symbol == nullptr && path == nullptr && fieldAccess == nullptr) {
 		errorHandler->error(functionCall.getSlice(),
-		      "Function call target is not a symbol or path");
+		      "Function call target is not a symbol, path, or method");
 		return;
 	}
 	Function *function = nullptr;
@@ -52,7 +53,7 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 			            + " not found");
 			return;
 		}
-	} else {
+	} else if (path != nullptr) {
 		Impl *impl = nullptr;
 		bool pathLookupGood = true;
 		size_t i = 0;
@@ -86,6 +87,32 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 		if (!pathLookupGood) {
 			return;
 		}
+	} else {
+		FieldAccessExpression &fieldAccessExpr = *fieldAccess;
+		fieldAccessExpr.getObject().accept(*this);
+		if (inUnreachableCode) {
+			errorHandler->error(fieldAccessExpr.getSlice(), "Unreachable code");
+			return;
+		}
+		int objectTypeId = fieldAccessExpr.getObject().getTypeID();
+		if (objectTypeId == -1) {
+			return;
+		}
+		std::pair<std::string_view, Impl *> impl = module->getImpl(objectTypeId);
+		if (impl.second == nullptr) {
+			errorHandler->error(fieldAccessExpr.getSlice(),
+			      "Field access on non-class type");
+			return;
+		}
+		function
+		      = impl.second->getMethod(fieldAccessExpr.getField().getSymbol().s.contents);
+		if (function == nullptr) {
+			errorHandler->error(fieldAccessExpr.getField().getSymbol().s,
+			      "Method "
+			            + std::string(fieldAccessExpr.getField().getSymbol().s.contents)
+			            + " not found in impl for " + std::string(impl.first));
+			return;
+		}
 	}
 	std::vector<std::pair<Symbol &, int>> parameters;
 	function->forEachParameter(
@@ -98,7 +125,8 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 	size_t i = 0;
 	bool unreachableArgument = false;
 	bool unreachableHandled = false;
-	if (function->getIsConstructor()) {
+	FunctionVariant variant = function->getVariant();
+	if (variant == FunctionVariant::CONSTRUCTOR || variant == FunctionVariant::METHOD) {
 		// Implicit self argument
 		i++;
 	}
@@ -143,8 +171,8 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 		return;
 	}
 
-	node.setIsConstructor(function->getIsConstructor());
-	if (function->getIsConstructor()) {
+	node.setVariant(function->getVariant());
+	if (function->getVariant() == FunctionVariant::CONSTRUCTOR) {
 		node.setTypeID(parameters[0].second);
 	} else {
 		node.setTypeID(function->getTypeID());
@@ -278,8 +306,28 @@ void SemanticAnalyzer::visit([[maybe_unused]] PathExpression &node) {
 	// TODO
 }
 
-void SemanticAnalyzer::visit([[maybe_unused]] FieldAccessExpression &node) {
-	// TODO
+void SemanticAnalyzer::visit(FieldAccessExpression &node) {
+	node.getObject().accept(*this);
+	if (inUnreachableCode) {
+		errorHandler->error(node.getSlice(), "Unreachable code");
+		return;
+	}
+	int objectTypeID = node.getObject().getTypeID();
+	if (objectTypeID == -1) {
+		return;
+	}
+	std::pair<std::string_view, Class *> cls = module->getClass(objectTypeID);
+	if (cls.second == nullptr) {
+		errorHandler->error(node.getSlice(), "Field access on non-class type");
+		return;
+	}
+	cls.second->forEachFieldDeclaration(
+	      [this, &node, &cls](LetStatement &fieldDeclaration) {
+		      if (fieldDeclaration.getSymbol().s.contents
+		            == node.getField().getSymbol().s.contents) {
+			      node.setTypeID(fieldDeclaration.getSymbolTypeID());
+		      }
+	      });
 }
 
 void SemanticAnalyzer::visit(IfElseExpression &node) {
@@ -427,7 +475,13 @@ void SemanticAnalyzer::visit(Module &node) {
 	addDefaultOperators(&node);
 	addRuntimeFunctions(&node, builtinApiJsonFile);
 	node.forEachClass([this](std::string_view name, Class & /*unused*/, bool /*unused*/) {
-		module->insertType(name);
+		module->insertType(name, true);
+	});
+	node.forEachClass([this](std::string_view /*unused*/, Class &cls, bool isBuiltin) {
+		if (isBuiltin) {
+			return;
+		}
+		cls.accept(*this);
 	});
 	node.forEachFunction([this]([[maybe_unused]]
 	                            std::string_view name,
@@ -460,14 +514,24 @@ void SemanticAnalyzer::visit(Module &node) {
 					errorHandler->error(type.s, "Unknown type");
 					return;
 				}
-				if (first && method.getIsConstructor()
+				if (first && method.getVariant() == FunctionVariant::CONSTRUCTOR
 				      && parameter.s.contents != "self") {
 					errorHandler->error(parameter.s,
 					      "First parameter of constructor must be self");
 				}
-				if (first && method.getIsConstructor() && type.s.contents != implName) {
+				if (first && method.getVariant() == FunctionVariant::CONSTRUCTOR
+				      && type.s.contents != implName) {
 					errorHandler->error(type.s, "Constructor self parameter type must be "
 					                            "the same as impl name");
+				}
+				if (first && method.getVariant() == FunctionVariant::FUNCTION) {
+					if (parameter.s.contents == "self") {
+						method.setVariant(FunctionVariant::METHOD);
+						if (type.s.contents != implName) {
+							errorHandler->error(type.s, "Method self parameter type must "
+							                            "be the same as impl name");
+						}
+					}
 				}
 				first = false;
 				method.getBody().pushSymbol(parameter.s.contents, typeID,
@@ -504,12 +568,6 @@ void SemanticAnalyzer::visit(Module &node) {
 			return;
 		}
 		impl.accept(*this);
-	});
-	node.forEachClass([this](std::string_view /*unused*/, Class &cls, bool isBuiltin) {
-		if (isBuiltin) {
-			return;
-		}
-		cls.accept(*this);
 	});
 	if (!hasMain) {
 		errorHandler->error(module->getSource(), "No main function");
@@ -636,7 +694,7 @@ static void addRuntimeFunctions(Module *module, std::istream &builtinApiJsonFile
 		      = std::make_unique<Symbol>(Slice(returnType, "", 0, 0));
 		std::unique_ptr<Function> builtin = std::make_unique<Function>(
 		      std::move(parameters), std::move(returnTypeAnnotation),
-		      std::make_unique<BlockExpression>(), false);
+		      std::make_unique<BlockExpression>(), FunctionVariant::FUNCTION);
 		module->addFunction(std::make_unique<Symbol>(Slice(functionName, "", 0, 0)),
 		      std::move(builtin), true);
 	}

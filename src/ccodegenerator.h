@@ -17,8 +17,18 @@ private:
 	Module *module;
 	std::ostream *os;
 	std::unordered_map<int, std::string> cTypes;
+	std::unordered_map<int, std::string> classNames;
 	int tabLevel = 0;
 	std::list<std::string> generatedStrings;
+	enum class Status {
+		NORMAL,
+		IN_FUNCTION,
+		IN_METHOD,
+		IN_CLASS,
+		IN_IMPL,
+		IN_CALL,
+	};
+	Status status = Status::NORMAL;
 public:
 	CCodeGenerator(Module *module, std::ostream *os);
 	void generate();
