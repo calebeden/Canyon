@@ -51,6 +51,7 @@ struct Keyword : public Token {
 		ELSE,
 		WHILE,
 		CLASS,
+		CONSTRUCTOR,
 	};
 
 	Type type;

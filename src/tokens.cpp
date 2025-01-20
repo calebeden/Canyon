@@ -63,6 +63,10 @@ void Keyword::print(std::ostream &os) const {
 			os << "class";
 			break;
 		}
+		case Type::CONSTRUCTOR: {
+			os << "constructor";
+			break;
+		}
 	}
 }
 
