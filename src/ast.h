@@ -331,6 +331,7 @@ public:
 	      bool isBuiltin = false);
 	void forEachClass(
 	      const std::function<void(std::string_view, Class &, bool)> &classHandler);
+	void forEachImpl(const std::function<void(std::string_view, Impl &, bool)> &implHandler);
 	Type getType(std::string_view typeName);
 	Type getType(int id);
 	void insertType(std::string_view typeName);

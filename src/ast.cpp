@@ -496,6 +496,13 @@ void Module::forEachClass(
 	}
 }
 
+void Module::forEachImpl(
+      const std::function<void(std::string_view, Impl &, bool)> &implHandler) {
+	for (auto &[name, impl] : impls) {
+		implHandler(name, *std::get<0>(impl), std::get<1>(impl));
+	}
+}
+
 Type Module::getType(std::string_view typeName) {
 	if (typeTableByName.find(typeName) == typeTableByName.end()) {
 		return Type(-1, -1, "");

@@ -459,8 +459,16 @@ void CCodeAdapter::visit(Class &node) {
 	returnValue = std::make_unique<Class>(std::move(newFieldDeclarations));
 }
 
-void CCodeAdapter::visit([[maybe_unused]] Impl &node) {
-	// TODO
+void CCodeAdapter::visit(Impl &node) {
+	std::unordered_map<std::string_view, std::unique_ptr<Function>> newMethods;
+	node.forEachMethod([this, &newMethods](std::string_view name, Function &method) {
+		method.accept(*this);
+		std::unique_ptr<Function> newMethod = std::unique_ptr<Function>(
+		      dynamic_cast<Function *>(returnValue.release()));
+		newMethod->setTypeID(method.getTypeID());
+		newMethods.emplace(name, std::move(newMethod));
+	});
+	returnValue = std::make_unique<Impl>(std::move(newMethods));
 }
 
 void CCodeAdapter::visit(Module &node) {
@@ -486,6 +494,16 @@ void CCodeAdapter::visit(Module &node) {
 		outputModule->addClass(
 		      std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0)),
 		      std::move(newClass), isBuiltin);
+	});
+	node.forEachImpl([this](std::string_view name, Impl &oldImpl, bool isBuiltin) {
+		generatedStrings->push_back("CANYON_IMPL_" + std::string(name));
+		std::string_view newName = generatedStrings->back();
+		oldImpl.accept(*this);
+		std::unique_ptr<Impl> newImpl
+		      = std::unique_ptr<Impl>(dynamic_cast<Impl *>(returnValue.release()));
+		outputModule->addImpl(
+		      std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0)),
+		      std::move(newImpl), isBuiltin);
 	});
 }
 

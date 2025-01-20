@@ -239,11 +239,63 @@ void CCodeGenerator::visit(Module &node) {
 	      });
 	*os << '\n';
 
+	// Method prototypes
+	node.forEachImpl([this](std::string_view name, Impl &impl, bool /*unused*/) {
+		impl.forEachMethod([this, &name](std::string_view methodName, Function &method) {
+			Type functionType = module->getType(method.getTypeID());
+			const std::string &cType = cTypes[functionType.id];
+			*os << cType << ' ' << name << "_METHOD_" << methodName << '(';
+			bool first = true;
+			method.forEachParameter([this, &first](Symbol &parameter, Symbol &type) {
+				const std::string &cType = cTypes[module->getType(type.s.contents).id];
+				if (!first) {
+					*os << ", ";
+				}
+				first = false;
+				*os << cType << ' ' << parameter.s;
+			});
+			*os << ");\n";
+		});
+	});
+	*os << '\n';
+
+	// Virtual tables
+	node.forEachImpl([this](std::string_view name, Impl &impl, bool /*unused*/) {
+		*os << "struct " << name << "_VT {\n";
+		tabLevel++;
+		impl.forEachMethod([this](std::string_view methodName, Function &method) {
+			Type methodType = module->getType(method.getTypeID());
+			const std::string &cType = cTypes[methodType.id];
+			*os << std::string(tabLevel, '\t') << cType << " (*" << methodName << ")(";
+			bool first = true;
+			method.forEachParameter([this, &first](Symbol & /*unused*/, Symbol &type) {
+				const std::string &cType = cTypes[module->getType(type.s.contents).id];
+				if (!first) {
+					*os << ", ";
+				}
+				first = false;
+				*os << cType;
+			});
+			*os << ");\n";
+		});
+		tabLevel--;
+		*os << "} " << name << "_VT_INSTANCE = {\n";
+		tabLevel++;
+		impl.forEachMethod(
+		      [this, &name](std::string_view methodName, Function & /*unused*/) {
+			      std::string newName
+			            = std::string(name) + "_METHOD_" + std::string(methodName);
+			      *os << std::string(tabLevel, '\t') << newName << ",\n";
+		      });
+		tabLevel--;
+		*os << "};\n";
+	});
+	*os << '\n';
+
 	// Class structs
 	node.forEachClass([this](std::string_view name, Class &cls, bool /*unused*/) {
 		*os << "typedef struct {\n";
 		tabLevel++;
-		*os << std::string(tabLevel, '\t') << "struct " << name << "_VT *vt;\n";
 		cls.forEachFieldDeclaration([this](LetStatement &declaration) {
 			*os << std::string(tabLevel, '\t');
 			const std::string &cType = cTypes[declaration.getSymbolTypeID()];
@@ -277,6 +329,31 @@ void CCodeGenerator::visit(Module &node) {
 		      function.getBody().accept(*this);
 		      *os << "\n";
 	      });
+	*os << '\n';
+
+	// Method definitions
+	node.forEachImpl([this](std::string_view name, Impl &impl, bool isBuiltin) {
+		if (isBuiltin) {
+			return;
+		}
+		impl.forEachMethod([this, &name](std::string_view methodName, Function &method) {
+			Type functionType = module->getType(method.getTypeID());
+			const std::string &cType = cTypes[functionType.id];
+			*os << cType << ' ' << name << "_METHOD_" << methodName << '(';
+			bool first = true;
+			method.forEachParameter([this, &first](Symbol &parameter, Symbol &type) {
+				const std::string &cType = cTypes[module->getType(type.s.contents).id];
+				if (!first) {
+					*os << ", ";
+				}
+				first = false;
+				*os << cType << ' ' << parameter.s;
+			});
+			*os << ") ";
+			method.getBody().accept(*this);
+			*os << "\n";
+		});
+	});
 }
 
 void CCodeGenerator::generateBuiltinFunctions() {
