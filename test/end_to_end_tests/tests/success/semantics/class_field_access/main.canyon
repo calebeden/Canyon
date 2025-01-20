@@ -1,0 +1,14 @@
+fun main() {
+    let foo: Foo = Foo::new();
+    let result: i32 = foo.x;
+}
+
+class Foo {
+    let x: i32 = 0;
+}
+
+impl Foo {
+    constructor new(self: Foo) {
+        self.x = 1;
+    }
+}
