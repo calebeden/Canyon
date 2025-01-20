@@ -478,8 +478,12 @@ void SemanticAnalyzer::visit(Impl &node) {
 void SemanticAnalyzer::visit(Module &node) {
 	addDefaultOperators(&node);
 	addRuntimeFunctions(&node, builtinApiJsonFile);
-	node.forEachClass([this](std::string_view name, Class & /*unused*/, bool /*unused*/) {
+	int unitTypeID = node.getType("()").id;
+	node.forEachClass([this, unitTypeID](std::string_view name, Class & /*unused*/,
+	                        bool /*unused*/) {
 		module->insertType(name, true);
+		int typeID = module->getType(name).id;
+		module->addBinaryOperator(Operator::Type::Assignment, typeID, typeID, unitTypeID);
 	});
 	node.forEachClass([this](std::string_view /*unused*/, Class &cls, bool isBuiltin) {
 		if (isBuiltin) {
