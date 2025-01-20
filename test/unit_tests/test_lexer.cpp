@@ -535,7 +535,8 @@ INSTANTIATE_TEST_SUITE_P(testKeywords, TestLexerKeywords,
             std::pair{"let", Keyword::Type::LET}, std::pair{"fun", Keyword::Type::FUN},
             std::pair{"if", Keyword::Type::IF}, std::pair{"else", Keyword::Type::ELSE},
             std::pair{"while", Keyword::Type::WHILE},
-            std::pair{"class", Keyword::Type::CLASS}));
+            std::pair{"class", Keyword::Type::CLASS},
+            std::pair{"constructor", Keyword::Type::CONSTRUCTOR}));
 
 TEST_P(TestLexerSymbols, testSymbols) {
 	const std::string symbol = GetParam();
