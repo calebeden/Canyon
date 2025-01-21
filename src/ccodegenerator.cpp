@@ -51,17 +51,9 @@ void CCodeGenerator::generateIncludes() {
 }
 
 void CCodeGenerator::visit(FunctionCallExpression &node) {
-	Status old = status;
-	status = Status::IN_CALL;
 	node.getFunction().accept(*this);
-	status = old;
 	*os << '(';
-	bool first = true;
-	if (node.getVariant() == FunctionVariant::CONSTRUCTOR) {
-		std::string_view name = classNames[node.getTypeID()];
-		*os << "malloc(sizeof(struct CANYON_CLASS_" << name << "))";
-		first = false;
-	}
+
 	if (node.getVariant() == FunctionVariant::METHOD) {
 		FieldAccessExpression &fieldAccess
 		      = dynamic_cast<FieldAccessExpression &>(node.getFunction());
@@ -70,12 +62,18 @@ void CCodeGenerator::visit(FunctionCallExpression &node) {
 		fieldAccess.getObject().accept(*this);
 		*os << ".object";
 	}
+	bool first = true;
 	node.forEachArgument([this, &first, &node](Expression &argument) {
 		if (!first) {
 			*os << ", ";
 		}
+		if (first && node.getVariant() == FunctionVariant::CONSTRUCTOR) {
+			argument.accept(*this);
+			*os << ".object";
+		} else {
+			argument.accept(*this);
+		}
 		first = false;
-		argument.accept(*this);
 	});
 	*os << ')';
 }
@@ -199,21 +197,32 @@ void CCodeGenerator::visit([[maybe_unused]] PathExpression &node) {
 }
 
 void CCodeGenerator::visit(FieldAccessExpression &node) {
-	if (status == Status::IN_CALL) {
+	SymbolExpression *field = dynamic_cast<SymbolExpression *>(&node.getField());
+	FunctionCallExpression *method
+	      = dynamic_cast<FunctionCallExpression *>(&node.getField());
+	if (field != nullptr) {
+		if (node.getObject().getSlice().contents == "CANYON_PARAMETER_self") {
+			*os << "CANYON_PARAMETER_self->";
+		} else {
+			*os << "((struct CANYON_CLASS_" << classNames[node.getObject().getTypeID()]
+			    << " *)";
+			node.getObject().accept(*this);
+			*os << ".object)->";
+		}
+		node.getField().accept(*this);
+		return;
+	}
+	if (method != nullptr) {
 		node.getObject().accept(*this);
 		*os << ".vt->";
+		Status old = status;
+		status = Status::IN_METHOD;
 		node.getField().accept(*this);
+		status = old;
 		return;
 	}
-	if (node.getObject().getSlice().contents == "CANYON_PARAMETER_self") {
-		*os << "CANYON_PARAMETER_self->";
-		node.getField().accept(*this);
-		return;
-	}
-	*os << "((struct CANYON_CLASS_" << classNames[node.getObject().getTypeID()] << " *)";
-	node.getObject().accept(*this);
-	*os << ".object)->";
-	node.getField().accept(*this);
+	std::cerr << "Field access target is not a symbol or method call" << std::endl;
+	exit(EXIT_FAILURE);
 }
 
 void CCodeGenerator::visit(IfElseExpression &node) {
@@ -250,11 +259,12 @@ void CCodeGenerator::visit(LetStatement &node) {
 		FunctionCallExpression *functionCall
 		      = dynamic_cast<FunctionCallExpression *>(expression);
 		if (module->getType(node.getSymbolTypeID()).isClass && functionCall != nullptr
-		      && functionCall->getVariant() == FunctionVariant::CONSTRUCTOR) {
+		      && functionCall->getFunction().getSlice().contents == "malloc") {
 			*os << cType << ' ' << node.getSymbol().s << " = {";
 			expression->accept(*this);
 			std::string_view className = classNames[node.getSymbolTypeID()];
-			*os << ", &" << className << "_VT_INSTANCE};\n";
+			*os << ", &" << className << "_VT_INSTANCE";
+			*os << "};\n";
 		} else {
 			*os << cType << ' ' << node.getSymbol().s << " = ";
 			node.getExpression()->accept(*this);
@@ -278,6 +288,16 @@ void CCodeGenerator::visit([[maybe_unused]] Impl &node) {
 }
 
 void CCodeGenerator::visit(Module &node) {
+	// Instance structs
+	node.forEachImpl([this](std::string_view name, Impl & /*unused*/, bool /*unused*/) {
+		*os << "struct CANYON_IMPL_" << name << "_VT;\n";
+		*os << "struct CANYON_INSTANCE_" << name << " {\n"
+		    << "\tvoid *object;\n"
+		    << "\tstruct CANYON_IMPL_" << name << "_VT *vt;\n"
+		    << "};\n";
+	});
+	*os << '\n';
+
 	// Function prototypes
 	node.forEachFunction(
 	      [this](std::string_view name, Function &function, bool /*unused*/) {
@@ -375,15 +395,6 @@ void CCodeGenerator::visit(Module &node) {
 		});
 		tabLevel--;
 		*os << "};\n";
-	});
-	*os << '\n';
-
-	// Instance structs
-	node.forEachImpl([this](std::string_view name, Impl & /*unused*/, bool /*unused*/) {
-		*os << "struct CANYON_INSTANCE_" << name << " {\n"
-		    << "\tvoid *object;\n"
-		    << "\tstruct CANYON_IMPL_" << name << "_VT *vt;\n"
-		    << "};\n";
 	});
 	*os << '\n';
 

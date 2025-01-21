@@ -28,6 +28,7 @@ void CCodeAdapter::visit(FunctionCallExpression &node) {
 		exit(EXIT_FAILURE);
 	}
 	std::unique_ptr<Expression> newWhichFunction = nullptr;
+	std::string_view constructedObjectName = "";
 	if (oldSymbol != nullptr) {
 		generatedStrings->push_back(
 		      "CANYON_FUNCTION_" + std::string(oldSymbol->getSymbol().s.contents));
@@ -36,6 +37,50 @@ void CCodeAdapter::visit(FunctionCallExpression &node) {
 		      = std::make_unique<Symbol>(Slice(newName, inputModule->getSource(), 0, 0));
 		newWhichFunction = std::make_unique<SymbolExpression>(std::move(newSymbol));
 	} else if (oldPath != nullptr) {
+		if (node.getVariant() == FunctionVariant::CONSTRUCTOR) {
+			std::unique_ptr<SymbolExpression> mallocSymbol
+			      = std::make_unique<SymbolExpression>(std::make_unique<Symbol>(
+			            Slice("malloc", inputModule->getSource(), 0, 0)));
+			std::vector<std::unique_ptr<Expression>> mallocArguments;
+
+			std::string_view className = "";
+			inputModule->forEachClass([this, &node, &className](std::string_view name,
+			                                 Class & /*unused*/, bool /*unused*/) {
+				int classTypeID = inputModule->getType(std::string(name)).id;
+				if (classTypeID == node.getTypeID()) {
+					className = name;
+				}
+			});
+			generatedStrings->push_back(
+			      "sizeof(struct CANYON_CLASS_" + std::string(className) + ")");
+			std::unique_ptr<Symbol> mallocArgumentSymbol = std::make_unique<Symbol>(
+			      Slice(generatedStrings->back(), inputModule->getSource(), 0, 0));
+			mallocArguments.push_back(
+			      std::make_unique<SymbolExpression>(std::move(mallocArgumentSymbol)));
+			std::unique_ptr<FunctionCallExpression> mallocFunctionCall
+			      = std::make_unique<FunctionCallExpression>(std::move(mallocSymbol),
+			            std::move(mallocArguments));
+
+			generatedStrings->push_back("CANYON_TEMP_" + std::to_string(blockCount++));
+			blockTemporaryVariables.push(generatedStrings->back());
+			constructedObjectName = generatedStrings->back();
+			std::unique_ptr<Symbol> instanceSymbol = std::make_unique<Symbol>(
+			      Slice(generatedStrings->back(), inputModule->getSource(), 0, 0));
+
+			std::unique_ptr<LetStatement> mallocLetStatement
+			      = std::make_unique<LetStatement>(std::move(instanceSymbol),
+			            std::move(mallocFunctionCall));
+			scopeStack.back()->pushSymbol(generatedStrings->back(), node.getTypeID(),
+			      SymbolSource::GENERATED_Temporary);
+			mallocLetStatement->setSymbolTypeID(node.getTypeID());
+			scopeStack.back()->pushStatement(std::move(mallocLetStatement));
+
+			std::unique_ptr<SymbolExpression> arg
+			      = std::make_unique<SymbolExpression>(std::make_unique<Symbol>(
+			            Slice(constructedObjectName, inputModule->getSource(), 0, 0)));
+			arg->setTypeID(node.getTypeID());
+			node.addFirstArgument(std::move(arg));
+		}
 		std::string functionName;
 		bool first = true;
 		oldPath->forEachSymbol([&functionName, &first](SymbolExpression &symbol) {
@@ -79,7 +124,20 @@ void CCodeAdapter::visit(FunctionCallExpression &node) {
 	            std::move(newArguments));
 	newFunctionCall->setTypeID(node.getTypeID());
 	newFunctionCall->setVariant(node.getVariant());
-	returnValue = std::move(newFunctionCall);
+
+	if (node.getVariant() == FunctionVariant::CONSTRUCTOR) {
+		std::unique_ptr<ExpressionStatement> constructorStatement
+		      = std::make_unique<ExpressionStatement>(std::move(newFunctionCall));
+		scopeStack.back()->pushStatement(std::move(constructorStatement));
+		std::unique_ptr<Symbol> instanceSymbol = std::make_unique<Symbol>(
+		      Slice(constructedObjectName, inputModule->getSource(), 0, 0));
+		std::unique_ptr<SymbolExpression> instance
+		      = std::make_unique<SymbolExpression>(std::move(instanceSymbol));
+		instance->setTypeID(node.getTypeID());
+		returnValue = std::move(instance);
+	} else {
+		returnValue = std::move(newFunctionCall);
+	}
 }
 
 void CCodeAdapter::visit(BinaryExpression &node) {
@@ -156,8 +214,10 @@ void CCodeAdapter::visit(SymbolExpression &node) {
 	if (source == SymbolSource::FunctionParameter) {
 		generatedStrings->push_back(
 		      "CANYON_PARAMETER_" + std::string(oldSymbol.s.contents));
-	} else {
+	} else if (source != SymbolSource::GENERATED_Temporary) {
 		generatedStrings->push_back("CANYON_LOCAL_" + std::string(oldSymbol.s.contents));
+	} else {
+		generatedStrings->emplace_back(oldSymbol.s.contents);
 	}
 	std::string_view newName = generatedStrings->back();
 	std::unique_ptr<Symbol> newSymbol
@@ -255,15 +315,51 @@ void CCodeAdapter::visit(FieldAccessExpression &node) {
 	      dynamic_cast<Expression *>(returnValue.release()));
 	// don't want to visit the field because otherwise it will get mangled; instead just
 	// make a new one with the same name
-	generatedStrings->push_back(std::string(node.getField().getSymbol().s.contents));
-	std::unique_ptr<SymbolExpression> newField
-	      = std::make_unique<SymbolExpression>(std::make_unique<Symbol>(
-	            Slice(generatedStrings->back(), inputModule->getSource(), 0, 0)));
-	std::unique_ptr<FieldAccessExpression> newFieldAccessExpression
-	      = std::make_unique<FieldAccessExpression>(std::move(newObject),
-	            std::move(newField));
-	newFieldAccessExpression->setTypeID(node.getTypeID());
-	returnValue = std::move(newFieldAccessExpression);
+	SymbolExpression *field = dynamic_cast<SymbolExpression *>(&node.getField());
+	FunctionCallExpression *method
+	      = dynamic_cast<FunctionCallExpression *>(&node.getField());
+	if (field == nullptr && method == nullptr) {
+		std::cerr << "Field access target is not a symbol or method call" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	if (field != nullptr) {
+		generatedStrings->push_back(std::string(field->getSlice().contents));
+		std::unique_ptr<SymbolExpression> newField
+		      = std::make_unique<SymbolExpression>(std::make_unique<Symbol>(
+		            Slice(generatedStrings->back(), inputModule->getSource(), 0, 0)));
+		std::unique_ptr<FieldAccessExpression> newFieldAccessExpression
+		      = std::make_unique<FieldAccessExpression>(std::move(newObject),
+		            std::move(newField));
+		newFieldAccessExpression->setTypeID(node.getTypeID());
+		returnValue = std::move(newFieldAccessExpression);
+	} else {
+		std::vector<std::unique_ptr<Expression>> newArguments;
+		generatedStrings->push_back(
+		      std::string(newObject->getSlice().contents) + ".object");
+		std::unique_ptr<SymbolExpression> self
+		      = std::make_unique<SymbolExpression>(std::make_unique<Symbol>(
+		            Slice(generatedStrings->back(), inputModule->getSource(), 0, 0)));
+		newArguments.push_back(std::move(self));
+		method->forEachArgument([this, &newArguments](Expression &argument) {
+			argument.accept(*this);
+			newArguments.push_back(std::unique_ptr<Expression>(
+			      dynamic_cast<Expression *>(returnValue.release())));
+		});
+		generatedStrings->push_back(
+		      std::string(method->getFunction().getSlice().contents));
+		std::unique_ptr<SymbolExpression> newMethod
+		      = std::make_unique<SymbolExpression>(std::make_unique<Symbol>(
+		            Slice(generatedStrings->back(), inputModule->getSource(), 0, 0)));
+		newMethod->setTypeID(node.getTypeID());
+		std::unique_ptr<FunctionCallExpression> newMethodCall
+		      = std::make_unique<FunctionCallExpression>(std::move(newMethod),
+		            std::move(newArguments));
+		std::unique_ptr<FieldAccessExpression> newFieldAccessExpression
+		      = std::make_unique<FieldAccessExpression>(std::move(newObject),
+		            std::move(newMethodCall));
+		newFieldAccessExpression->setTypeID(node.getTypeID());
+		returnValue = std::move(newFieldAccessExpression);
+	}
 }
 
 void CCodeAdapter::visit(IfElseExpression &node) {

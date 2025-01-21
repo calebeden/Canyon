@@ -47,8 +47,8 @@ private:
 	std::unique_ptr<Expression> parseAdditiveExpression();
 	std::unique_ptr<Expression> parseMultiplicativeExpression();
 	std::unique_ptr<Expression> parseUnaryExpression();
-	std::unique_ptr<Expression> parseFunctionCallExpression();
 	std::unique_ptr<Expression> parseFieldAccessExpression();
+	std::unique_ptr<Expression> parseFunctionCallExpression();
 	std::unique_ptr<Expression> parsePathExpression();
 	std::unique_ptr<Expression> parsePrimaryExpression();
 	void synchronize();

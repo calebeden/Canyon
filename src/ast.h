@@ -143,6 +143,7 @@ enum class SymbolSource {
 	GENERATED_IfElse,
 	GENERATED_While,
 	GENERATED_Argument,
+	GENERATED_Temporary,
 };
 
 class BlockExpression : public Expression {
@@ -204,12 +205,12 @@ public:
 class FieldAccessExpression : public Expression {
 private:
 	std::unique_ptr<Expression> object;
-	std::unique_ptr<SymbolExpression> field;
+	std::unique_ptr<Expression> field;
 public:
 	FieldAccessExpression(std::unique_ptr<Expression> object,
-	      std::unique_ptr<SymbolExpression> field);
+	      std::unique_ptr<Expression> field);
 	Expression &getObject();
-	SymbolExpression &getField();
+	Expression &getField();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~FieldAccessExpression() = default;
 };

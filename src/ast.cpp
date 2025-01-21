@@ -303,7 +303,7 @@ void PathExpression::accept(ASTVisitor &visitor) {
 }
 
 FieldAccessExpression::FieldAccessExpression(std::unique_ptr<Expression> object,
-      std::unique_ptr<SymbolExpression> field)
+      std::unique_ptr<Expression> field)
     : Expression(Slice::merge(object->getSlice(), field->getSlice())),
       object(std::move(object)), field(std::move(field)) {
 }
@@ -312,7 +312,7 @@ Expression &FieldAccessExpression::getObject() {
 	return *object;
 }
 
-SymbolExpression &FieldAccessExpression::getField() {
+Expression &FieldAccessExpression::getField() {
 	return *field;
 }
 

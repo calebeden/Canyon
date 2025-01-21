@@ -38,8 +38,7 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 	Expression &functionCall = node.getFunction();
 	auto *symbol = dynamic_cast<SymbolExpression *>(&functionCall);
 	auto *path = dynamic_cast<PathExpression *>(&functionCall);
-	auto *fieldAccess = dynamic_cast<FieldAccessExpression *>(&functionCall);
-	if (symbol == nullptr && path == nullptr && fieldAccess == nullptr) {
+	if (symbol == nullptr && path == nullptr) {
 		errorHandler->error(functionCall.getSlice(),
 		      "Function call target is not a symbol, path, or method");
 		return;
@@ -85,32 +84,6 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 			      }
 		      });
 		if (!pathLookupGood) {
-			return;
-		}
-	} else {
-		FieldAccessExpression &fieldAccessExpr = *fieldAccess;
-		fieldAccessExpr.getObject().accept(*this);
-		if (inUnreachableCode) {
-			errorHandler->error(fieldAccessExpr.getSlice(), "Unreachable code");
-			return;
-		}
-		int objectTypeId = fieldAccessExpr.getObject().getTypeID();
-		if (objectTypeId == -1) {
-			return;
-		}
-		std::pair<std::string_view, Impl *> impl = module->getImpl(objectTypeId);
-		if (impl.second == nullptr) {
-			errorHandler->error(fieldAccessExpr.getSlice(),
-			      "Field access on non-class type");
-			return;
-		}
-		function
-		      = impl.second->getMethod(fieldAccessExpr.getField().getSymbol().s.contents);
-		if (function == nullptr) {
-			errorHandler->error(fieldAccessExpr.getField().getSymbol().s,
-			      "Method "
-			            + std::string(fieldAccessExpr.getField().getSymbol().s.contents)
-			            + " not found in impl for " + std::string(impl.first));
 			return;
 		}
 	}
@@ -323,8 +296,55 @@ void SemanticAnalyzer::visit(FieldAccessExpression &node) {
 	}
 	cls.second->getScope().forEachSymbol([this, &node, &cls](std::string_view fieldName,
 	                                           int /*unused*/, SymbolSource /*unused*/) {
-		if (fieldName == node.getField().getSymbol().s.contents) {
-			node.setTypeID(cls.second->getScope().getSymbolType(fieldName));
+		SymbolExpression *field = dynamic_cast<SymbolExpression *>(&node.getField());
+		FunctionCallExpression *method
+		      = dynamic_cast<FunctionCallExpression *>(&node.getField());
+		if (field == nullptr && method == nullptr) {
+			errorHandler->error(node.getField().getSlice(),
+			      "Field access is not a symbol or method");
+			return;
+		}
+		if (field != nullptr) {
+			if (fieldName == field->getSlice().contents) {
+				node.setTypeID(cls.second->getScope().getSymbolType(fieldName));
+			}
+		} else {
+			node.getObject().accept(*this);
+			if (inUnreachableCode) {
+				errorHandler->error(node.getSlice(), "Unreachable code");
+				return;
+			}
+			int objectTypeId = node.getObject().getTypeID();
+			if (objectTypeId == -1) {
+				return;
+			}
+			std::pair<std::string_view, Impl *> impl = module->getImpl(objectTypeId);
+			if (impl.second == nullptr) {
+				errorHandler->error(node.getSlice(), "Field access on non-class type");
+				return;
+			}
+			FunctionCallExpression *methodCall
+			      = dynamic_cast<FunctionCallExpression *>(&node.getField());
+			if (methodCall == nullptr) {
+				errorHandler->error(node.getField().getSlice(),
+				      "Field access is not a method");
+				return;
+			}
+			SymbolExpression *functionName
+			      = dynamic_cast<SymbolExpression *>(&methodCall->getFunction());
+			if (functionName == nullptr) {
+				errorHandler->error(methodCall->getFunction().getSlice(),
+				      "Method name is not a symbol");
+				return;
+			}
+			Function *function
+			      = impl.second->getMethod(functionName->getSymbol().s.contents);
+			if (function == nullptr) {
+				errorHandler->error(functionName->getSymbol(),
+				      "Method " + std::string(functionName->getSymbol().s.contents)
+				            + " not found in impl for " + std::string(impl.first));
+				return;
+			}
 		}
 	});
 }
