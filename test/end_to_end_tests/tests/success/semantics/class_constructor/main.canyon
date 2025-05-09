@@ -1,0 +1,9 @@
+fun main() {
+    let foo: Foo = Foo::new();
+}
+
+class Foo {}
+
+impl Foo {
+    constructor new(self: Foo) {}
+}

@@ -1,0 +1,11 @@
+fun main() {
+    let result: i32 = Foo::bar(1);
+}
+
+class Foo {}
+
+impl Foo {
+    fun bar(x: i32): i32 {
+        x
+    }
+}

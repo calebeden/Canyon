@@ -37,16 +37,55 @@ void SemanticAnalyzer::analyze() {
 void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 	Expression &functionCall = node.getFunction();
 	auto *symbol = dynamic_cast<SymbolExpression *>(&functionCall);
-	if (symbol == nullptr) {
+	auto *path = dynamic_cast<PathExpression *>(&functionCall);
+	if (symbol == nullptr && path == nullptr) {
 		errorHandler->error(functionCall.getSlice(),
-		      "Function call target is not a symbol");
+		      "Function call target is not a symbol, path, or method");
 		return;
 	}
-	Function *function = module->getFunction(symbol->getSymbol().s.contents);
-	if (function == nullptr) {
-		errorHandler->error(symbol->getSymbol().s,
-		      "Function " + std::string(symbol->getSymbol().s.contents) + " not found");
-		return;
+	Function *function = nullptr;
+	if (symbol != nullptr) {
+		function = module->getFunction(symbol->getSymbol().s.contents);
+		if (function == nullptr) {
+			errorHandler->error(symbol->getSymbol().s,
+			      "Function " + std::string(symbol->getSymbol().s.contents)
+			            + " not found");
+			return;
+		}
+	} else if (path != nullptr) {
+		Impl *impl = nullptr;
+		bool pathLookupGood = true;
+		size_t i = 0;
+		path->forEachSymbol(
+		      [this, &impl, &function, &pathLookupGood, &i](SymbolExpression &symbol) {
+			      if (impl == nullptr && pathLookupGood) {
+				      impl = module->getImpl(symbol.getSymbol().s.contents);
+				      if (impl == nullptr) {
+					      errorHandler->error(symbol.getSymbol().s,
+					            "Impl " + std::string(symbol.getSymbol().s.contents)
+					                  + " not found");
+					      pathLookupGood = false;
+					      return;
+				      }
+				      i++;
+			      } else if (pathLookupGood) {
+				      function = impl->getMethod(symbol.getSymbol().s.contents);
+				      if (function == nullptr) {
+					      errorHandler->error(symbol.getSymbol().s,
+					            "Method " + std::string(symbol.getSymbol().s.contents)
+					                  + " not found");
+					      pathLookupGood = false;
+					      return;
+				      }
+				      i++;
+			      } else if (i >= 2) {
+				      errorHandler->error(symbol.getSymbol().s, "Path too long");
+				      pathLookupGood = false;
+			      }
+		      });
+		if (!pathLookupGood) {
+			return;
+		}
 	}
 	std::vector<std::pair<Symbol &, int>> parameters;
 	function->forEachParameter(
@@ -59,6 +98,11 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 	size_t i = 0;
 	bool unreachableArgument = false;
 	bool unreachableHandled = false;
+	FunctionVariant variant = function->getVariant();
+	if (variant == FunctionVariant::CONSTRUCTOR || variant == FunctionVariant::METHOD) {
+		// Implicit self argument
+		i++;
+	}
 	node.forEachArgument([this, &parameters, &i, &unreachableArgument,
 	                           &unreachableHandled](Expression &argument) {
 		if (i == parameters.size()) {
@@ -100,7 +144,12 @@ void SemanticAnalyzer::visit(FunctionCallExpression &node) {
 		return;
 	}
 
-	node.setTypeID(function->getTypeID());
+	node.setVariant(function->getVariant());
+	if (function->getVariant() == FunctionVariant::CONSTRUCTOR) {
+		node.setTypeID(parameters[0].second);
+	} else {
+		node.setTypeID(function->getTypeID());
+	}
 }
 
 void SemanticAnalyzer::visit(BinaryExpression &node) {
@@ -117,9 +166,10 @@ void SemanticAnalyzer::visit(BinaryExpression &node) {
 		return;
 	}
 	if (node.getOperator().type == Operator::Type::Assignment
-	      && (dynamic_cast<SymbolExpression *>(&left) == nullptr)) {
+	      && (dynamic_cast<SymbolExpression *>(&left) == nullptr)
+	      && (dynamic_cast<FieldAccessExpression *>(&left) == nullptr)) {
 		errorHandler->error(left.getSlice(),
-		      "Left side of assignment must be a variable");
+		      "Left side of assignment must be a variable or field access");
 		return;
 	}
 	if (left.getTypeID() == -1 || right.getTypeID() == -1) {
@@ -225,6 +275,80 @@ void SemanticAnalyzer::visit(ParenthesizedExpression &node) {
 	node.setTypeID(expr.getTypeID());
 }
 
+void SemanticAnalyzer::visit([[maybe_unused]] PathExpression &node) {
+	// TODO
+}
+
+void SemanticAnalyzer::visit(FieldAccessExpression &node) {
+	node.getObject().accept(*this);
+	if (inUnreachableCode) {
+		errorHandler->error(node.getSlice(), "Unreachable code");
+		return;
+	}
+	int objectTypeID = node.getObject().getTypeID();
+	if (objectTypeID == -1) {
+		return;
+	}
+	std::pair<std::string_view, Class *> cls = module->getClass(objectTypeID);
+	if (cls.second == nullptr) {
+		errorHandler->error(node.getSlice(), "Field access on non-class type");
+		return;
+	}
+	cls.second->getScope().forEachSymbol([this, &node, &cls](std::string_view fieldName,
+	                                           int /*unused*/, SymbolSource /*unused*/) {
+		SymbolExpression *field = dynamic_cast<SymbolExpression *>(&node.getField());
+		FunctionCallExpression *method
+		      = dynamic_cast<FunctionCallExpression *>(&node.getField());
+		if (field == nullptr && method == nullptr) {
+			errorHandler->error(node.getField().getSlice(),
+			      "Field access is not a symbol or method");
+			return;
+		}
+		if (field != nullptr) {
+			if (fieldName == field->getSlice().contents) {
+				node.setTypeID(cls.second->getScope().getSymbolType(fieldName));
+			}
+		} else {
+			node.getObject().accept(*this);
+			if (inUnreachableCode) {
+				errorHandler->error(node.getSlice(), "Unreachable code");
+				return;
+			}
+			int objectTypeId = node.getObject().getTypeID();
+			if (objectTypeId == -1) {
+				return;
+			}
+			std::pair<std::string_view, Impl *> impl = module->getImpl(objectTypeId);
+			if (impl.second == nullptr) {
+				errorHandler->error(node.getSlice(), "Field access on non-class type");
+				return;
+			}
+			FunctionCallExpression *methodCall
+			      = dynamic_cast<FunctionCallExpression *>(&node.getField());
+			if (methodCall == nullptr) {
+				errorHandler->error(node.getField().getSlice(),
+				      "Field access is not a method");
+				return;
+			}
+			SymbolExpression *functionName
+			      = dynamic_cast<SymbolExpression *>(&methodCall->getFunction());
+			if (functionName == nullptr) {
+				errorHandler->error(methodCall->getFunction().getSlice(),
+				      "Method name is not a symbol");
+				return;
+			}
+			Function *function
+			      = impl.second->getMethod(functionName->getSymbol().s.contents);
+			if (function == nullptr) {
+				errorHandler->error(functionName->getSymbol(),
+				      "Method " + std::string(functionName->getSymbol().s.contents)
+				            + " not found in impl for " + std::string(impl.first));
+				return;
+			}
+		}
+	});
+}
+
 void SemanticAnalyzer::visit(IfElseExpression &node) {
 	Expression &condition = node.getCondition();
 	condition.accept(*this);
@@ -301,21 +425,26 @@ void SemanticAnalyzer::visit(LetStatement &node) {
 		return;
 	}
 	int typeID = module->getType(typeAnnotation->s.contents).id;
-	Expression *value = node.getExpression();
-	if (!value) {
-		errorHandler->error(node.getSlice(), "Expression required for let statement");
-		return;
-	}
-	value->accept(*this);
-	if (inUnreachableCode) {
-		errorHandler->error(node.getEqualSign().s, "Unreachable code");
-		return;
-	}
-	scopeStack.back()->pushSymbol(node.getSymbol().s.contents, typeID,
-	      SymbolSource::LetStatement);
-	if (typeID != value->getTypeID() && value->getTypeID() != -1) {
-		errorHandler->error(node.getExpression()->getSlice(),
-		      "Type mismatch in let statement");
+	if (!node.getIsFieldDeclaration()) {
+		Expression *value = node.getExpression();
+		if (!value) {
+			errorHandler->error(node.getSlice(), "Expression required for let statement");
+			return;
+		}
+		value->accept(*this);
+		if (inUnreachableCode) {
+			errorHandler->error(node.getEqualSign().s, "Unreachable code");
+			return;
+		}
+		scopeStack.back()->pushSymbol(node.getSymbol().s.contents, typeID,
+		      SymbolSource::LetStatement);
+		if (typeID != value->getTypeID() && value->getTypeID() != -1) {
+			errorHandler->error(node.getExpression()->getSlice(),
+			      "Type mismatch in let statement");
+		}
+	} else {
+		scopeStack.back()->pushSymbol(node.getSymbol().s.contents, typeID,
+		      SymbolSource::FieldDeclaration);
 	}
 	node.setSymbolTypeID(typeID);
 }
@@ -353,9 +482,35 @@ void SemanticAnalyzer::visit(Function &node) {
 	inUnreachableCode = false;
 }
 
+void SemanticAnalyzer::visit(Class &node) {
+	scopeStack.push_back(&node.getScope());
+	node.forEachFieldDeclaration([this](LetStatement &declaration) {
+		declaration.accept(*this);
+	});
+}
+
+void SemanticAnalyzer::visit(Impl &node) {
+	node.forEachMethod([this](std::string_view /*unused*/, Function &method) {
+		method.accept(*this);
+	});
+}
+
 void SemanticAnalyzer::visit(Module &node) {
 	addDefaultOperators(&node);
 	addRuntimeFunctions(&node, builtinApiJsonFile);
+	int unitTypeID = node.getType("()").id;
+	node.forEachClass([this, unitTypeID](std::string_view name, Class & /*unused*/,
+	                        bool /*unused*/) {
+		module->insertType(name, true);
+		int typeID = module->getType(name).id;
+		module->addBinaryOperator(Operator::Type::Assignment, typeID, typeID, unitTypeID);
+	});
+	node.forEachClass([this](std::string_view /*unused*/, Class &cls, bool isBuiltin) {
+		if (isBuiltin) {
+			return;
+		}
+		cls.accept(*this);
+	});
 	node.forEachFunction([this]([[maybe_unused]]
 	                            std::string_view name,
 	                           Function &function, bool /*unused*/) {
@@ -376,6 +531,50 @@ void SemanticAnalyzer::visit(Module &node) {
 			function.setTypeID(module->getType(type->s.contents).id);
 		}
 	});
+	node.forEachImpl([this](std::string_view implName, Impl &impl, bool /*unused*/) {
+		impl.forEachMethod([this, &implName](std::string_view /*unused*/,
+		                         Function &method) {
+			bool first = true;
+			method.forEachParameter([this, &method, &first, &implName](Symbol &parameter,
+			                              Symbol &type) {
+				int typeID = module->getType(type.s.contents).id;
+				if (typeID == -1) {
+					errorHandler->error(type.s, "Unknown type");
+					return;
+				}
+				if (first && method.getVariant() == FunctionVariant::CONSTRUCTOR
+				      && parameter.s.contents != "self") {
+					errorHandler->error(parameter.s,
+					      "First parameter of constructor must be self");
+				}
+				if (first && method.getVariant() == FunctionVariant::CONSTRUCTOR
+				      && type.s.contents != implName) {
+					errorHandler->error(type.s, "Constructor self parameter type must be "
+					                            "the same as impl name");
+				}
+				if (first && method.getVariant() == FunctionVariant::FUNCTION) {
+					if (parameter.s.contents == "self") {
+						method.setVariant(FunctionVariant::METHOD);
+						if (type.s.contents != implName) {
+							errorHandler->error(type.s, "Method self parameter type must "
+							                            "be the same as impl name");
+						}
+					}
+				}
+				first = false;
+				method.getBody().pushSymbol(parameter.s.contents, typeID,
+				      SymbolSource::FunctionParameter);
+			});
+
+			Symbol *type = method.getReturnTypeAnnotation();
+			if (type == nullptr) {
+				method.setTypeID(module->getType("()").id);
+			} else {
+				method.setTypeID(module->getType(type->s.contents).id);
+			}
+		});
+	});
+
 	bool hasMain = false;
 	node.forEachFunction(
 	      [this, &hasMain](std::string_view name, Function &function, bool isBuiltin) {
@@ -392,6 +591,12 @@ void SemanticAnalyzer::visit(Module &node) {
 			      }
 		      }
 	      });
+	node.forEachImpl([this](std::string_view /*unused*/, Impl &impl, bool isBuiltin) {
+		if (isBuiltin) {
+			return;
+		}
+		impl.accept(*this);
+	});
 	if (!hasMain) {
 		errorHandler->error(module->getSource(), "No main function");
 	}
@@ -515,9 +720,9 @@ static void addRuntimeFunctions(Module *module, std::istream &builtinApiJsonFile
 		std::string_view returnType = module->ownedStrings.back();
 		std::unique_ptr<Symbol> returnTypeAnnotation
 		      = std::make_unique<Symbol>(Slice(returnType, "", 0, 0));
-		std::unique_ptr<Function> builtin
-		      = std::make_unique<Function>(std::move(parameters),
-		            std::move(returnTypeAnnotation), std::make_unique<BlockExpression>());
+		std::unique_ptr<Function> builtin = std::make_unique<Function>(
+		      std::move(parameters), std::move(returnTypeAnnotation),
+		      std::make_unique<BlockExpression>(), FunctionVariant::FUNCTION);
 		module->addFunction(std::make_unique<Symbol>(Slice(functionName, "", 0, 0)),
 		      std::move(builtin), true);
 	}
