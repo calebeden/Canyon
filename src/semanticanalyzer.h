@@ -33,11 +33,15 @@ public:
 	void visit(BlockExpression &node) override;
 	void visit(ReturnExpression &node) override;
 	void visit(ParenthesizedExpression &node) override;
+	void visit(PathExpression &node) override;
+	void visit(FieldAccessExpression &node) override;
 	void visit(IfElseExpression &node) override;
 	void visit(WhileExpression &node) override;
 	void visit(ExpressionStatement &node) override;
 	void visit(LetStatement &node) override;
 	void visit(Function &node) override;
+	void visit(Class &node) override;
+	void visit(Impl &node) override;
 	void visit(Module &node) override;
 	virtual ~SemanticAnalyzer() = default;
 };

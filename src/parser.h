@@ -25,8 +25,12 @@ public:
 	std::unique_ptr<Module> parse();
 	~Parser() = default;
 private:
-	std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> parseFunction();
+	std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Function>> parseFunction(
+	      bool isConstructor = false);
+	std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Class>> parseClass();
+	std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Impl>> parseImpl();
 	std::unique_ptr<Statement> parseStatement();
+	std::unique_ptr<LetStatement> parseLet();
 	std::unique_ptr<Expression> parseExpression();
 	std::unique_ptr<BlockExpression> parseBlock();
 	std::unique_ptr<IfElseExpression> parseIfElse();
@@ -43,7 +47,9 @@ private:
 	std::unique_ptr<Expression> parseAdditiveExpression();
 	std::unique_ptr<Expression> parseMultiplicativeExpression();
 	std::unique_ptr<Expression> parseUnaryExpression();
+	std::unique_ptr<Expression> parseFieldAccessExpression();
 	std::unique_ptr<Expression> parseFunctionCallExpression();
+	std::unique_ptr<Expression> parsePathExpression();
 	std::unique_ptr<Expression> parsePrimaryExpression();
 	void synchronize();
 	bool isAtEnd() const;

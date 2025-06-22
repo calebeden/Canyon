@@ -1,0 +1,17 @@
+fun main() {
+    let result: i32 = Foo::new().bar();
+}
+
+class Foo {
+    x: i32;
+}
+
+impl Foo {
+    constructor new(self: Foo) {
+        self.x = 1;
+    }
+
+    fun bar(self: Foo): i32 {
+        self.x
+    }
+}
