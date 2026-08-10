@@ -43,16 +43,26 @@ public:
 	virtual ~Statement() = default;
 };
 
+enum class FunctionVariant {
+	FUNCTION,
+	METHOD,
+	CONSTRUCTOR,
+};
+
 class FunctionCallExpression : public Expression {
 	std::unique_ptr<Expression> function;
 	std::vector<std::unique_ptr<Expression>> arguments;
+	FunctionVariant variant;
 public:
 	FunctionCallExpression(std::unique_ptr<Expression> function, const Punctuation &open,
 	      std::vector<std::unique_ptr<Expression>> arguments, const Punctuation &close);
 	FunctionCallExpression(std::unique_ptr<Expression> function,
 	      std::vector<std::unique_ptr<Expression>> arguments);
 	Expression &getFunction();
+	void addFirstArgument(std::unique_ptr<Expression> argument);
 	void forEachArgument(const std::function<void(Expression &)> &argumentHandler);
+	void setVariant(FunctionVariant variant);
+	FunctionVariant getVariant() const;
 	void accept(ASTVisitor &visitor) override;
 	virtual ~FunctionCallExpression() = default;
 };
@@ -70,7 +80,6 @@ public:
 	Operator &getOperator();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~BinaryExpression() = default;
-	friend class ASTVisitor;
 };
 
 class UnaryExpression : public Expression {
@@ -129,10 +138,12 @@ enum class SymbolSource {
 	Unknown,
 	LetStatement,
 	FunctionParameter,
+	FieldDeclaration,
 	GENERATED_Block,
 	GENERATED_IfElse,
 	GENERATED_While,
 	GENERATED_Argument,
+	GENERATED_Temporary,
 };
 
 class BlockExpression : public Expression {
@@ -148,6 +159,7 @@ public:
 	void forEachStatement(const std::function<void(Statement &)> &statementHandler);
 	Expression *getFinalExpression();
 	int getSymbolType(std::string_view symbol);
+	void setSymbolType(std::string_view symbol, int typeID);
 	SymbolSource getSymbolSource(std::string_view symbol);
 	void pushSymbol(std::string_view symbol, int typeID, SymbolSource source);
 	void forEachSymbol(
@@ -178,6 +190,29 @@ public:
 	Expression &getExpression();
 	void accept(ASTVisitor &visitor) override;
 	virtual ~ParenthesizedExpression() = default;
+};
+
+class PathExpression : public Expression {
+private:
+	std::vector<std::unique_ptr<SymbolExpression>> path;
+public:
+	PathExpression(std::vector<std::unique_ptr<SymbolExpression>> path);
+	void forEachSymbol(const std::function<void(SymbolExpression &)> &symbolHandler);
+	void accept(ASTVisitor &visitor) override;
+	virtual ~PathExpression() = default;
+};
+
+class FieldAccessExpression : public Expression {
+private:
+	std::unique_ptr<Expression> object;
+	std::unique_ptr<Expression> field;
+public:
+	FieldAccessExpression(std::unique_ptr<Expression> object,
+	      std::unique_ptr<Expression> field);
+	Expression &getObject();
+	Expression &getField();
+	void accept(ASTVisitor &visitor) override;
+	virtual ~FieldAccessExpression() = default;
 };
 
 class IfElseExpression : public Expression {
@@ -234,11 +269,13 @@ private:
 	std::unique_ptr<Symbol> typeAnnotation;
 	std::unique_ptr<Operator> equalSign;
 	std::unique_ptr<Expression> expression;
+	bool isFieldDeclaration = false;
 	int symbolTypeID = -1;
 public:
 	LetStatement(const Keyword &let, std::unique_ptr<Symbol> symbol,
 	      std::unique_ptr<Symbol> typeAnnotation, std::unique_ptr<Operator> equalSign,
 	      std::unique_ptr<Expression> expression, Punctuation *semicolon);
+	LetStatement(std::unique_ptr<Symbol> symbol, std::unique_ptr<Symbol> typeAnnotation, Punctuation *semicolon);
 	LetStatement(std::unique_ptr<Symbol> symbol, std::unique_ptr<Expression> expression);
 	Symbol &getSymbol();
 	Expression *getExpression();
@@ -246,6 +283,7 @@ public:
 	Operator &getEqualSign();
 	void setSymbolTypeID(int typeID);
 	int getSymbolTypeID() const;
+	bool getIsFieldDeclaration() const;
 	void accept(ASTVisitor &visitor) override;
 	virtual ~LetStatement() = default;
 };
@@ -255,30 +293,59 @@ private:
 	std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>> parameters;
 	std::unique_ptr<Symbol> returnTypeAnnotation;
 	std::unique_ptr<BlockExpression> body;
+	FunctionVariant variant;
 	int typeID = -1;
 public:
 	Function(std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
 	               parameters,
 	      std::unique_ptr<Symbol> returnTypeAnnotation,
-	      std::unique_ptr<BlockExpression> body);
+	      std::unique_ptr<BlockExpression> body, FunctionVariant variant);
 	Function(std::vector<std::pair<std::unique_ptr<Symbol>, std::unique_ptr<Symbol>>>
 	               parameters,
-	      std::unique_ptr<BlockExpression> body);
+	      std::unique_ptr<BlockExpression> body, FunctionVariant variant);
 	void forEachParameter(
 	      const std::function<void(Symbol &, Symbol &)> &parameterHandler);
 	Symbol *getReturnTypeAnnotation();
 	BlockExpression &getBody();
 	int getTypeID() const;
 	void setTypeID(int typeID);
+	void setVariant(FunctionVariant variant);
+	FunctionVariant getVariant() const;
 	void accept(ASTVisitor &visitor);
 	~Function() = default;
+};
+
+class Class : public ASTComponent {
+private:
+	std::vector<std::unique_ptr<LetStatement>> fieldDeclarations;
+	std::unique_ptr<BlockExpression> scope = std::make_unique<BlockExpression>();
+public:
+	Class(std::vector<std::unique_ptr<LetStatement>> fieldDeclarations);
+	Class(std::unique_ptr<BlockExpression> scope);
+	void forEachFieldDeclaration(const std::function<void(LetStatement &)> &fieldHandler);
+	BlockExpression &getScope();
+	void accept(ASTVisitor &visitor);
+	~Class() = default;
+};
+
+class Impl : public ASTComponent {
+private:
+	std::unordered_map<std::string_view, std::unique_ptr<Function>> methods;
+public:
+	Impl(std::unordered_map<std::string_view, std::unique_ptr<Function>> methods);
+	void forEachMethod(
+	      const std::function<void(std::string_view, Function &)> &methodHandler);
+	Function *getMethod(std::string_view name);
+	void accept(ASTVisitor &visitor);
+	~Impl() = default;
 };
 
 struct Type {
 	int id;
 	int parentID;
+	bool isClass;
 	std::string_view name;
-	Type(int id, int parentID, std::string_view name);
+	Type(int id, int parentID, std::string_view name, bool isClass);
 	Type(const Type &) = default;
 };
 
@@ -292,6 +359,9 @@ private:
 	std::unordered_map<Operator::Type, std::vector<std::tuple<int, int, int>>>
 	      binaryOperators;
 	std::filesystem::path source;
+	std::unordered_map<std::string_view, std::tuple<std::unique_ptr<Class>, bool>>
+	      classes;
+	std::unordered_map<std::string_view, std::tuple<std::unique_ptr<Impl>, bool>> impls;
 public:
 	std::list<std::string> ownedStrings;
 	explicit Module(std::filesystem::path source);
@@ -300,9 +370,17 @@ public:
 	      bool isBuiltin = false);
 	void forEachFunction(
 	      const std::function<void(std::string_view, Function &, bool)> &functionHandler);
+	void addClass(std::unique_ptr<Symbol> name, std::unique_ptr<Class> cls,
+	      bool isBuiltin = false);
+	void addImpl(std::unique_ptr<Symbol> className, std::unique_ptr<Impl> impl,
+	      bool isBuiltin = false);
+	void forEachClass(
+	      const std::function<void(std::string_view, Class &, bool)> &classHandler);
+	void forEachImpl(
+	      const std::function<void(std::string_view, Impl &, bool)> &implHandler);
 	Type getType(std::string_view typeName);
 	Type getType(int id);
-	void insertType(std::string_view typeName);
+	void insertType(std::string_view typeName, bool isClass);
 	bool isTypeConvertible(int from, int to);
 	Type getCommonTypeAncestor(int type1, int type2);
 	void addUnaryOperator(Operator::Type op, int operandType, int resultType);
@@ -311,6 +389,9 @@ public:
 	      int resultType);
 	int getBinaryOperator(Operator::Type op, int leftType, int rightType);
 	Function *getFunction(std::string_view name);
+	Impl *getImpl(std::string_view name);
+	std::pair<std::string_view, Impl *> getImpl(int typeID);
+	std::pair<std::string_view, Class *> getClass(int typeID);
 	std::filesystem::path getSource();
 	void accept(ASTVisitor &visitor);
 	~Module() = default;
@@ -328,11 +409,15 @@ public:
 	virtual void visit(BlockExpression &node) = 0;
 	virtual void visit(ReturnExpression &node) = 0;
 	virtual void visit(ParenthesizedExpression &node) = 0;
+	virtual void visit(PathExpression &node) = 0;
+	virtual void visit(FieldAccessExpression &node) = 0;
 	virtual void visit(IfElseExpression &node) = 0;
 	virtual void visit(WhileExpression &node) = 0;
 	virtual void visit(ExpressionStatement &node) = 0;
 	virtual void visit(LetStatement &node) = 0;
 	virtual void visit(Function &node) = 0;
+	virtual void visit(Class &node) = 0;
+	virtual void visit(Impl &node) = 0;
 	virtual void visit(Module &node) = 0;
 	virtual ~ASTVisitor() = default;
 };
@@ -350,11 +435,15 @@ public:
 	void visit(BlockExpression &node) override;
 	void visit(ReturnExpression &node) override;
 	void visit(ParenthesizedExpression &node) override;
+	void visit(PathExpression &node) override;
+	void visit(FieldAccessExpression &node) override;
 	void visit(IfElseExpression &node) override;
 	void visit(WhileExpression &node) override;
 	void visit(ExpressionStatement &node) override;
 	void visit(LetStatement &node) override;
 	void visit(Function &node) override;
+	void visit(Class &node) override;
+	void visit(Impl &node) override;
 	void visit(Module &node) override;
 	virtual ~ASTPrinter() = default;
 };

@@ -1,1 +1,1 @@
-Error at {main}:1:1: Expected keyword `fun`
+Error at {main}:1:1: Expected keyword `fun` or `class`

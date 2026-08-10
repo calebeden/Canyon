@@ -17,8 +17,18 @@ private:
 	Module *module;
 	std::ostream *os;
 	std::unordered_map<int, std::string> cTypes;
+	std::unordered_map<int, std::string> classNames;
 	int tabLevel = 0;
 	std::list<std::string> generatedStrings;
+	enum class Status {
+		NORMAL,
+		IN_FUNCTION,
+		IN_METHOD,
+		IN_CLASS,
+		IN_IMPL,
+		IN_CALL,
+	};
+	Status status = Status::NORMAL;
 public:
 	CCodeGenerator(Module *module, std::ostream *os);
 	void generate();
@@ -32,16 +42,20 @@ public:
 	void visit(BlockExpression &node) override;
 	void visit(ReturnExpression &node) override;
 	void visit(ParenthesizedExpression &node) override;
+	void visit(PathExpression &node) override;
+	void visit(FieldAccessExpression &node) override;
 	void visit(IfElseExpression &node) override;
 	void visit(WhileExpression &node) override;
 	void visit(ExpressionStatement &node) override;
 	void visit(LetStatement &node) override;
 	void visit(Function &node) override;
+	void visit(Class &node) override;
+	void visit(Impl &node) override;
 	void visit(Module &node) override;
 	~CCodeGenerator() = default;
 private:
 	void generateIncludes();
-	void generateMain();
+	void generateBuiltinFunctions();
 };
 
 #endif

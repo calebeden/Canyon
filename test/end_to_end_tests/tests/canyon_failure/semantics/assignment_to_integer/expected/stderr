@@ -1,1 +1,1 @@
-Error at {main}:2:5: Left side of assignment must be a variable
+Error at {main}:2:5: Left side of assignment must be a variable or field access
