@@ -1,0 +1,16 @@
+fun main() {
+    let foo = Foo::new();
+    let foo2 = foo.doSomething().doSomething();
+}
+
+class Foo {
+}
+
+impl Foo {
+    constructor new(self: Foo) {
+    }
+
+    fun doSomething(self: Foo): Foo {
+        self
+    }
+}
